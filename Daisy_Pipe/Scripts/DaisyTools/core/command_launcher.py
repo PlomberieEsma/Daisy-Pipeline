@@ -37,8 +37,8 @@ class Command_launcher(object):
         self.project_path = self.core.projectPath
         self.project_path = self.project_path.replace("\\", "/")
 
-        # importe path.json
-        with open(f'{self.project_path}00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/lib/path.json', 'r') as file:
+        # importe config.json
+        with open(f'{self.project_path}00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/lib/config.json', 'r') as file:
             self.jsonPath = json.load(file)
         
     ######################################################################################################################################
