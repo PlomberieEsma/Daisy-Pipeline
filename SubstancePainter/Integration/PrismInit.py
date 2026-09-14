@@ -8,6 +8,7 @@
 
 import os
 import sys
+import json
 import logging
 logger = logging.getLogger(__name__)
 
@@ -19,20 +20,8 @@ import substance_painter.project as sp_project
 pcore = None
 prism_menu = None
 
-# ---------------------------------------------------------------------- #
-# 1. Rendre PrismCore importable
-# ---------------------------------------------------------------------- #
-# Le chemin racine de Prism (Scripts/) doit etre injecte dans sys.path.
-# Idealement ce chemin n'est PAS hardcode ici, mais lu depuis une variable
-# d'environnement definie a l'installation (PRISM_ROOT), pour rester
-# valide meme si Prism est deplace/reinstalle ailleurs.
-
 prismRoot = os.environ.get("PRISM_ROOT", r"C:/Program Files/Prism2")
 ICON_PATH = os.path.join(prismRoot, "Plugins", "Apps", "SubstancePainter", "Resources", "daisy_logo.png")
-
-# ---------------------------------------------------------------------- #
-# 3. Enregistrer le menu Prism dans l'UI de Substance Painter
-# ---------------------------------------------------------------------- #
 
 
 def open_project_browser():
@@ -47,9 +36,9 @@ def save_comment():
     if pcore is not None and pcore.appPlugin is not None:
         pcore.appPlugin.SaveComment()
 
-def import_geometry():
+def geometry_path():
     if pcore is not None and pcore.appPlugin is not None:
-        pcore.appPlugin.ImportGeometry()
+        pcore.appPlugin.GeometryPath()
 
 def export_textures():
     if pcore is not None and pcore.appPlugin is not None:
@@ -59,7 +48,6 @@ def start_plugin():
     global pcore, prism_menu
 
     if pcore is not None:
-        # deja demarre, evite une double initialisation
         return
 
     scriptDir = os.path.join(prismRoot, "Scripts")
@@ -94,15 +82,13 @@ def start_plugin():
     project_browser_action.triggered.connect(open_project_browser)
     prism_menu.addAction(project_browser_action)
 
-    import_geometry_action = QtGui.QAction("Import Geometry", main_window)
-    import_geometry_action.triggered.connect(import_geometry)
+    import_geometry_action = QtGui.QAction("Geometry Path", main_window)
+    import_geometry_action.triggered.connect(geometry_path)
     prism_menu.addAction(import_geometry_action)
 
     export_textures_action = QtGui.QAction("Export Textures", main_window)
     export_textures_action.triggered.connect(export_textures)
     prism_menu.addAction(export_textures_action)
-
-
 
 def close_plugin():
     global prism_menu
@@ -110,3 +96,61 @@ def close_plugin():
         main_window = sp_ui.get_main_window()
         main_window.menuBar().removeAction(prism_menu.menuAction())
         prism_menu = None
+
+
+##############################################################################################################
+# Naming for pending scene from temporary json file
+##############################################################################################################
+
+def get_pending_file_path():
+    if pcore is None or not getattr(pcore, "projectPath", None):
+        return None
+    return os.path.join(
+        pcore.projectPath,
+        "00_Pipeline", "Plugins", "SubstancePainter", "tmp",
+        "SubstancePainterPending.json",
+    )
+
+def check_pending_scene(event):
+    pendingFile = get_pending_file_path()
+    if not pendingFile or not os.path.isfile(pendingFile):
+        return
+
+    try:
+        with open(pendingFile, "r") as f:
+            data = json.load(f)
+    except Exception as e:
+        logger.warning("Impossible de lire le fichier pending: %s" % e)
+        return
+
+    filepath = data.get("filepath")
+    if not filepath:
+        return
+
+    def onProjectReady(readyEvent):
+        sp_event.DISPATCHER.disconnect(sp_event.ProjectEditionEntered, onProjectReady)
+        try:
+            sp_project.save_as(filepath)
+
+            details = {
+                "asset_path": data.get("asset_path", ""),
+                "asset": data.get("asset", ""),
+                "type": data.get("type", "asset"),
+                "department": data.get("department", ""),
+                "task": data.get("task", ""),
+                "version": data.get("version", ""),
+                "comment": data.get("comment", ""),
+                "extension": data.get("extension", ""),
+                "user": data.get("user", ""),
+            }
+            pcore.saveSceneInfo(filepath, details=details)
+
+            os.remove(pendingFile)
+        except Exception as e:
+            logger.warning("Impossible de sauvegarder la scene en attente: %s" % e)
+
+    sp_event.DISPATCHER.connect(sp_event.ProjectEditionEntered, onProjectReady)
+
+
+# dans start_plugin(), en plus du reste :
+sp_event.DISPATCHER.connect(sp_event.ProjectCreated, check_pending_scene)

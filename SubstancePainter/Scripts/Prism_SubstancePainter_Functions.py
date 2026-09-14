@@ -30,7 +30,6 @@ from qtpy.QtWidgets import *
 from functools import partial
 import json
 import subprocess
-
 import os, sys
 
 from PrismUtils.Decorators import err_catcher
@@ -38,6 +37,8 @@ from PrismUtils import PrismWidgets
 
 
 import substance_painter.project as sp_project
+
+from Prism_SubstancePainter_externalAccess_Functions import MeshPathsDialog
 
 
 class Prism_SubstancePainter_Functions(object):
@@ -59,12 +60,6 @@ class Prism_SubstancePainter_Functions(object):
 
     @err_catcher(name=__name__)
     def startup(self, origin):
-        # 	for obj in QApplication.topLevelWidgets():
-        # 		if obj.objectName() == 'SubstancePainterWindow':
-        # 			QtParent = obj
-        # 			break
-        # 	else:
-        # 		return False
 
         origin.timer.stop()
 
@@ -384,7 +379,7 @@ class Prism_SubstancePainter_Functions(object):
         oldFilePath = self.getCurrentFileName(origin)
         if oldFilePath == "":
             self.core.popup(
-                "Merci d'utiliser le Project Browser pour creer un nouveau "
+                "Merci d'utiliser le Project Browser pour créer un nouveau "
                 "fichier avant d'utiliser 'Save Comment'."
             )
             return False
@@ -415,3 +410,338 @@ class Prism_SubstancePainter_Functions(object):
         self.core.savec.activateWindow()
         self.core.savec.setAttribute(Qt.WA_DeleteOnClose)
         return True
+
+    @err_catcher(name=__name__)
+    def GeometryPath(self, origin=None):
+
+        #-----------------------------------------------------------------------------------#
+        # Open the GeomatryPath Window from the Substance Prism Menu
+        #-----------------------------------------------------------------------------------#
+
+        filepath = self.getCurrentFileName(origin)
+        if not filepath:
+            self.core.popup("Aucune scene ouverte.")
+            return
+
+        versionInfoPath = os.path.splitext(filepath)[0] + "versioninfo.json"
+        if not os.path.isfile(versionInfoPath):
+            self.core.popup(
+                "Impossible de trouver les informations de la scene:\n%s" % versionInfoPath
+            )
+            return
+
+        try:
+            with open(versionInfoPath, "r") as f:
+                data = json.load(f)
+        except Exception as e:
+            self.core.popup("Impossible de lire les informations de la scene:\n%s" % e)
+            return
+
+        entity = {
+            "type": data.get("type", "asset"),
+            "asset": data.get("asset", ""),
+            "asset_path": data.get("asset_path", ""),
+        }
+
+        meshData = self.findMeshCandidates(entity)
+
+        self.core.meshDlg = MeshPathsDialog(
+            meshData, assetName=entity.get("asset", ""), parent=self.core.messageParent
+        )
+        self.core.meshDlg.destroyed.connect(lambda: setattr(self.core, "meshDlg", None))
+        self.core.meshDlg.setAttribute(Qt.WA_DeleteOnClose)
+        self.core.meshDlg.show()
+
+    @err_catcher(name=__name__)
+    def ExportTextures(self, origin=None):
+
+        #-----------------------------------------------------------------------------------#
+        # From the currentFileName, find the path and asset informations for the ExportTexturesWindow
+        # Open the ExportTexturesDialog Window
+        #-----------------------------------------------------------------------------------#
+        filepath = self.getCurrentFileName(origin)
+        versionInfoPath = os.path.splitext(filepath)[0] + "versioninfo.json"
+
+        with open(versionInfoPath, 'r') as file:
+            jsonPath = json.load(file)
+
+        # Get the Project path through the Z Disk
+        networkProjectPath = jsonPath["project_path"]
+        project_name = networkProjectPath.split("\\")[-1]
+        localProjectPath = f"Z:\{project_name}"
+
+        exportPath = os.path.join(localProjectPath, "03_Production", "Assets", jsonPath["asset_path"], "Textures", jsonPath["task"])
+
+# # C:\Users\3D5\Documents\Daisy_Pipe\03_Production\Assets\Char\<assetname>\Textures\<task>\<asset_name>_<task>_v<version>.<ext>
+
+
+        self.core.exportDlg = ExportTexturesDialog(core=self.core,
+            assetName=jsonPath["asset"], exportPath=exportPath, parent=self.core.messageParent)
+        self.core.exportDlg.destroyed.connect(lambda: setattr(self.core, "exportDlg", None))
+        self.core.exportDlg.setAttribute(Qt.WA_DeleteOnClose)
+        self.core.exportDlg.show()
+
+class ExportTexturesDialog(QDialog):
+    def __init__(self, core, assetName="", exportPath="", parent=None):
+
+        #-----------------------------------------------------------------------------------#
+        # Window with the export options with presets
+        #   core : Prism core, needed for popups and path helpers
+        #   assetName : Name of the asset
+        #   exportPath : Folder path where the textures will be exported
+        #-----------------------------------------------------------------------------------#
+
+        super(ExportTexturesDialog, self).__init__(parent)
+        self.core = core
+        self.setWindowTitle("Prism - Export Textures")
+        self.resize(650, 350)
+
+        self.mainLayout = QVBoxLayout(self)
+
+        titleLabel = QLabel("Export Textures for the asset : %s" % assetName)
+        titleFont = titleLabel.font()
+        titleFont.setPointSize(titleFont.pointSize() + 2)
+        titleFont.setBold(True)
+        titleLabel.setFont(titleFont)
+        self.mainLayout.addWidget(titleLabel)
+
+        ### General Parameters
+
+        self.formLayout = QFormLayout()
+        self.formLayout.setLabelAlignment(Qt.AlignRight)
+        self.mainLayout.addLayout(self.formLayout)
+
+        # Export path (QLineEdit + Browse + Reset)
+        pathRow = QHBoxLayout()
+        self.pathEdit = QLineEdit(exportPath)
+        self.browseBtn = QPushButton("Browse")
+        self.browseBtn.setMaximumWidth(30)
+        self.browseBtn.clicked.connect(self.onBrowseClicked)
+        self.resetBtn = QPushButton("Reset")
+        self.resetBtn.setMaximumWidth(50)
+        self.resetBtn.clicked.connect(lambda: self.onResetClicked(exportPath))
+        pathRow.addWidget(self.pathEdit)
+        pathRow.addWidget(self.browseBtn)
+        pathRow.addWidget(self.resetBtn)
+        self.formLayout.addRow("Export Path", pathRow)
+
+        # Export preset
+        self.presetCombo = QComboBox()
+        self.presetCombo.addItems([
+            "PBR Metallic Roughness",
+            "Unity HDRP (Lit)",
+            "Arnold (AiStandard)",
+            "USD PBR Metal Roughness",
+        ])
+        self.formLayout.addRow("Output template", self.presetCombo)
+
+        # File type (Type + Bit depth)
+        fileRow = QHBoxLayout()
+        self.formatCombo = QComboBox()
+        fileType = self.formatCombo.addItems(["Based on output template", "png", "tiff", "exr"])
+        self.formatCombo.currentTextChanged.connect(self.onFileTypeChanged)
+        bitDepthList = self.onFileTypeChanged(text=fileType)
+        self.bitDepthCombo = QComboBox()
+        self.bitDepthCombo.addItems(bitDepthList)
+        fileRow.addWidget(self.formatCombo)
+        fileRow.addWidget(self.bitDepthCombo)
+        self.formLayout.addRow("File type", fileRow)
+
+        # Etat initial du bouton de dilation selon le choix par défaut du combo
+        self.onFileTypeChanged(self.formatCombo.currentText())
+
+        # Resolution
+        self.sizeCombo = QComboBox()
+        self.sizeCombo.addItems(["Based on each Texture Set's size", "128", "256", "512", "1024", "2048", "4096", "8192"])
+        self.sizeCombo.setCurrentText("Based on each Texture Set's size")
+        self.formLayout.addRow("Resolution", self.sizeCombo)
+
+        # Padding (algorithm + dilation button revealing a slider popup)
+        paddingRow = QHBoxLayout()
+        self.paddingCombo = QComboBox()
+        self.paddingCombo.addItems([
+            "No padding (Passthrough)",
+            "Dilation Infinite",
+            "Dilation + transparent",
+            "Dilation + default background color",
+            "Dilation + diffusion",
+        ])
+        self.paddingCombo.currentTextChanged.connect(self.onPaddingChanged)
+
+        self.dilationValue = 5
+        self.dilationBtn = QPushButton(str(self.dilationValue))
+        self.dilationBtn.setMaximumWidth(50)
+        self.dilationBtn.clicked.connect(self.onDilationClicked)
+
+        paddingRow.addWidget(self.paddingCombo)
+        paddingRow.addWidget(self.dilationBtn)
+        self.formLayout.addRow("Padding", paddingRow)
+
+        # Popup contenant le slider, caché par défaut, affiché au clic sur dilationBtn
+        self.dilationPopup = QFrame(self, Qt.Popup)
+        popupLayout = QVBoxLayout(self.dilationPopup)
+        popupLayout.setContentsMargins(6, 6, 6, 6)
+
+        self.dilationSlider = QSlider(Qt.Horizontal, self.dilationPopup)
+        self.dilationSlider.setRange(0, 255)
+        self.dilationSlider.setValue(self.dilationValue)
+        self.dilationSlider.setMinimumWidth(150)
+        self.dilationSlider.valueChanged.connect(self.onDilationSliderChanged)
+        popupLayout.addWidget(self.dilationSlider)
+
+        # Etat initial du bouton de dilation selon le choix par défaut du combo
+        self.onPaddingChanged(self.paddingCombo.currentText())
+
+        # Checkboxes
+        self.ditheringCheck = QCheckBox()
+        self.ditheringCheck.setChecked(True)
+        self.formLayout.addRow("Dithering", self.ditheringCheck)
+
+        self.shaderParamsCheck = QCheckBox()
+        self.formLayout.addRow("Export Shader Params", self.shaderParamsCheck)
+
+        ### Bouton export
+
+        exportBtn = QPushButton("Export")
+        exportBtn.clicked.connect(self.onExportClicked)
+        self.mainLayout.addWidget(exportBtn)
+
+    def onBrowseClicked(self):
+
+        #-----------------------------------------------------------------------------------#
+        # Open a folder browser and update the export path field
+        #-----------------------------------------------------------------------------------#
+
+        folder = QFileDialog.getExistingDirectory(self, "Choose export directory", self.pathEdit.text())
+        if folder:
+            self.pathEdit.setText(folder)
+
+    def availableBitDepth(self, fileType):
+
+        #-----------------------------------------------------------------------------------#
+        # List the available Bit Depth by fileType
+        #-----------------------------------------------------------------------------------#
+
+        bitDepthList=[]
+        if fileType =="png" or fileType =="tiff":
+            bitDepthList=["8 bits", "8 bits + dithering", "16 bits"]
+            if fileType =="tiff":
+                bitDepthList.append("32f bits")
+        elif fileType == "exr":
+            bitDepthList=["16f bits", "32f bits"]
+        else:
+            bitDepthList=[""]
+        return bitDepthList
+
+
+    def onDilationClicked(self):
+
+        #-----------------------------------------------------------------------------------#
+        # Show the dilation slider popup, positioned right under the button
+        #-----------------------------------------------------------------------------------#
+
+        pos = self.dilationBtn.mapToGlobal(self.dilationBtn.rect().bottomLeft())
+        self.dilationPopup.move(pos)
+        self.dilationPopup.show()
+
+    def onDilationSliderChanged(self, value):
+
+        #-----------------------------------------------------------------------------------#
+        # Update the stored dilation value and reflect it on the button label
+        #-----------------------------------------------------------------------------------#
+
+        self.dilationValue = value
+        self.dilationBtn.setText(str(value))
+
+    def onResetClicked(self, exportPath):
+
+        #-----------------------------------------------------------------------------------#
+        # Reset the export path field to its original value
+        #-----------------------------------------------------------------------------------#
+
+        self.pathEdit.setText(exportPath)
+
+    def onPaddingChanged(self, text):
+
+        #-----------------------------------------------------------------------------------#
+        # Enable/disable the dilation button depending on the selected padding algorithm
+        # Dilation distance is only relevant for transparent, color and diffusion padding
+        #-----------------------------------------------------------------------------------#
+
+        needsDilation = text in [
+            "Dilation + transparent",
+            "Dilation + default background color",
+            "Dilation + diffusion",
+        ]
+        self.dilationBtn.setEnabled(needsDilation)
+
+        
+
+    def onFileTypeChanged(self, text):
+    
+            #-----------------------------------------------------------------------------------#
+            # Enable/disable the dilation button depending on the selected padding algorithm
+            # Dilation distance is only relevant for transparent, color and diffusion padding
+            #-----------------------------------------------------------------------------------#
+    
+            needsBitDepth = text not in [
+                "Based on output template",
+            ]
+            self.bitDepthCombo.setEnabled(needsBitDepth)
+
+            bitDepthList=[]
+            if text =="png" or text =="tiff":
+                bitDepthList=["8 bits", "8 bits + dithering", "16 bits"]
+                if text =="tiff":
+                    bitDepthList.append("32f bits")
+            elif text == "exr":
+                bitDepthList=["16f bits", "32f bits"]
+            else:
+                bitDepthList=[""]
+            return bitDepthList
+
+
+    def getExportConfig(self):
+
+        #-----------------------------------------------------------------------------------#
+        # Build the substance_painter.export JSON config from the UI fields
+        # Return - dict ready to be passed to export_project_textures
+        #-----------------------------------------------------------------------------------#
+
+        sizeLog2 = int(self.sizeCombo.currentText()).bit_length() - 1
+
+        return {
+            "exportPath": self.pathEdit.text(),
+            "exportShaderParams": self.shaderParamsCheck.isChecked(),
+            "defaultExportPreset": self.presetCombo.currentText(),
+            "exportList": [{"rootPath": ""}],  # à compléter avec le/les texture sets réels
+            "exportParameters": [{
+                "parameters": {
+                    "fileFormat": self.formatCombo.currentText(),
+                    "bitDepth": self.bitDepthCombo.currentText(),
+                    "dithering": self.ditheringCheck.isChecked(),
+                    "paddingAlgorithm": self.paddingCombo.currentText(),
+                    "dilationDistance": self.dilationValue,
+                    "sizeLog2": sizeLog2,
+                }
+            }],
+        }
+
+    def onExportClicked(self):
+
+        #-----------------------------------------------------------------------------------#
+        # Trigger the actual texture export using the built config
+        #-----------------------------------------------------------------------------------#
+
+        config = self.getExportConfig()
+
+        import substance_painter.export
+        try:
+            result = substance_painter.export.export_project_textures(config)
+            if result.status != substance_painter.export.ExportStatus.Success:
+                self.core.popup(result.message)
+            else:
+                self.close()
+        except Exception as e:
+            self.core.popup("Export failed:\n\n%s" % e)
+

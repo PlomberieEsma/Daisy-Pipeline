@@ -1,15 +1,5 @@
-# -*- coding: utf-8 -*-
-#
-####################################################
-#
-# PRISM - Pipeline for animation and VFX projects
-#
-####################################################
-
 import os
 import json
-import shutil
-import subprocess
 import platform
 import re
 
@@ -57,6 +47,12 @@ class Prism_SubstancePainter_externalAccess_Functions(object):
 
     @err_catcher(name=__name__)
     def getPendingFilePath(self):
+
+        #-----------------------------------------------------------------------------------#
+        # Get the Substance Json pending file path
+        # Return - Path to the file
+        #-----------------------------------------------------------------------------------#
+
         return os.path.join(
             self.core.projectPath,
             "00_Pipeline", "Plugins", "SubstancePainter", "tmp",
@@ -64,6 +60,12 @@ class Prism_SubstancePainter_externalAccess_Functions(object):
         )
 
     def openPBFileContextMenu(self, origin, rcMenu, widget):
+
+        #-----------------------------------------------------------------------------------#
+        # Add a EmptyScene SubstancePainter to the Presets scenes in the RC Contextual Menu in the Files
+        # Return - Launch onEmptySceneRequested function
+        #-----------------------------------------------------------------------------------#
+
         entity = origin.getCurrentEntity()
         widgetType = "department" if widget == origin.lw_departments else "task"
 
@@ -91,6 +93,12 @@ class Prism_SubstancePainter_externalAccess_Functions(object):
 
     @err_catcher(name=__name__)
     def onEmptySceneRequested(self, origin, entity, department):
+
+        #-----------------------------------------------------------------------------------#
+        # Open SubstancePainter and create a pending file Json to keep the scene info for the first save
+        # Return - Open the Geometry Path window
+        #-----------------------------------------------------------------------------------#
+
         taskItem = origin.lw_tasks.currentItem()
         taskName = taskItem.text() if taskItem else ""
 
@@ -113,21 +121,27 @@ class Prism_SubstancePainter_externalAccess_Functions(object):
         filepath = filepath.replace("\\", "/")
 
         if os.path.exists(filepath):
-            self.core.popup("Une scene existe deja a cet emplacement:\n\n%s" % filepath)
+            self.core.popup("There already is a scene here:\n\n%s" % filepath)
             return
 
         if not os.path.exists(os.path.dirname(filepath)):
             try:
                 os.makedirs(os.path.dirname(filepath))
             except Exception as e:
-                self.core.popup("Le dossier n'a pas pu être créé:\n\n%s" % e)
+                self.core.popup("Folder couldn't be created:\n\n%s" % e)
                 return
 
         pendingData = {
             "project_path": self.core.projectPath,
             "asset_path": entity.get("asset_path", ""),
+            "asset": entity.get("asset", ""),
+            "type": entity.get("type", "asset"),
             "department": department,
             "task": taskName,
+            "version": version,
+            "comment": "",
+            "extension": ext,
+            "user": self.core.user,
             "filepath": filepath,
         }
 
@@ -139,22 +153,34 @@ class Prism_SubstancePainter_externalAccess_Functions(object):
         meshData = self.findMeshCandidates(entity)
 
         self.core.meshDlg = MeshPathsDialog(
-            meshData, assetName=entity.get("asset", ""), parent=self.core.messageParent
+            meshData, assetName=entity.get("asset", ""), parent=self.core.messageParent, source="new"
         )
         self.core.meshDlg.destroyed.connect(lambda: setattr(self.core, "meshDlg", None))
         self.core.meshDlg.setAttribute(Qt.WA_DeleteOnClose)
         self.core.meshDlg.show()
 
-
-    
-
     @err_catcher(name=__name__)
     def findMeshCandidates(self, entity):
+
+        #-----------------------------------------------------------------------------------#
+        # Find the all meshes in all format from the same asset as where the user clicked.
+        # Return - mashData dict with
+        #   variant - name of the variant
+        #   definition - ModH or ModL
+        #   format - format of the files found
+        #   path - path to the folder of the files found
+        #-----------------------------------------------------------------------------------#
+
         meshData = []
         assetName = entity.get("asset", "")
 
+        # Get the Project path through the Z Disk
+        networkProjectPath = self.core.projectPath
+        project_name = os.path.basename(networkProjectPath.rstrip("/\\"))
+        localProjectPath = os.path.join("Z:\\", project_name)
+
         exportPath = os.path.join(
-            self.core.projectPath, "03_Production", "Assets",
+            localProjectPath, "03_Production", "Assets",
             entity["asset_path"].replace("\\", os.sep), "Export"
         )
         if not os.path.isdir(exportPath):
@@ -205,9 +231,14 @@ class Prism_SubstancePainter_externalAccess_Functions(object):
         return meshData
 
 class MeshPathsDialog(QDialog):
-    def __init__(self, meshData, assetName="", parent=None):
+    def __init__(self, meshData, assetName="", parent=None, source=None):
+
+        #-----------------------------------------------------------------------------------#
+        # Window with the different meshes of the same asset textured for path selection
+        #-----------------------------------------------------------------------------------#
+
         super(MeshPathsDialog, self).__init__(parent)
-        self.setWindowTitle("Prism - Meshs disponibles")
+        self.setWindowTitle("Prism - Geometry Path")
         self.resize(650, 350)
         self.meshData = meshData
 
@@ -215,16 +246,26 @@ class MeshPathsDialog(QDialog):
 
         self.mainLayout = QVBoxLayout(self)
 
-        titleLabel = QLabel("Mesh de l'asset %s" % assetName)
+        titleLabel = QLabel("Mesh for the asset : %s" % assetName)
         titleFont = titleLabel.font()
         titleFont.setPointSize(titleFont.pointSize() + 2)
         titleFont.setBold(True)
         titleLabel.setFont(titleFont)
         self.mainLayout.addWidget(titleLabel)
 
+        if source == "new":
+            helpLabel = QLabel("Guide : \nCopy the path of the mesh you want to use " \
+                "\nGo to Files > New project... > Select and paste the path in the os window." \
+                "\nChoose which format you prefer if there are several.\n")
+            helpFont = helpLabel.font()
+            helpFont.setPointSize(helpFont.pointSize() + 2)
+            helpLabel.setFont(helpFont)
+            self.mainLayout.addWidget(helpLabel)
+
+
         if len(self.variants) > 1:
             comboRow = QHBoxLayout()
-            comboRow.addWidget(QLabel("Variante :"))
+            comboRow.addWidget(QLabel("Variant :"))
             self.variantCombo = QComboBox()
             self.variantCombo.addItems(self.variants)
             self.variantCombo.currentTextChanged.connect(self.refreshTable)
@@ -236,13 +277,13 @@ class MeshPathsDialog(QDialog):
 
         self.table = QTableWidget()
         self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels(["Definition", "Format", "Chemin", ""])
+        self.table.setHorizontalHeaderLabels(["Definition", "Format", "Path", ""])
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
         self.table.verticalHeader().setVisible(False)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.mainLayout.addWidget(self.table)
 
-        closeBtn = QPushButton("Fermer")
+        closeBtn = QPushButton("Close")
         closeBtn.clicked.connect(self.close)
         self.mainLayout.addWidget(closeBtn)
 
@@ -250,6 +291,11 @@ class MeshPathsDialog(QDialog):
         self.refreshTable(initialVariant)
 
     def refreshTable(self, variant):
+
+        #-----------------------------------------------------------------------------------#
+        # Refresh the Path selection UI
+        #-----------------------------------------------------------------------------------#
+
         filtered = [m for m in self.meshData if m["variant"] == variant] if variant else self.meshData
 
         self.table.setRowCount(len(filtered))
@@ -264,15 +310,20 @@ class MeshPathsDialog(QDialog):
             pathItem = QTableWidgetItem(m["path"])
             self.table.setItem(row, 2, pathItem)
 
-            copyBtn = QPushButton("Copier")
+            copyBtn = QPushButton("Copy")
             copyBtn.clicked.connect(lambda checked, p=m["path"]: self.copyToClipboard(p))
             self.table.setCellWidget(row, 3, copyBtn)
 
         if not filtered:
             self.table.setRowCount(1)
-            emptyItem = QTableWidgetItem("Aucun mesh trouve.")
+            emptyItem = QTableWidgetItem("No mesh found.")
             self.table.setItem(0, 0, emptyItem)
             self.table.setSpan(0, 0, 1, 4)
 
     def copyToClipboard(self, path):
+
+        #-----------------------------------------------------------------------------------#
+        # Copy the path link to clipboard for later Paste
+        #-----------------------------------------------------------------------------------#
+
         QApplication.clipboard().setText(path)
