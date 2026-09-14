@@ -31,6 +31,7 @@ from functools import partial
 import json
 import subprocess
 import os, sys
+import re
 
 from PrismUtils.Decorators import err_catcher
 from PrismUtils import PrismWidgets
@@ -39,6 +40,7 @@ from PrismUtils import PrismWidgets
 import substance_painter.project as sp_project
 
 from Prism_SubstancePainter_externalAccess_Functions import MeshPathsDialog
+VERSION_PATTERN = re.compile(r"^v(\d{4})$", re.IGNORECASE)
 
 
 class Prism_SubstancePainter_Functions(object):
@@ -459,21 +461,29 @@ class Prism_SubstancePainter_Functions(object):
         # From the currentFileName, find the path and asset informations for the ExportTexturesWindow
         # Open the ExportTexturesDialog Window
         #-----------------------------------------------------------------------------------#
+
         filepath = self.getCurrentFileName(origin)
         versionInfoPath = os.path.splitext(filepath)[0] + "versioninfo.json"
 
         with open(versionInfoPath, 'r') as file:
             jsonPath = json.load(file)
 
-        # Get the Project path through the Z Disk
-        networkProjectPath = jsonPath["project_path"]
-        project_name = networkProjectPath.split("\\")[-1]
-        localProjectPath = f"Z:\{project_name}"
+        # Coding file search to pinpoint project file and network
+        current_file = os.path.dirname(__file__)
+        originalProjectPath=current_file.split("\\00_Pipeline")[0]
 
-        exportPath = os.path.join(localProjectPath, "03_Production", "Assets", jsonPath["asset_path"], "Textures", jsonPath["task"])
+        diskLetter=""
+        if "minerva" or "gandalf" in originalProjectPath:
+            if "minerva" in originalProjectPath:
+                diskLetter="Z:\\"
+            elif "gandalf" in originalProjectPath:
+                diskLetter="Y:\\"
+            ProjectPath = os.path.join(diskLetter, originalProjectPath)
+        else:
+            self.core.popup("Check the Disk path letter to have Minerva projects:Z and Gandalf projects:Y")
+            ProjectPath = originalProjectPath
 
-# # C:\Users\3D5\Documents\Daisy_Pipe\03_Production\Assets\Char\<assetname>\Textures\<task>\<asset_name>_<task>_v<version>.<ext>
-
+        exportPath = os.path.join(ProjectPath, "03_Production", "Assets", jsonPath["asset_path"], "Textures", jsonPath["task"])
 
         self.core.exportDlg = ExportTexturesDialog(core=self.core,
             assetName=jsonPath["asset"], exportPath=exportPath, parent=self.core.messageParent)
@@ -507,23 +517,74 @@ class ExportTexturesDialog(QDialog):
 
         ### General Parameters
 
-        self.formLayout = QFormLayout()
-        self.formLayout.setLabelAlignment(Qt.AlignRight)
-        self.mainLayout.addLayout(self.formLayout)
+        sTitle1Label = QLabel("Export path parameters")
+        sTitle1Font = sTitle1Label.font()
+        sTitle1Font.setPointSize(sTitle1Font.pointSize() + 2)
+        sTitle1Font.setBold(True)
+        sTitle1Label.setFont(sTitle1Font)
+        sTitle1Label.setContentsMargins(0, 20, 5, 0)
+        self.mainLayout.addWidget(sTitle1Label)
+
+        self.formPathLayout = QFormLayout()
+        self.formPathLayout.setLabelAlignment(Qt.AlignRight)
+        self.mainLayout.addLayout(self.formPathLayout)
+
+        
+        self.pathEdit = QLineEdit(exportPath)
+        self.baseExportPath = exportPath
+
+        # Export version CheckBoxe
+        versionRow = QHBoxLayout()
+        self.newVersionCheck = QCheckBox()
+        self.versionCombo = QComboBox()
+
+        existingVersions = self.availableVersions(exportPath)
+        self.versionCombo.addItems(existingVersions)
+        if existingVersions == ["No existing version yet"]:
+            self.newVersionCheck.setChecked(True)
+
+        # Connexions posées APRES l'état initial, pour éviter un déclenchement prématuré
+        self.newVersionCheck.toggled.connect(self.onVersionChecked)
+        self.newVersionCheck.toggled.connect(self.refreshExportPath)
+        self.versionCombo.currentTextChanged.connect(self.refreshExportPath)
+
+        # Etat initial, maintenant que pathEdit/baseExportPath/versionCombo existent tous
+        self.onVersionChecked(self.newVersionCheck.isChecked())
+        self.refreshExportPath()
+
+        versionRow.addWidget(self.newVersionCheck)
+        versionRow.addWidget(self.versionCombo, stretch=1)
+        self.formPathLayout.addRow("Export as new version", versionRow)
+
+        # Etat initial du combo version selon l'état par défaut de la checkbox
+        self.onVersionChecked(self.newVersionCheck.isChecked())
 
         # Export path (QLineEdit + Browse + Reset)
         pathRow = QHBoxLayout()
-        self.pathEdit = QLineEdit(exportPath)
         self.browseBtn = QPushButton("Browse")
         self.browseBtn.setMaximumWidth(30)
         self.browseBtn.clicked.connect(self.onBrowseClicked)
         self.resetBtn = QPushButton("Reset")
         self.resetBtn.setMaximumWidth(50)
-        self.resetBtn.clicked.connect(lambda: self.onResetClicked(exportPath))
+        self.resetBtn.clicked.connect(lambda: self.refreshExportPath())
         pathRow.addWidget(self.pathEdit)
         pathRow.addWidget(self.browseBtn)
         pathRow.addWidget(self.resetBtn)
-        self.formLayout.addRow("Export Path", pathRow)
+        self.formPathLayout.addRow("Export Path", pathRow)
+
+        ### Texture Parameters
+
+        sTitle2Label = QLabel("Texture parameters")
+        sTitle2Font = sTitle2Label.font()
+        sTitle2Font.setPointSize(sTitle2Font.pointSize() + 2)
+        sTitle2Font.setBold(True)
+        sTitle2Label.setFont(sTitle2Font)
+        sTitle2Label.setContentsMargins(0, 20, 5, 0)
+        self.mainLayout.addWidget(sTitle2Label)
+
+        self.formTextureLayout = QFormLayout()
+        self.formTextureLayout.setLabelAlignment(Qt.AlignRight)
+        self.mainLayout.addLayout(self.formTextureLayout)
 
         # Export preset
         self.presetCombo = QComboBox()
@@ -533,28 +594,26 @@ class ExportTexturesDialog(QDialog):
             "Arnold (AiStandard)",
             "USD PBR Metal Roughness",
         ])
-        self.formLayout.addRow("Output template", self.presetCombo)
+        self.formTextureLayout.addRow("Output template", self.presetCombo)
 
         # File type (Type + Bit depth)
         fileRow = QHBoxLayout()
         self.formatCombo = QComboBox()
-        fileType = self.formatCombo.addItems(["Based on output template", "png", "tiff", "exr"])
-        self.formatCombo.currentTextChanged.connect(self.onFileTypeChanged)
-        bitDepthList = self.onFileTypeChanged(text=fileType)
+        self.formatCombo.addItems(["Based on output template", "png", "tiff", "exr"])
         self.bitDepthCombo = QComboBox()
-        self.bitDepthCombo.addItems(bitDepthList)
+        self.formatCombo.currentTextChanged.connect(self.onFileTypeChanged)
         fileRow.addWidget(self.formatCombo)
         fileRow.addWidget(self.bitDepthCombo)
-        self.formLayout.addRow("File type", fileRow)
+        self.formTextureLayout.addRow("File type", fileRow)
 
-        # Etat initial du bouton de dilation selon le choix par défaut du combo
+        # Etat initial du combo bit depth selon le choix par défaut du format
         self.onFileTypeChanged(self.formatCombo.currentText())
 
         # Resolution
         self.sizeCombo = QComboBox()
         self.sizeCombo.addItems(["Based on each Texture Set's size", "128", "256", "512", "1024", "2048", "4096", "8192"])
         self.sizeCombo.setCurrentText("Based on each Texture Set's size")
-        self.formLayout.addRow("Resolution", self.sizeCombo)
+        self.formTextureLayout.addRow("Resolution", self.sizeCombo)
 
         # Padding (algorithm + dilation button revealing a slider popup)
         paddingRow = QHBoxLayout()
@@ -575,7 +634,7 @@ class ExportTexturesDialog(QDialog):
 
         paddingRow.addWidget(self.paddingCombo)
         paddingRow.addWidget(self.dilationBtn)
-        self.formLayout.addRow("Padding", paddingRow)
+        self.formTextureLayout.addRow("Padding", paddingRow)
 
         # Popup contenant le slider, caché par défaut, affiché au clic sur dilationBtn
         self.dilationPopup = QFrame(self, Qt.Popup)
@@ -593,18 +652,101 @@ class ExportTexturesDialog(QDialog):
         self.onPaddingChanged(self.paddingCombo.currentText())
 
         # Checkboxes
-        self.ditheringCheck = QCheckBox()
-        self.ditheringCheck.setChecked(True)
-        self.formLayout.addRow("Dithering", self.ditheringCheck)
-
         self.shaderParamsCheck = QCheckBox()
-        self.formLayout.addRow("Export Shader Params", self.shaderParamsCheck)
+        self.formTextureLayout.addRow("Export Shader Params", self.shaderParamsCheck)
 
         ### Bouton export
-
         exportBtn = QPushButton("Export")
         exportBtn.clicked.connect(self.onExportClicked)
         self.mainLayout.addWidget(exportBtn)
+
+    def onVersionChecked(self, checked):
+
+        #-----------------------------------------------------------------------------------#
+        # Grey out and disable the version combo when "new version" is checked,
+        # keep it active otherwise
+        #-----------------------------------------------------------------------------------#
+
+        self.versionCombo.setEnabled(not checked)
+
+    def availableVersions(self, exportPath):
+
+        #-----------------------------------------------------------------------------------#
+        # List all existing version folders (vXXXX) found in exportPath
+        #   exportPath : Folder path where the version folders are located
+        # Return - list of version folder names (e.g. ["v0001", "v0003"]),
+        #          or ["No existing version yet"] if none found
+        #-----------------------------------------------------------------------------------#
+
+        if not os.path.isdir(exportPath):
+            return ["No existing version yet"]
+
+        foundVersions = []
+        for f in os.listdir(exportPath):
+            fullPath = os.path.join(exportPath, f)
+            if not os.path.isdir(fullPath):
+                continue
+            if not VERSION_PATTERN.match(f):
+                continue
+            foundVersions.append(f)
+
+        if not foundVersions:
+            return ["No existing version yet"]
+
+        foundVersions.sort(key=lambda v: int(VERSION_PATTERN.match(v).group(1)), reverse=True)
+        return foundVersions
+
+    def defaultExportPath(self, exportPath, version):
+
+        #-----------------------------------------------------------------------------------#
+        # Update the export path field accordingly
+        #   exportPath : base export path, without any version folder appended
+        #   version : v\d{4} name of the version folder
+        # Return
+        #   exportPath : export path with folder appened
+        #-----------------------------------------------------------------------------------#
+
+        exportPath = os.path.join(exportPath, version)
+        return exportPath
+
+    def onVersionChanged(self, exportPath, selectedVersion, versionChecked):
+
+        #-----------------------------------------------------------------------------------#
+        # Recompute the version folder to use and update the export path field accordingly
+        #   exportPath : base export path, without any version folder appended
+        #   selectedVersion : currently selected item in versionCombo
+        #   versionChecked : state of the "Export as new version" checkbox
+        #-----------------------------------------------------------------------------------#
+
+        if selectedVersion == "No existing version yet":
+            version = "v0001"
+        elif versionChecked:
+            existingVersions = self.availableVersions(exportPath)
+            if existingVersions == ["No existing version yet"]:
+                version = "v0001"
+            else:
+                highest = max(int(VERSION_PATTERN.match(v).group(1)) for v in existingVersions)
+                version = "v%04d" % (highest + 1)
+        else:
+            version = selectedVersion
+
+        newExportPath = self.defaultExportPath(exportPath, version)
+        self.pathEdit.setText(newExportPath)
+
+        return version
+
+    def refreshExportPath(self, *args):
+
+        #-----------------------------------------------------------------------------------#
+        # Wrapper called by both the checkbox and the combo signals (different payloads),
+        # re-reads the current UI state and updates the export path field
+        #-----------------------------------------------------------------------------------#
+
+        self.onVersionChanged(
+            self.baseExportPath,
+            self.versionCombo.currentText(),
+            self.newVersionCheck.isChecked(),
+        )
 
     def onBrowseClicked(self):
 
@@ -622,16 +764,28 @@ class ExportTexturesDialog(QDialog):
         # List the available Bit Depth by fileType
         #-----------------------------------------------------------------------------------#
 
-        bitDepthList=[]
-        if fileType =="png" or fileType =="tiff":
-            bitDepthList=["8 bits", "8 bits + dithering", "16 bits"]
-            if fileType =="tiff":
+        if fileType == "png" or fileType == "tiff":
+            bitDepthList = ["8 bits", "8 bits + dithering", "16 bits"]
+            if fileType == "tiff":
                 bitDepthList.append("32f bits")
         elif fileType == "exr":
-            bitDepthList=["16f bits", "32f bits"]
+            bitDepthList = ["16f bits", "32f bits"]
         else:
-            bitDepthList=[""]
+            bitDepthList = []
         return bitDepthList
+
+    def onFileTypeChanged(self, text):
+
+        #-----------------------------------------------------------------------------------#
+        # Refresh the available bit depth options based on the selected file format
+        # "Based on output template" disables the choice entirely
+        #-----------------------------------------------------------------------------------#
+
+        needsBitDepth = text != "Based on output template"
+        self.bitDepthCombo.setEnabled(needsBitDepth)
+
+        self.bitDepthCombo.clear()
+        self.bitDepthCombo.addItems(self.availableBitDepth(text))
 
 
     def onDilationClicked(self):
@@ -675,30 +829,85 @@ class ExportTexturesDialog(QDialog):
         ]
         self.dilationBtn.setEnabled(needsDilation)
 
-        
+    def availableTextureSets(self):
 
-    def onFileTypeChanged(self, text):
-    
-            #-----------------------------------------------------------------------------------#
-            # Enable/disable the dilation button depending on the selected padding algorithm
-            # Dilation distance is only relevant for transparent, color and diffusion padding
-            #-----------------------------------------------------------------------------------#
-    
-            needsBitDepth = text not in [
-                "Based on output template",
-            ]
-            self.bitDepthCombo.setEnabled(needsBitDepth)
+        #-----------------------------------------------------------------------------------#
+        # List all Texture Sets of the currently opened project
+        # Return - list of Texture Set names
+        #-----------------------------------------------------------------------------------#
 
-            bitDepthList=[]
-            if text =="png" or text =="tiff":
-                bitDepthList=["8 bits", "8 bits + dithering", "16 bits"]
-                if text =="tiff":
-                    bitDepthList.append("32f bits")
-            elif text == "exr":
-                bitDepthList=["16f bits", "32f bits"]
-            else:
-                bitDepthList=[""]
-            return bitDepthList
+        import substance_painter.textureset
+        try:
+            return [ts.name() for ts in substance_painter.textureset.all_texture_sets()]
+        except Exception as e:
+            self.core.popup("Couldn't list Texture Sets:\n\n%s" % e)
+            return []
+
+    def availablePresets(self):
+
+        #-----------------------------------------------------------------------------------#
+        # List all export presets (.spexp) found across every shelf
+        # Return - dict {display_name: ResourceID}
+        #-----------------------------------------------------------------------------------#
+
+        import substance_painter.resource
+
+        presets = {}
+        try:
+            for shelf in substance_painter.resource.Shelves.all():
+                presetsDir = os.path.join(shelf.path(), "export-presets")
+                if not os.path.isdir(presetsDir):
+                    continue
+
+                for filename in os.listdir(presetsDir):
+                    if not filename.endswith(".spexp"):
+                        continue
+                    
+                    name = os.path.splitext(filename)[0]
+                    resId = substance_painter.resource.ResourceID(context=shelf.name(), name=name)
+                    resList = substance_painter.resource.Resource.retrieve(resId)
+                    if not resList:
+                        continue
+                    
+                    presets[resList[0].gui_name()] = resId
+        except Exception as e:
+            self.core.popup("Couldn't list export presets:\n\n%s" % e)
+
+        return presets
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     def getExportConfig(self):
