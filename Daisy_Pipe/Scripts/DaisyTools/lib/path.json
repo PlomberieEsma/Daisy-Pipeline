@@ -1,9 +1,0 @@
-{
-    "global":{
-        "project_path": "C:/Users/3D5/Downloads/Daisy_Pipe"
-    },
-    "software": {
-        "hython": "C:/Program Files/Side Effects Software/Houdini 20.5.445/bin/hython.exe",
-        "usdcat": "C:/Users/3D5/Downloads/Daisy_Pipe/00_Pipeline/Plugins/Daisy_Pipe/ExternalModules/usd_root/scripts/usdcat.bat"
-    }
-}

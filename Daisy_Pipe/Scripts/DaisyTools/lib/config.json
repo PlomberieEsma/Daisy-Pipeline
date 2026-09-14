@@ -8,5 +8,9 @@
     "create_usd_asset": {
         "autoproxy_polygone_number": 3000,
         "variant_digit_number": 2
+    },
+    "software": {
+        "hython": "C:/Program Files/Side Effects Software/Houdini 20.5.1021/bin/hython.exe",
+        "usdcat": "C:/Users/3D5/Downloads/Daisy_Pipe/00_Pipeline/Plugins/Daisy_Pipe/ExternalModules/usd_root/scripts/usdcat.bat"
     }
 }

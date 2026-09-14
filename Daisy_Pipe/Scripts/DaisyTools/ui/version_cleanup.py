@@ -37,7 +37,8 @@ from PrismUtils.Decorators import err_catcher
 from DaisyTools.ui.delete_versions_window import openDeleteVersionsWindow
 
 #get variables from config.json
-config_file_path = f"{project_path}/00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/lib/config.json"
+current_dir = os.path.dirname(__file__)
+config_file_path = os.path.join(current_dir, "../lib/config.json")
 with open(config_file_path, mode="r", encoding="utf-8") as read_file:
     config_file = json.load(read_file)
 
