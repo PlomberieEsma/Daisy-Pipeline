@@ -102,11 +102,15 @@ class Command_launcher(object):
 
     def install_usd_package(self) -> None:
         #---------------------------------------------------------------------------------------------------#
-        # launch powershell to install usd-core package                                                     #
+        # launch powershell to install usd-core package if not already installed                            #
         #---------------------------------------------------------------------------------------------------#
-        try:
-            import pxr
-        except:
-            command_line = "pip install usd-core"
-            subprocess.Popen(command_line)
+        import os
+        stream = os.popen("pip list")
+        pip_lst = stream.read()
+        packages = list(pip_lst.split(" "))
+        for package in packages:
+            if "usd-core" in package:
+                return
+        command_line = "pip install usd-core"
+        subprocess.Popen(command_line)
 
