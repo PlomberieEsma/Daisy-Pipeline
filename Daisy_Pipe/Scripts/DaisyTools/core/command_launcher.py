@@ -77,7 +77,7 @@ class Command_launcher(object):
     def convert_usd_format(self, path: Any, usd_in: str = "usdc", usd_out: str = "usda") -> None:
         #---------------------------------------------------------------------------------------------------#
         # launch usdcat in powershell to convert USD format                                                 #
-        #                                                                                                   #       
+        #                                                                                                   #
         # path : the path for which to convert USD format                                                   #
         # usd_in : the input USD format                                                                     #
         # usd_out : the output USD format                                                                   #
@@ -98,5 +98,19 @@ class Command_launcher(object):
             command_line = f"powershell.exe \"{to_usdcat_path}\" ; ./usdcat --out \"{output_path}\" \"{input_path}\""
 
         # launch command line in powershell
+        subprocess.Popen(command_line)
+
+    def install_usd_package(self) -> None:
+        #---------------------------------------------------------------------------------------------------#
+        # launch powershell to install usd-core package if not already installed                            #
+        #---------------------------------------------------------------------------------------------------#
+        import os
+        stream = os.popen("pip list")
+        pip_lst = stream.read()
+        packages = list(pip_lst.split(" "))
+        for package in packages:
+            if "usd-core" in package:
+                return
+        command_line = "pip install usd-core"
         subprocess.Popen(command_line)
 

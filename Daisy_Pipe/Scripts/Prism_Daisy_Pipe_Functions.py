@@ -95,8 +95,14 @@ class Prism_Daisy_Pipe_Functions(object):
         # Create a general menu 'DaisyMenu'
         #-----------------------------------------------------------------------------------#
 
-        origin.daisyMenu = QMenu("DaisyMenu")
-        origin.menubar.addMenu(origin.daisyMenu)
+        from DaisyTools.core.command_launcher import Command_launcher
+        Command_launcher(self.core).install_usd_package()
+        
+        # origin.daisyMenu = QMenu("DaisyMenu")
+        # onAssetBrowserAction = QAction("lancer", origin)
+        # onAssetBrowserAction.triggered.connect(Command_launcher(self.core).install_usd_package())
+        # origin.daisyMenu.addAction(onAssetBrowserAction)
+        # origin.menubar.addMenu(origin.daisyMenu)
 
 
     ##############################################################################################################
