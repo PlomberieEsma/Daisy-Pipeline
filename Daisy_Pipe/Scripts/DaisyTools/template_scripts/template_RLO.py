@@ -157,7 +157,7 @@ def define_time_offset() -> int:
     time_offset = start_shot_frame - start_MASTER_frame
     return time_offset
 
-def node_template_RLO() -> dict[str,Any]:
+def nodes_template_RLO() -> dict[str,Any]:
     #-------------------------------------------------------------------------------#
     # This function creates the houdini node template for the RLO department        #
     # works only for the shot                                                       #
@@ -166,6 +166,10 @@ def node_template_RLO() -> dict[str,Any]:
     #-------------------------------------------------------------------------------#
 
     start_counter = perf_counter()
+
+    # delete the HDA node to avoid it to influence the layout
+    node_template = hou.node("/stage/create_template1")
+    node_template.destroy()
 
     node_list = {}
 

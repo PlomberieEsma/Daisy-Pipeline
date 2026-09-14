@@ -91,6 +91,10 @@ def template_shading() -> Any:
 
     start_counter = perf_counter()
 
+    # delete the HDA node to avoid it to influence the layout
+    node_template = hou.node("/stage/create_template1")
+    node_template.destroy()
+
     #-------------------------------- create nodes ---------------------------------#
     lopnet=hou.node("/stage")
 

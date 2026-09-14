@@ -180,6 +180,7 @@ def nodes_import_assets(imported_assets: list[dict[str,str]], input: Any) -> dic
     node_list.update({"graft_set_dress1": graft_set_dress1})
 
     #-------------------------------- arange nodes ---------------------------------#
+    
     lopnet.layoutChildren()
     node_list["graft_set_dress1"].setPosition([0,node_list["graft_set_dress1"].position()[1]])
     
@@ -204,6 +205,10 @@ def nodes_template_set_dress(imported_assets: list[dict[str,Any]]) -> dict[str,A
     #-------------------------------------------------------------------------------#
 
     start_counter = perf_counter()
+
+    # delete the HDA node to avoid it to influence the layout
+    node_template = hou.node("/stage/create_template1")
+    node_template.destroy()
 
     node_list = {}
 

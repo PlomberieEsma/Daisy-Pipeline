@@ -225,6 +225,10 @@ def nodes_template_MASTER_RLO(imported_assets: list[dict[str,str]]) -> dict[str,
 
     start_counter = perf_counter()
 
+    # delete the HDA node to avoid it to influence the layout
+    node_template = hou.node("/stage/create_template1")
+    node_template.destroy()
+
     node_list = {}
 
     #-------------------------------- create nodes ---------------------------------#
