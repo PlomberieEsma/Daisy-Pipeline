@@ -141,7 +141,7 @@ class Prism_Daisy_Pipe_Functions(object):
         # Launch the create asset function
         #-----------------------------------------------------------------------------------#
 
-        self.Command_launcher.create_asset(item["asset"], item)
+        self.Command_launcher.create_asset(item["asset"], item, packed=False)
 
     def onPackUsdAsset(self, item):
         

@@ -58,7 +58,7 @@ try:
     parser.add_argument("--path", type=str, help="path of the asset to be processed")
     parser.add_argument("--assetPath", type=str, help="path of the asset to be processed from 'Assets' to the asset name")
     parser.add_argument("--projectPath", type=str, help="project path of the asset to be processed")
-    parser.add_argument("--packed", type=bool, help="whether the asset is packed or not")
+    parser.add_argument("--packed", type=str, help="whether the asset is packed or not")
     args = parser.parse_args()
 except:
     raise Error("An argument is missing in the command line, please check the command line arguments\n\nThe command line should be : hython create_asset.py --assetName <asset_name> --path <asset_path> --projectPath <project_path> --packed <True/False>")
@@ -1079,7 +1079,7 @@ def nodes_payload(asset_name: str, input_nodes: dict[str,Any], detections: dict[
     config_payload_layer1.parm("defaultprim").set(root_name)
     config_payload_layer1.parm("setmetersperunit").set(1)
     config_payload_layer1.parm("metersperunit").set(meters_per_unit)
-    if packed:
+    if packed == "True":
         config_payload_layer1.parm("flattenop").set("stage")# flatten input stage
 
     ref_payload1 = lopnet.createNode("reference")

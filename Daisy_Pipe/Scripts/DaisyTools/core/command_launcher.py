@@ -54,6 +54,7 @@ class Command_launcher(object):
         # asset name : name of the asset to be processed, it is passed in the command line to hython        #
         # path : path of the asset to be processed, it is passed in the command line to hython              #
         # project path : path of the project, it is passed in the command line to hython                    #
+        # packed : boolean to know if the payload should be flattened or not                                #
         #---------------------------------------------------------------------------------------------------#
 
         hython_path = self.jsonPath["software"]["hython"]
@@ -70,7 +71,7 @@ class Command_launcher(object):
         path_to_asset = self.core.paths.getEntityPath(entity=current_entity)
 
         # create command line to launch hython with the create_asset.py script and pass the asset name and info as arguments
-        command_line = f"powershell.exe \"{to_hython_path}\" ; ./hython.exe \"{python_file_path}\" --assetName \'{asset_name}\' --path '{path_to_asset}' --assetPath '{asset_path}' --projectPath '{self.project_path}' --packed '{packed}'"
+        command_line = f"powershell.exe \"{to_hython_path}\" ; ./hython.exe \"{python_file_path}\" --assetName \'{asset_name}\' --path '{path_to_asset}' --assetPath '{asset_path}' --projectPath '{self.project_path}' --packed '{str(packed)}'"
 
         # launch command line in powershell
         subprocess.Popen(command_line)
