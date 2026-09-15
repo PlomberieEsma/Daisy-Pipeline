@@ -26,7 +26,7 @@
 
 # import modules
 import subprocess
-import json
+import json, os
 from typing import Any
 
 
@@ -34,11 +34,12 @@ class Command_launcher(object):
     def __init__(self, core: Any, plugin: Any = None) -> None:
         self.core = core
         self.plugin = plugin
-        self.project_path = self.core.projectPath
+        self.current_dir = os.path.dirname(__file__)
+        self.project_path = self.current_dir.split("\\00_Pipeline")[0]
         self.project_path = self.project_path.replace("\\", "/")
 
         # importe config.json
-        with open(f'{self.project_path}00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/lib/config.json', 'r') as file:
+        with open(f'{self.project_path}/00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/lib/config.json', 'r') as file:
             self.jsonPath = json.load(file)
         
     ######################################################################################################################################
@@ -58,7 +59,7 @@ class Command_launcher(object):
         hython_path = self.jsonPath["software"]["hython"]
 
         # path to the create_asset.py script to be launched with hython
-        python_file_path = f"{self.project_path}00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/core/create_asset.py"
+        python_file_path = f"{self.project_path}/00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/core/create_asset.py"
 
         asset_name = str(asset_name)
         to_hython_path = "cd \'" + hython_path.replace("/hython.exe", "") + "\'"
