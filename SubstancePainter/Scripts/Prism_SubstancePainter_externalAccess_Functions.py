@@ -174,13 +174,22 @@ class Prism_SubstancePainter_externalAccess_Functions(object):
         meshData = []
         assetName = entity.get("asset", "")
 
-        # Get the Project path through the Z Disk
-        networkProjectPath = self.core.projectPath
-        project_name = os.path.basename(networkProjectPath.rstrip("/\\"))
-        localProjectPath = os.path.join("Z:\\", project_name)
+        current_file = os.path.dirname(__file__)
+        originalProjectPath=current_file.split("\\00_Pipeline")[0]
+
+        diskLetter=""
+        if "minerva" or "gandalf" in originalProjectPath:
+            if "minerva" in originalProjectPath:
+                diskLetter="Z:\\"
+            elif "gandalf" in originalProjectPath:
+                diskLetter="Y:\\"
+            ProjectPath = os.path.join(diskLetter, originalProjectPath)
+        else:
+            self.core.popup("Check the Disk path letter to have Minerva projects:Z and Gandalf projects:Y")
+            ProjectPath = originalProjectPath
 
         exportPath = os.path.join(
-            localProjectPath, "03_Production", "Assets",
+            ProjectPath, "03_Production", "Assets",
             entity["asset_path"].replace("\\", os.sep), "Export"
         )
         if not os.path.isdir(exportPath):
