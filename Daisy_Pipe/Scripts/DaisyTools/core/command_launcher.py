@@ -94,9 +94,9 @@ class Command_launcher(object):
 
         # create command line to convert USD format using usdcat
         if usd_out == "usd":
-            command_line = f"powershell.exe \"{to_usdcat_path}\" ; ./usdcat --out \"{output_path}\" --usdFormat \"{usd_out}\" \"{input_path}.{usd_out}\""
+            command_line = f"powershell.exe \"{to_usdcat_path}\" ; usdcat --out \"{output_path}\" --usdFormat \"{usd_out}\" \"{input_path}.{usd_out}\""
         else:
-            command_line = f"powershell.exe \"{to_usdcat_path}\" ; ./usdcat --out \"{output_path}\" \"{input_path}\""
+            command_line = f"powershell.exe \"{to_usdcat_path}\" ; usdcat --out \"{output_path}\" \"{input_path}\""
 
         # launch command line in powershell
         subprocess.Popen(command_line)

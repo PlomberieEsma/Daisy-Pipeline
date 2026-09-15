@@ -86,7 +86,7 @@ tasks = os.listdir(f"{path}/Export")
 tasks_save = list(tasks)
 
 #get variables from config.json
-config_file_path = f"{project_path}00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/lib/config.json"
+config_file_path = f"{project_path}/00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/lib/config.json"
 with open(config_file_path, mode="r", encoding="utf-8") as read_file:
     config_file = json.load(read_file)
 
