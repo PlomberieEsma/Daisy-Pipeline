@@ -27,6 +27,7 @@
 
 #import modules
 import hou # type: ignore
+import json
 from time import perf_counter
 from typing import Any
 from pxr import Usd, UsdGeom # type: ignore
@@ -53,8 +54,6 @@ class Error(Exception):
 #=========================================================== SET VARIABLES ===============================================================
 ##########################################################################################################################################
 
-usd_file_format = "usda"
-
 core = get_core()
 info = get_entity_info()
 assert core is not None
@@ -69,14 +68,22 @@ project_path = info["entity"]["project_path"].replace("\\", "/")
 
 env_var_path = f"$PRISM_JOB/03_Production/Assets/{asset_path}"
 
-asset_stage = Usd.Stage.Open(f"{project_path}/03_Production/Assets/{asset_path}/Export/USD/master/{asset_name}_USD_master.{usd_file_format}")
-meters_per_unit = UsdGeom.GetStageMetersPerUnit(asset_stage)
-print(f"meters per unit : {meters_per_unit}")
-
 node_position = [0,0]
 color_input_box = [0.33, 0.18, 0.44]
 color_material_box = [0.7, 0.79, 0.72]
 color_output_box = [0.86, 0.85, 0.72]
+
+#get variables from config.json
+config_file_path = f"{project_path}/00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/lib/config.json"
+with open(config_file_path, mode="r", encoding="utf-8") as read_file:
+    config_file = json.load(read_file)
+
+usd_file_format = config_file["global"]["usd_file_format"]
+print(f"{usd_file_format = }")
+
+asset_stage = Usd.Stage.Open(f"{project_path}/03_Production/Assets/{asset_path}/Export/USD/master/{asset_name}_USD_master.{usd_file_format}")
+meters_per_unit = UsdGeom.GetStageMetersPerUnit(asset_stage)
+print(f"meters per unit : {meters_per_unit}")
 
 ##########################################################################################################################################
 #=========================================================== SET FUNCTIONS ===============================================================
