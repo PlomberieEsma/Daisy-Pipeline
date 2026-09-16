@@ -141,4 +141,9 @@ def export_usd(params=None):
         master_info_path = core.products.getVersionInfoPathFromProductFilepath(master_path)
         core.saveVersionInfo(filepath=master_info_path, details=details)
 
+    from DaisyTools.core.version_cleanup import check_version_limit_for_output
+    from DaisyTools.core.dcc.launcher import get_main_window
+
+    check_version_limit_for_output(core, entity, task, path, parent=get_main_window())
+
     return path

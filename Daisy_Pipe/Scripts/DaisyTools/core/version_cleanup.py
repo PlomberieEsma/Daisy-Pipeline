@@ -50,7 +50,7 @@ MAX_SCENE_VERSIONS = config_file["global"]["max_scene_version"]
 
 
 @err_catcher(name=__name__)
-def getVersionNumber(core, version):
+def get_version_number(core, version):
 
     #-----------------------------------------------------------------------------------#
     # Sortable integer for a version name ("v0003" -> 3), -1 when it can't be parsed     #
@@ -61,7 +61,7 @@ def getVersionNumber(core, version):
 
 
 @err_catcher(name=__name__)
-def getProductVersions(core, entity, product):
+def get_product_versions(core, entity, product):
 
     #-----------------------------------------------------------------------------------#
     # List the numbered versions of a product, oldest first                             #
@@ -72,11 +72,11 @@ def getProductVersions(core, entity, product):
     versions = [
         v for v in versions if v.get("version") and v.get("version") != "master"
     ]
-    return sorted(versions, key=lambda v: getVersionNumber(core, v))
+    return sorted(versions, key=lambda v: get_version_number(core, v))
 
 
 @err_catcher(name=__name__)
-def checkVersionLimit(core, entity, product, currentVersion=None, parent=None):
+def check_version_limit(core, entity, product, currentVersion=None, parent=None):
 
     #-----------------------------------------------------------------------------------#
     # Once a product has more than MAX_VERSIONS versions, offer a clean up               #
@@ -84,7 +84,7 @@ def checkVersionLimit(core, entity, product, currentVersion=None, parent=None):
     # and ticks versions there                                                           #
     #-----------------------------------------------------------------------------------#
 
-    versions = getProductVersions(core, entity, product)
+    versions = get_product_versions(core, entity, product)
     if len(versions) <= MAX_VERSIONS:
         return []
 
@@ -117,7 +117,23 @@ def checkVersionLimit(core, entity, product, currentVersion=None, parent=None):
 
 
 @err_catcher(name=__name__)
-def getSceneEntity(core, data):
+def check_version_limit_for_output(core, entity, task, outputPath, parent=None):
+
+    #-----------------------------------------------------------------------------------#
+    # Single entry point for "a product version was just written" - every export path   #
+    # (Maya's export_usd, Houdini's usd_rop postrender script, ...) calls this once     #
+    # it has the path it just wrote, instead of duplicating the cleanup wiring          #
+    #-----------------------------------------------------------------------------------#
+
+    return check_version_limit(
+        core, entity, task,
+        currentVersion=core.products.getVersionFromFilepath(outputPath),
+        parent=parent,
+    )
+
+
+@err_catcher(name=__name__)
+def get_scene_entity(core, data):
 
     #-----------------------------------------------------------------------------------#
     # Rebuild the Prism entity dict from the metadata of a scenefile                     #
@@ -141,7 +157,7 @@ def getSceneEntity(core, data):
 
 
 @err_catcher(name=__name__)
-def getSceneVersions(core, entity, department, task):
+def get_scene_versions(core, entity, department, task):
 
     #-----------------------------------------------------------------------------------#
     # List the work scenes of a task, oldest first                                       #
@@ -163,15 +179,15 @@ def getSceneVersions(core, entity, department, task):
             "paths": [scenePath],
         }
         #a file we can't put a version number on isn't a version of anything
-        if not version["version"] or getVersionNumber(core, version) < 0:
+        if not version["version"] or get_version_number(core, version) < 0:
             continue
         versions.append(version)
 
-    return sorted(versions, key=lambda v: getVersionNumber(core, v))
+    return sorted(versions, key=lambda v: get_version_number(core, v))
 
 
 @err_catcher(name=__name__)
-def getSceneVersionFiles(core, scenePath):
+def get_scene_version_files(core, scenePath):
 
     #-----------------------------------------------------------------------------------#
     # Every file that belongs to one scene version: the scene itself, its versioninfo,   #
@@ -194,7 +210,7 @@ def getSceneVersionFiles(core, scenePath):
 
 
 @err_catcher(name=__name__)
-def deleteSceneVersion(core, version):
+def delete_scene_version(core, version):
 
     #-----------------------------------------------------------------------------------#
     # Remove one work scene and its side files from every location it exists in          #
@@ -225,7 +241,7 @@ def deleteSceneVersion(core, version):
         #cheap guard against removing anything but this version's own files
         prefix = os.path.splitext(os.path.basename(scenePath))[0]
 
-        for path in getSceneVersionFiles(core, scenePath):
+        for path in get_scene_version_files(core, scenePath):
             if not os.path.isfile(path):
                 continue
             if not os.path.basename(path).startswith(prefix):
@@ -240,11 +256,11 @@ def deleteSceneVersion(core, version):
 
 
 @err_catcher(name=__name__)
-def checkSceneVersionLimit(core, scenePath=None, parent=None):
+def check_scene_version_limit(core, scenePath=None, parent=None):
 
     #-----------------------------------------------------------------------------------#
     # Once a task has more than MAX_SCENE_VERSIONS work scenes, offer a clean up         #
-    # Same deal as checkVersionLimit does for products: it is only ever an offer,        #
+    # Same deal as check_version_limit does for products: it is only ever an offer,      #
     # nothing is deleted unless the user opens the window and ticks versions there       #
     #-----------------------------------------------------------------------------------#
 
@@ -253,7 +269,7 @@ def checkSceneVersionLimit(core, scenePath=None, parent=None):
         return []
 
     data = core.getScenefileData(scenePath) or {}
-    entity = getSceneEntity(core, data)
+    entity = get_scene_entity(core, data)
     department = data.get("department")
     task = data.get("task")
 
@@ -261,7 +277,7 @@ def checkSceneVersionLimit(core, scenePath=None, parent=None):
     if not entity or not department or not task:
         return []
 
-    versions = getSceneVersions(core, entity, department, task)
+    versions = get_scene_versions(core, entity, department, task)
     if len(versions) <= MAX_SCENE_VERSIONS:
         return []
 
@@ -290,6 +306,6 @@ def checkSceneVersionLimit(core, scenePath=None, parent=None):
             % (task, len(versions), MAX_SCENE_VERSIONS)
         ),
         parent=parent,
-        deleteFunc=deleteSceneVersion,
+        deleteFunc=delete_scene_version,
         lockedLabel=" (in use)",
     )

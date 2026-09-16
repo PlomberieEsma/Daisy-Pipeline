@@ -72,9 +72,9 @@ class Prism_Daisy_Pipe_Functions(object):
         # offer to clean them up - same deal as the product check after an export           #
         #-----------------------------------------------------------------------------------#
 
-        from DaisyTools.ui.version_cleanup import checkSceneVersionLimit
+        from DaisyTools.core.version_cleanup import check_scene_version_limit
 
-        checkSceneVersionLimit(self.core)
+        check_scene_version_limit(self.core)
 
 
     def onStateManagerOpen(self, origin):
