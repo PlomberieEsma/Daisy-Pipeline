@@ -7,6 +7,12 @@ _pkg_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 with open(os.path.join(_pkg_root, "lib", "usdParamsExport.json"), "r") as f:
     usdExportParams = json.load(f)
 
+#pipeline-wide settings (extensions, limits, ...) stocked in config.json
+with open(os.path.join(_pkg_root, "lib", "config.json"), "r", encoding="utf-8") as f:
+    daisyConfig = json.load(f)
+
+USD_FILE_FORMAT = daisyConfig["global"]["usd_file_format"]
+
 
 def get_core():
     
@@ -173,6 +179,10 @@ def create_master(file_path, master_path, default_prim="", frame_range=None):
 
     start_frame, end_frame = frame_range if frame_range else (1, 1)
 
+    #store the sublayer path relative to the master file so the project stays
+    #portable across drives/machines instead of baking in an absolute path
+    relative_file_path = os.path.relpath(file_path, os.path.dirname(master_path)).replace("\\", "/")
+
     if not os.path.exists(master_path): #check if master usd file already exists if not we create it
 
         master_stage = Usd.Stage.CreateNew(master_path) #create new master usd file
@@ -183,7 +193,7 @@ def create_master(file_path, master_path, default_prim="", frame_range=None):
         root_layer.endTimeCode = end_frame #set end time code
         master_stage.SetMetadata("metersPerUnit", 0.01) #set meters per unit
 
-        root_layer.subLayerPaths.append(file_path) #append file path to sublayer paths
+        root_layer.subLayerPaths.append(relative_file_path) #append relative file path to sublayer paths
 
         root_layer.Save()
 
@@ -193,7 +203,7 @@ def create_master(file_path, master_path, default_prim="", frame_range=None):
         layer = Sdf.Layer.FindOrOpen(master_path) #find master usd file
 
         layer.subLayerPaths.clear() #clear sublayer paths
-        layer.subLayerPaths.append(file_path) #append file path to sublayer paths
+        layer.subLayerPaths.append(relative_file_path) #append relative file path to sublayer paths
 
         layer.startTimeCode = start_frame #keep the framerange in sync with the current export
         layer.endTimeCode = end_frame

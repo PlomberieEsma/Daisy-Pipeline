@@ -27,7 +27,7 @@
 import os
 
 from DaisyTools.core.get_entity_info import get_entity_info
-from DaisyTools.core.core import get_core, write_usd, create_master, create_master_clips, SUBDIVISION_METHOD_MAP
+from DaisyTools.core.core import get_core, write_usd, create_master, create_master_clips, SUBDIVISION_METHOD_MAP, USD_FILE_FORMAT
 from DaisyTools.core.dcc.launcher import get_dcc
 
 
@@ -90,9 +90,9 @@ def export_usd(params=None):
     is_animation = bool(frame_range) and frame_range[0] != frame_range[1]
 
     path = core.products.generateProductPath(entity=entity, task=task, extension=extension, version=None, location="global")
-    #the master is always .usda, independent of the versioned file's Outputtype:
-    #it's just a thin sublayer/clip wrapper, so keeping it text-based makes it diffable
-    master_path = core.products.generateProductPath(entity=entity, task=task, extension=".usda", version="master", location="global")
+    #the master's format is independent of the versioned file's Outputtype:
+    #it's just a thin sublayer/clip wrapper, driven by config.json's usd_file_format
+    master_path = core.products.generateProductPath(entity=entity, task=task, extension=f".{USD_FILE_FORMAT}", version="master", location="global")
 
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
