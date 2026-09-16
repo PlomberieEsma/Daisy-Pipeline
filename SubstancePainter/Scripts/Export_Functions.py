@@ -58,9 +58,10 @@ class ExportTexturesDialog(QDialog):
         self.exportPath=exportPath
 
         if "var" in exportPath:
-            variant=exportPath.split("_var")[-1]
+            variant=exportPath.split("var")[-1]
+            variant=f"var{variant}"
         else:
-            variant="01"
+            variant=""
         self.variant=variant
 
 
@@ -522,6 +523,7 @@ class ExportTexturesDialog(QDialog):
             import substance_painter.export
             try:
                 result = substance_painter.export.list_project_textures(previewConfig)
+                textureRenamed=self.mapNaming(self.assetName, self.variant, result)
             except Exception as e:
                 self.textureTree.blockSignals(False)
                 errorItem = QTreeWidgetItem(["Preview unavailable: %s" % e])
@@ -535,7 +537,7 @@ class ExportTexturesDialog(QDialog):
                 tsItem = self.textureTree.topLevelItem(i)
                 tsItemsByName[tsItem.text(0)] = tsItem
 
-            for (textureSetName, stackName), filenames in result.items():
+            for textureSetName, filenames in textureRenamed.items():
                 tsItem = tsItemsByName.get(textureSetName)
                 if not tsItem:
                     continue
@@ -613,41 +615,154 @@ class ExportTexturesDialog(QDialog):
     def buildCustomPreset(self, presetInfo, assetName, variant):
 
         #-----------------------------------------------------------------------------------#
-        # Read the original .spexp file, replace $mesh with the custom naming,
-        # and register the result as a new session resource
+        # Patch every "$mesh..." naming field in the raw .spexp binary, replacing the
+        # part before $textureSet with the custom naming, and fixing the single-byte
+        # length prefix that precedes each field accordingly
         #   presetInfo : dict with "path" (raw .spexp filepath) for the base preset
         # Return - ResourceID of the newly registered custom preset
         #-----------------------------------------------------------------------------------#
 
-        with open(presetInfo["path"], "r", encoding="utf-8") as f:
-            presetContent = f.read()
+        with open(presetInfo["path"], "rb") as f:
+            rawBytes = f.read()
 
-        customName = self.mapNaming(assetName, variant)
-        presetContent = presetContent.replace("$mesh", customName)
+        customName = "blah"
+        marker = b"$mesh"
 
-        tempPresetName = "0_DaisyTemplate_%s" % customName
-        tempPresetPath = os.path.join(
-            tempfile.gettempdir(), "%s.spexp" % tempPresetName
+        result = bytearray()
+        pos = 0
+        patchedCount = 0
+
+        while True:
+            idx = rawBytes.find(marker, pos)
+            if idx == -1:
+                result.extend(rawBytes[pos:])
+                break
+
+            lengthBytePos = idx - 1
+            if lengthBytePos < 0:
+                result.extend(rawBytes[pos:idx + len(marker)])
+                pos = idx + len(marker)
+                continue
+
+            oldLen = rawBytes[lengthBytePos]
+            oldField = rawBytes[idx:idx + oldLen]
+
+            # Sécurité : on ne patche que si le champ entier correspond bien
+            # à ce que le préfixe de longueur annonce, et commence par $mesh
+            if not oldField.startswith(marker) or len(oldField) != oldLen:
+                result.extend(rawBytes[pos:idx + len(marker)])
+                pos = idx + len(marker)
+                continue
+
+            suffix = oldField[len(marker):]  # tout ce qui suit "$mesh", ex: "_$textureSet_..."
+            newField = customName.encode("ascii") + suffix
+
+            if len(newField) > 255:
+                self.core.popup("Le nom personnalisé est trop long pour ce champ du preset, il sera tronqué.")
+                newField = newField[:255]
+
+            result.extend(rawBytes[pos:lengthBytePos])  # tout ce qu'il y avait avant le préfixe
+            result.append(len(newField))                # nouveau préfixe de longueur, recalculé
+            result.extend(newField)                      # nouveau champ
+
+            pos = idx + oldLen
+            patchedCount += 1
+
+        if patchedCount == 0:
+            return presetInfo["resourceId"]  # aucun champ $mesh trouvé, on garde l'original
+
+        tempPresetName = "%s_%s" % (
+            os.path.splitext(os.path.basename(presetInfo["path"]))[0], customName
         )
-        with open(tempPresetPath, "w", encoding="utf-8") as f:
-            f.write(presetContent)
+        tempPresetPath = os.path.join(tempfile.gettempdir(), "%s.spexp" % tempPresetName)
+
+        with open(tempPresetPath, "wb") as f:
+            f.write(bytes(result))
 
         import substance_painter.resource
         resourceId = substance_painter.resource.import_session_resource(
             tempPresetPath,
-            substance_painter.resource.Usage.EXPORT,  # à vérifier via l'API intégrée si erreur
+            substance_painter.resource.Usage.EXPORT,
             name=tempPresetName,
         )
         return resourceId
 
-    def mapNaming(self, assetName, variant):
+    def mapNaming(self, assetName, variant, textureFile):
 
         #-----------------------------------------------------------------------------------#
         # Build the custom naming string used to replace $mesh in the export preset
+        #   assetName : Name of the asset
+        #   variant : "var{2}" if the curent scene is a variant
+        #   textureFile : Dictionnary with tuple as key with lists of all maps and paths to export
+        # Return
+        #   materialDict : Dictionnary with texture set as key and texture maps names for each texture set
         #-----------------------------------------------------------------------------------#
 
-        return f"{assetName}_{variant}"
+        # Dynamic maps set to be exported. We reformate the Dictionary to keep only what interest us to rename.
+        textureFile=str(textureFile)
+        textureFile=textureFile.replace("'", "")
 
+
+        ########
+        ### Recupérer la key a l'emplacement 0 du tuple de textureFile
+        ########
+        
+        textureFileName=textureFile.split("[")[1:]
+        materialList=[]
+        for tf in textureFileName:
+            textureList=tf.split("]")[0]
+            textureList=textureList.split(",")
+            materialList.append(textureList)
+
+        # Absolute Names of all materials in the scene
+        materialNames=self.availableTextureSets()
+
+        materialDict={}
+        # contreCompte to synchronize the dynamic list of maps with the absolute list of texturesSet
+        # in case the User only wants to Export the maps of a certain material
+        contreCompte=0
+        # previews_deleted = False
+        # try:
+        #     for i in range(len(materialNames)):
+        #         if previews_deleted:
+        #             # if a task has been popped previously
+        #             contreCompte += 1
+        #             previews_deleted = False
+                
+        #         self.core.popup(i)
+        #         currentMat=materialNames[i-contreCompte]
+        #         currentList=materialList[i-contreCompte]
+        #         if currentMat not in str(currentList):
+        #             materialNames.pop(i-contreCompte)
+        #             previews_deleted = True
+        #         else:
+        #             continue
+
+        #     self.core.popup(materialNames)
+        # except Exception as e:
+        #     self.core.popup(e)
+
+        self.core.popup(len(materialNames))
+
+        for i in range(len(materialNames)):
+            self.core.popup(i)
+            currentMat=materialNames[i]
+            currentList=materialList[i]
+            currentList=materialList[i-contreCompte]
+            # self.core.popup(f"{str(currentMat)=}\n{str(currentList)=}\n{str(contreCompte)=}")
+            if currentMat not in str(currentList):
+                if i != len(materialNames):
+                    contreCompte+=1
+                    continue
+            texturePath=[]
+            for path in currentList:
+                textureType=path.split(currentMat)[-1]
+                goodpath=f"{currentMat}{textureType}"
+                texturePath.append(f"{assetName}_{variant}_{goodpath}")
+            materialDict.update({currentMat:texturePath})
+
+        # self.core.popup(materialDict)
+        return materialDict
 
 
 
