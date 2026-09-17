@@ -138,7 +138,7 @@ def nodes_import_assets(imported_assets: list[dict[str,str]], input: Any) -> dic
         reference1.parm("enable").set(0)
         reference1.parm("num_files").set(2)
         reference1.parm("primpath1").set("""/`pythonexprs("__import__('pxr').Sdf.Layer.FindOrOpen(hou.pwd().evalParm('filepath1')).defaultPrim")`""")
-        reference1.parm("filepath1").set(f"{asset_env_var_path}/Export/USD/master/{asset_name}_USD_master.usda")
+        reference1.parm("filepath1").set(f"{asset_env_var_path}/Export/USD/master/{asset_name}_USD_master.{usd_file_format}")
         reference1.parm("filerefprim1").set("") #reference specific primitive
         reference1.parm("filerefprimpath1").set("`chs(\"primpath1\")`")
         reference1.parm("primpath2").set("/__class__")
@@ -224,6 +224,10 @@ def nodes_template_MASTER_RLO(imported_assets: list[dict[str,str]]) -> dict[str,
     #-------------------------------------------------------------------------------#
 
     start_counter = perf_counter()
+
+    # delete the HDA node to avoid it to influence the layout
+    node_template = hou.node("/stage/create_template1")
+    node_template.destroy()
 
     node_list = {}
 

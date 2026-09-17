@@ -710,8 +710,6 @@ class EsmaUsdExportClass(QWidget):
         if not outputPath:
             return [self.state.text(0) + " - error"]
 
-        self.checkVersionLimit(outputPath)
-
         result = self.core.popupQuestion(
             "USD export: %s" % outputPath,
             title="EsmaUsdExport",
@@ -722,28 +720,6 @@ class EsmaUsdExportClass(QWidget):
             self.core.openFolder(outputPath)
 
         return [self.state.text(0) + " - success"]
-
-    @err_catcher(name=__name__)
-    def checkVersionLimit(self, outputPath):
-
-        #-----------------------------------------------------------------------------------#
-        # Once exported, offer to clean up the product when it piles up too many versions   #
-        #-----------------------------------------------------------------------------------#
-
-        from DaisyTools.core.get_entity_info import get_entity_info
-        from DaisyTools.ui.version_cleanup import checkVersionLimit
-
-        info = get_entity_info()
-        if not info or not info.get("task"):
-            return
-
-        checkVersionLimit(
-            self.core,
-            info["entity"],
-            info["task"],
-            currentVersion=self.core.products.getVersionFromFilepath(outputPath),
-            parent=self.stateManager,
-        )
 
     @err_catcher(name=__name__)
     def getStateProps(self):

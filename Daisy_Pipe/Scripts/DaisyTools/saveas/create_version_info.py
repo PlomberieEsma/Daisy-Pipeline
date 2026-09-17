@@ -1,6 +1,9 @@
 from Scripts.DaisyTools.core.core import get_core
 from Scripts.DaisyTools.core.get_entity_info import get_entity_info
 
+from DaisyTools.core.version_cleanup import check_version_limit_for_output
+from DaisyTools.core.dcc.launcher import get_main_window
+
 core = get_core()
 info = get_entity_info()
 entity = info["entity"]
@@ -23,3 +26,5 @@ details["comment"] = comment
 
 info_path = core.products.getVersionInfoPathFromProductFilepath(path)
 core.saveVersionInfo(filepath=path, details=details)
+
+check_version_limit_for_output(core, entity, task, path, parent=get_main_window())

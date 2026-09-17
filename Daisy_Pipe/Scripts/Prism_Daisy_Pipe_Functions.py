@@ -72,9 +72,9 @@ class Prism_Daisy_Pipe_Functions(object):
         # offer to clean them up - same deal as the product check after an export           #
         #-----------------------------------------------------------------------------------#
 
-        from DaisyTools.ui.version_cleanup import checkSceneVersionLimit
+        from DaisyTools.core.version_cleanup import check_scene_version_limit
 
-        checkSceneVersionLimit(self.core)
+        check_scene_version_limit(self.core)
 
 
     def onStateManagerOpen(self, origin):
@@ -141,7 +141,7 @@ class Prism_Daisy_Pipe_Functions(object):
         # Launch the create asset function
         #-----------------------------------------------------------------------------------#
 
-        self.Command_launcher.create_asset(item["asset"], item)
+        self.Command_launcher.create_asset(item["asset"], item, packed=False)
 
     def onPackUsdAsset(self, item):
         
@@ -281,10 +281,14 @@ class Prism_Daisy_Pipe_Functions(object):
 
         path = f"{path}\\{filename}"
         convertUsdAction = QAction(QIcon(self.daisyIcon(iconName)),f"Duplicate and Convert to {usd_out}", origin)
-        convertUsdAction.triggered.connect(lambda: self.onConvertUsd(path, usd_in, usd_out))
+        convertUsdAction.triggered.connect(lambda: self.onConvertUsd(path, usd_in, usd_out, origin))
         rcMenu.addAction(convertUsdAction)
 
-    def onConvertUsd(self, path, usd_in, usd_out):
+        ViewUsdViewAction = QAction(QIcon(self.daisyIcon(iconName)),f"View with UsdView", origin)
+        ViewUsdViewAction.triggered.connect(lambda: self.onViewUsdView(path, origin))
+        rcMenu.addAction(ViewUsdViewAction)
+
+    def onConvertUsd(self, path, usd_in, usd_out, origin):
         
         #-----------------------------------------------------------------------------------#
         # Get the selected product version from the Create USD option
@@ -296,6 +300,18 @@ class Prism_Daisy_Pipe_Functions(object):
         #-----------------------------------------------------------------------------------#
 
         self.Command_launcher.convert_usd_format(path, usd_in, usd_out)
+        origin.core.refreshUI()
+
+    def onViewUsdView(self, path, origin):
+        
+        #-----------------------------------------------------------------------------------#
+        # Get the selected product version from the Create USD option
+        # Launch the view with usdview script
+        #
+        #   path: path to the usd version folder
+        #-----------------------------------------------------------------------------------#
+
+        self.Command_launcher.view_usd_view(path)
         origin.core.refreshUI()
 
 

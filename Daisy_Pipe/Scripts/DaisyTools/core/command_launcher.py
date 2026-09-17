@@ -26,7 +26,7 @@
 
 # import modules
 import subprocess
-import json
+import json, os
 from typing import Any
 
 
@@ -34,11 +34,12 @@ class Command_launcher(object):
     def __init__(self, core: Any, plugin: Any = None) -> None:
         self.core = core
         self.plugin = plugin
-        self.project_path = self.core.projectPath
+        self.current_dir = os.path.dirname(__file__)
+        self.project_path = self.current_dir.split("\\00_Pipeline")[0]
         self.project_path = self.project_path.replace("\\", "/")
 
         # importe config.json
-        with open(f'{self.project_path}00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/lib/config.json', 'r') as file:
+        with open(f'{self.project_path}/00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/lib/config.json', 'r') as file:
             self.jsonPath = json.load(file)
         
     ######################################################################################################################################
@@ -53,12 +54,13 @@ class Command_launcher(object):
         # asset name : name of the asset to be processed, it is passed in the command line to hython        #
         # path : path of the asset to be processed, it is passed in the command line to hython              #
         # project path : path of the project, it is passed in the command line to hython                    #
+        # packed : boolean to know if the payload should be flattened or not                                #
         #---------------------------------------------------------------------------------------------------#
 
         hython_path = self.jsonPath["software"]["hython"]
 
         # path to the create_asset.py script to be launched with hython
-        python_file_path = f"{self.project_path}00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/core/create_asset.py"
+        python_file_path = f"{self.project_path}/00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/core/create_asset.py"
 
         asset_name = str(asset_name)
         to_hython_path = "cd \'" + hython_path.replace("/hython.exe", "") + "\'"
@@ -69,7 +71,7 @@ class Command_launcher(object):
         path_to_asset = self.core.paths.getEntityPath(entity=current_entity)
 
         # create command line to launch hython with the create_asset.py script and pass the asset name and info as arguments
-        command_line = f"powershell.exe \"{to_hython_path}\" ; ./hython.exe \"{python_file_path}\" --assetName \'{asset_name}\' --path '{path_to_asset}' --assetPath '{asset_path}' --projectPath '{self.project_path}' --packed '{packed}'"
+        command_line = f"powershell.exe \"{to_hython_path}\" ; ./hython.exe \"{python_file_path}\" --assetName \'{asset_name}\' --path '{path_to_asset}' --assetPath '{asset_path}' --projectPath '{self.project_path}' --packed '{str(packed)}'"
 
         # launch command line in powershell
         subprocess.Popen(command_line)
@@ -83,19 +85,53 @@ class Command_launcher(object):
         # usd_out : the output USD format                                                                   #
         #---------------------------------------------------------------------------------------------------#
 
-        usdcat_path = self.jsonPath["software"]["usdcat"]
-        usdcat_path_to_del = usdcat_path.split("/")[-1]
-        usdcat_path = usdcat_path.replace(f"/{usdcat_path_to_del}", "")
-
         input_path = path
         output_path = path.replace(usd_in, usd_out)
-        to_usdcat_path = f"cd \'{usdcat_path}\'"
+
+        self.install_usd_package()
 
         # create command line to convert USD format using usdcat
         if usd_out == "usd":
-            command_line = f"powershell.exe \"{to_usdcat_path}\" ; ./usdcat --out \"{output_path}\" --usdFormat \"{usd_out}\" \"{input_path}.{usd_out}\""
+            command_line = f"usdcat --out \"{output_path}\" --usdFormat \"{usd_out}\" \"{input_path}.{usd_out}\""
         else:
-            command_line = f"powershell.exe \"{to_usdcat_path}\" ; ./usdcat --out \"{output_path}\" \"{input_path}\""
+            command_line = f"usdcat --out \"{output_path}\" \"{input_path}\""
+
+        # launch command line in powershell
+        subprocess.Popen(command_line)
+
+    def replace_disk(self, path: str) -> str:
+        #---------------------------------------------------------------------------#
+        # replace UNC paths by mapped drive paths                                   #
+        #                                                                           #
+        # path : path to be processed, it must be a UNC path (e.g. \\network\...)   #
+        #---------------------------------------------------------------------------#
+
+        path = path.replace("\\", "/")
+        path = path.lower()
+        unc_path = self.jsonPath["network"]["UNC_path"].lower()
+        mapped_drive_path = self.jsonPath["network"]["mapped_drive_path"].lower()
+        path = path.replace(unc_path, mapped_drive_path)
+
+        return path
+
+    def view_usd_view(self, path: str) -> None:
+        #-----------------------------------------------------------------------------------#
+        # launch the usdview.bat in powershell for the selected product                     #
+        #                                                                                   #
+        # path : path of the asset to be processed, it is passed as an argument in usdview  #
+        #-----------------------------------------------------------------------------------#
+
+        if not (path.endswith(".usd") or path.endswith(".usda") or path.endswith(".usdc") or path.endswith(".usdz")):
+            return
+        
+        to_usd_view = self.jsonPath["software"]["usdview"]
+        to_usd_view = self.replace_disk(to_usd_view)
+
+        path = path.replace("\\", "/")
+        path = self.replace_disk(path)
+
+        # create command line to launch usdview for the selected product
+        command_line = f"{to_usd_view} \"{path}\""
 
         # launch command line in powershell
         subprocess.Popen(command_line)
