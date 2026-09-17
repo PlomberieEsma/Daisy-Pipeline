@@ -1,6 +1,6 @@
 {
     "global": {
-        "usd_file_format": "usda",
+        "usd_file_format": "usdc",
         "sh_name_digit_number": 3,
         "max_product_version": 10,
         "max_scene_version": 25
@@ -11,6 +11,10 @@
     },
     "software": {
         "hython": "C:/Program Files/Side Effects Software/Houdini 20.5.1021/bin/hython.exe",
-        "usdcat": "C:/Users/3D5/Downloads/Daisy_Pipe/00_Pipeline/Plugins/Daisy_Pipe/ExternalModules/usd_root/scripts/usdcat.bat"
+        "usdview": "//minerva/3d5_2627/100_DEV_PIPE/DEEP_DIVE/00_Pipeline/Plugins/Daisy_Pipe/ExternalModules/usd_root/scripts/usdview.bat"
+    },
+    "network": {
+        "UNC_path": "//minerva/3D5_2627",
+        "mapped_drive_path": "Z:"
     }
 }
