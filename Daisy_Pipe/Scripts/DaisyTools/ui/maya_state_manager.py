@@ -30,8 +30,8 @@ from qtpy.QtWidgets import *
 
 from PrismUtils.Decorators import err_catcher
 
-class EsmaUsdExportClass(QWidget):
-    className = "EsmaUsdExport"   # nom affiché dans le menu "Add state"
+class DaisyUsdExportClass(QWidget):
+    className = "DaisyUsdExport"   # nom affiché dans le menu "Add state"
     listType = "Export"           # ou "Import" — la liste dans laquelle il se range
 
     def setup(self, state, core, stateManager, stateData=None):
@@ -547,6 +547,40 @@ class EsmaUsdExportClass(QWidget):
         self.cb_rangeType.currentTextChanged.connect(self.refreshFrameRange)
         self.b_addSelected.clicked.connect(self.addSelected)
         self.b_detectExisting.clicked.connect(self.detectExistingSelection)
+        self.lw_objects.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.lw_objects.customContextMenuRequested.connect(self.objectsContextMenu)
+
+    @err_catcher(name=__name__)
+    def objectsContextMenu(self, pos):
+
+        #-----------------------------------------------------------------------------------#
+        # Right click menu on the Maya Objects list:                                        #
+        # remove the selected objects or clear the whole list                               #
+        #-----------------------------------------------------------------------------------#
+
+        item = self.lw_objects.itemAt(pos)
+        if item is None:
+            return
+
+        # right clicking an unselected item acts on that item only, like a file browser
+        if not item.isSelected():
+            self.lw_objects.clearSelection()
+            item.setSelected(True)
+
+        menu = QMenu(self)
+        menu.addAction("Remove", self.removeSelectedObjects)
+        menu.addAction("Clear", lambda: self.setObjects([]))
+        menu.exec_(self.lw_objects.viewport().mapToGlobal(pos))
+
+    @err_catcher(name=__name__)
+    def removeSelectedObjects(self):
+
+        #-----------------------------------------------------------------------------------#
+        # Remove the selected entries from the Maya Objects list                            #
+        #-----------------------------------------------------------------------------------#
+
+        rows = {self.lw_objects.row(item) for item in self.lw_objects.selectedItems()}
+        self.setObjects([node for idx, node in enumerate(self.nodes) if idx not in rows])
 
     @err_catcher(name=__name__)
     def wholeSceneToggled(self, checked):
@@ -736,3 +770,312 @@ class EsmaUsdExportClass(QWidget):
             }
         )
         return stateProps
+
+
+class DaisyGeoExportClass(DaisyUsdExportClass):
+    className = "DaisyGeoExport"   # nom affiché dans le menu "Add state"
+    listType = "Export"
+
+    # reuses the USD state's context, frame range and selection helpers -
+    # only the UI, the export params and the execution differ
+
+    ##############################################################################################################
+    ###########################     CONTEXT Helpers     ##########################################################
+    ##############################################################################################################
+
+    @err_catcher(name=__name__)
+    def initializeContextDefaults(self):
+
+        #-----------------------------------------------------------------------------------#
+        # Remove range types that don't apply outside of shots                              #
+        # and default to a single frame export whatever the entity type                     #
+        #-----------------------------------------------------------------------------------#
+
+        context = self.getCurrentContext()
+
+        if context.get("type") != "shot":
+            for rangeType in ("Shot + 1", "Shot"):
+                idx = self.cb_rangeType.findText(rangeType)
+                if idx != -1:
+                    self.cb_rangeType.removeItem(idx)
+
+        self.setRangeType("Single Frame")
+
+    @err_catcher(name=__name__)
+    def getDefaultPrim(self):
+
+        #-----------------------------------------------------------------------------------#
+        # No USD prim here - the entity name is still what names the geo group/set          #
+        #-----------------------------------------------------------------------------------#
+
+        return self.getEntityName(self.getCurrentContext())
+
+    ##############################################################################################################
+    ###########################     UI CONSTRUCTION     ##########################################################
+    ##############################################################################################################
+
+    @err_catcher(name=__name__)
+    def _makeRow(self, label, widget):
+
+        #-----------------------------------------------------------------------------------#
+        # Build a 'label ... widget' row                                                    #
+        #-----------------------------------------------------------------------------------#
+
+        row = QWidget()
+        lo_row = QHBoxLayout(row)
+        lo_row.addWidget(QLabel(label))
+        lo_row.addStretch()
+        lo_row.addWidget(widget)
+        return row
+
+    @err_catcher(name=__name__)
+    def _makeCheckBox(self, checked):
+
+        #-----------------------------------------------------------------------------------#
+        # Build a checkbox with its default state                                           #
+        #-----------------------------------------------------------------------------------#
+
+        chb = QCheckBox()
+        chb.setChecked(checked)
+        return chb
+
+    @err_catcher(name=__name__)
+    def setupUi(self):
+
+        #-----------------------------------------------------------------------------------#
+        # Build the state's UI: Source, Comment, Target, Settings and per-format options    #
+        #-----------------------------------------------------------------------------------#
+
+        self.lo_main = QVBoxLayout(self)
+
+        self.w_name = QWidget()
+        self.lo_name = QHBoxLayout(self.w_name)
+        self.l_name = QLabel("Name:")
+        self.e_name = QLineEdit()
+        self.e_name.setText(self.state.text(0))
+        self.l_name.setVisible(False)
+        self.e_name.setVisible(False)
+        self.lo_name.addWidget(self.l_name)
+        self.lo_name.addWidget(self.e_name)
+        self.lo_main.addWidget(self.w_name)
+
+        # ------------------------------------------------------------ Source
+        self.gb_source = QGroupBox("Source")
+        self.lo_source = QVBoxLayout(self.gb_source)
+
+        self.chb_wholeScene = QCheckBox()
+        self.w_wholeScene = self._makeRow("Export whole Scene:", self.chb_wholeScene)
+
+        self.l_objects = QLabel("Maya Objects")
+        self.lw_objects = QListWidget()
+        self.lw_objects.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.lw_objects.setStyleSheet(
+            "QListWidget { border: 3px solid rgb(200,0,0); }"
+        )
+        self.b_addSelected = QPushButton("Add selected")
+        self.b_detectExisting = QPushButton("Detect from scene")
+
+        self.w_objectButtons = QWidget()
+        self.lo_objectButtons = QHBoxLayout(self.w_objectButtons)
+        self.lo_objectButtons.setContentsMargins(0, 0, 0, 0)
+        self.lo_objectButtons.addWidget(self.b_addSelected)
+        self.lo_objectButtons.addWidget(self.b_detectExisting)
+
+        self.lo_source.addWidget(self.w_wholeScene)
+        self.lo_source.addWidget(self.l_objects)
+        self.lo_source.addWidget(self.lw_objects)
+        self.lo_source.addWidget(self.w_objectButtons)
+
+        # ----------------------------------------------------------- Comment
+        self.gb_comment = QGroupBox("Comment")
+        self.lo_comment = QVBoxLayout(self.gb_comment)
+        self.te_comment = QTextEdit()
+        self.te_comment.setFixedHeight(80)
+        self.lo_comment.addWidget(self.te_comment)
+
+        # ------------------------------------------------------------ Target
+        self.gb_target = QGroupBox("Target")
+        self.lo_target = QVBoxLayout(self.gb_target)
+
+        self.chb_master = self._makeCheckBox(True)
+        self.chb_updateThumbnail = self._makeCheckBox(True)
+        self.cb_outputType = QComboBox()
+        self.cb_outputType.addItems([".fbx", ".obj"])
+
+        self.lo_target.addWidget(self._makeRow("Update Master Version:", self.chb_master))
+        self.lo_target.addWidget(self._makeRow("Update Thumbnail:", self.chb_updateThumbnail))
+        self.lo_target.addWidget(self._makeRow("Outputtype:", self.cb_outputType))
+
+        # ----------------------------------------------------------- Settings
+        self.gb_settings = QGroupBox("Settings")
+        self.lo_settings = QVBoxLayout(self.gb_settings)
+
+        self.cb_rangeType = QComboBox()
+        self.cb_rangeType.addItems(
+            ["Scene", "Shot", "Shot + 1", "Single Frame", "Custom"]
+        )
+        self.w_rangeType = self._makeRow("Framerange:", self.cb_rangeType)
+
+        self.w_rangeStart = QWidget()
+        self.lo_rangeStart = QHBoxLayout(self.w_rangeStart)
+        self.l_startLbl = QLabel("Start:")
+        self.l_rangeStart = QLabel("1")
+        self.sp_rangeStart = QSpinBox()
+        self.sp_rangeStart.setRange(-9999, 9999)
+        self.sp_rangeStart.setValue(1)
+        self.lo_rangeStart.addWidget(self.l_startLbl)
+        self.lo_rangeStart.addStretch()
+        self.lo_rangeStart.addWidget(self.l_rangeStart)
+        self.lo_rangeStart.addWidget(self.sp_rangeStart)
+
+        self.w_rangeEnd = QWidget()
+        self.lo_rangeEnd = QHBoxLayout(self.w_rangeEnd)
+        self.l_endLbl = QLabel("End:")
+        self.l_rangeEnd = QLabel("120")
+        self.sp_rangeEnd = QSpinBox()
+        self.sp_rangeEnd.setRange(-9999, 9999)
+        self.sp_rangeEnd.setValue(120)
+        self.lo_rangeEnd.addWidget(self.l_endLbl)
+        self.lo_rangeEnd.addStretch()
+        self.lo_rangeEnd.addWidget(self.l_rangeEnd)
+        self.lo_rangeEnd.addWidget(self.sp_rangeEnd)
+
+        # FBX options
+        self.w_fbxOptions = QWidget()
+        self.lo_fbxOptions = QVBoxLayout(self.w_fbxOptions)
+        self.lo_fbxOptions.setContentsMargins(0, 0, 0, 0)
+        self.chb_fbxTriangulate = self._makeCheckBox(False)
+        self.chb_fbxSmoothingGroups = self._makeCheckBox(True)
+        self.chb_fbxSkins = self._makeCheckBox(False)
+        self.chb_fbxBlendshapes = self._makeCheckBox(False)
+        self.chb_fbxEmbedTextures = self._makeCheckBox(False)
+        self.lo_fbxOptions.addWidget(self._makeRow("Triangulate:", self.chb_fbxTriangulate))
+        self.lo_fbxOptions.addWidget(self._makeRow("Smoothing Groups:", self.chb_fbxSmoothingGroups))
+        self.lo_fbxOptions.addWidget(self._makeRow("Skins:", self.chb_fbxSkins))
+        self.lo_fbxOptions.addWidget(self._makeRow("Blendshapes:", self.chb_fbxBlendshapes))
+        self.lo_fbxOptions.addWidget(self._makeRow("Embed Textures:", self.chb_fbxEmbedTextures))
+
+        # OBJ options
+        self.w_objOptions = QWidget()
+        self.lo_objOptions = QVBoxLayout(self.w_objOptions)
+        self.lo_objOptions.setContentsMargins(0, 0, 0, 0)
+        self.chb_objMaterials = self._makeCheckBox(False)
+        self.chb_objNormals = self._makeCheckBox(False)
+        self.chb_objSmoothing = self._makeCheckBox(True)
+        self.lo_objOptions.addWidget(self._makeRow("Materials:", self.chb_objMaterials))
+        self.lo_objOptions.addWidget(self._makeRow("Normals:", self.chb_objNormals))
+        self.lo_objOptions.addWidget(self._makeRow("Smoothing:", self.chb_objSmoothing))
+
+        self.lo_settings.addWidget(self.w_rangeType)
+        self.lo_settings.addWidget(self.w_rangeStart)
+        self.lo_settings.addWidget(self.w_rangeEnd)
+        self.lo_settings.addWidget(self.w_fbxOptions)
+        self.lo_settings.addWidget(self.w_objOptions)
+
+        self.lo_main.addWidget(self.gb_source)
+        self.lo_main.addWidget(self.gb_comment)
+        self.lo_main.addWidget(self.gb_target)
+        self.lo_main.addWidget(self.gb_settings)
+
+        self.updateRangeVisibility(self.cb_rangeType.currentText())
+        self.outputTypeChanged(self.cb_outputType.currentText())
+
+    ##############################################################################################################
+    ###########################     EVENT Handling     ############################################################
+    ##############################################################################################################
+
+    @err_catcher(name=__name__)
+    def connectEvents(self):
+
+        #-----------------------------------------------------------------------------------#
+        # Wire up the UI widgets to their handlers                                          #
+        #-----------------------------------------------------------------------------------#
+
+        self.e_name.textChanged.connect(self.nameChanged)
+        self.e_name.editingFinished.connect(self.stateManager.saveStatesToScene)
+
+        self.chb_wholeScene.toggled.connect(self.wholeSceneToggled)
+        self.cb_rangeType.currentTextChanged.connect(self.refreshFrameRange)
+        self.cb_outputType.currentTextChanged.connect(self.outputTypeChanged)
+        self.b_addSelected.clicked.connect(self.addSelected)
+        self.b_detectExisting.clicked.connect(self.detectExistingSelection)
+        self.lw_objects.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.lw_objects.customContextMenuRequested.connect(self.objectsContextMenu)
+
+    @err_catcher(name=__name__)
+    def outputTypeChanged(self, extension):
+
+        #-----------------------------------------------------------------------------------#
+        # Show the options of the chosen format                                             #
+        # OBJ has no animation: it only writes the Start frame, so hide the End frame       #
+        #-----------------------------------------------------------------------------------#
+
+        isObj = extension == ".obj"
+        self.w_fbxOptions.setVisible(not isObj)
+        self.w_objOptions.setVisible(isObj)
+        self.w_rangeEnd.setVisible(not isObj)
+
+    ##############################################################################################################
+    ###########################     EXPORT Execution     ##########################################################
+    ##############################################################################################################
+
+    @err_catcher(name=__name__)
+    def getExportParams(self):
+
+        #-----------------------------------------------------------------------------------#
+        # Collect this state's UI values into the plain dict                                #
+        # that exportGeo.export_geo() expects                                               #
+        #-----------------------------------------------------------------------------------#
+
+        return {
+            "whole_scene": self.chb_wholeScene.isChecked(),
+            "nodes": list(self.nodes),
+            "extension": self.cb_outputType.currentText(),
+            "update_master": self.chb_master.isChecked(),
+            "update_thumbnail": self.chb_updateThumbnail.isChecked(),
+            "start_frame": self.sp_rangeStart.value(),
+            "end_frame": self.sp_rangeEnd.value(),
+            "comment": self.getComment(),
+            "fbx_triangulate": self.chb_fbxTriangulate.isChecked(),
+            "fbx_smoothing_groups": self.chb_fbxSmoothingGroups.isChecked(),
+            "fbx_skins": self.chb_fbxSkins.isChecked(),
+            "fbx_blendshapes": self.chb_fbxBlendshapes.isChecked(),
+            "fbx_embed_textures": self.chb_fbxEmbedTextures.isChecked(),
+            "obj_materials": self.chb_objMaterials.isChecked(),
+            "obj_normals": self.chb_objNormals.isChecked(),
+            "obj_smoothing": self.chb_objSmoothing.isChecked(),
+        }
+
+    @err_catcher(name=__name__)
+    def executeState(self, parent, useVersion="next"):
+
+        #-----------------------------------------------------------------------------------#
+        # Run the FBX/OBJ export and report the result back to the State Manager            #
+        #-----------------------------------------------------------------------------------#
+
+        from DaisyTools.saveas.exportGeo import export_geo
+
+        if not self.chb_wholeScene.isChecked() and not self.nodes:
+            return [
+                self.state.text(0)
+                + ": error - No objects in the Maya Objects list. Add objects or check 'Export whole Scene'."
+            ]
+
+        try:
+            outputPath = export_geo(self.getExportParams())
+        except Exception as e:
+            return [self.state.text(0) + " - error - %s" % e]
+
+        if not outputPath:
+            return [self.state.text(0) + " - error"]
+
+        result = self.core.popupQuestion(
+            "%s export: %s" % (self.cb_outputType.currentText()[1:].upper(), outputPath),
+            title="DaisyGeoExport",
+            buttons=["Open in Explorer", "Ok"],
+            default="Ok",
+        )
+        if result == "Open in Explorer":
+            self.core.openFolder(outputPath)
+
+        return [self.state.text(0) + " - success"]
