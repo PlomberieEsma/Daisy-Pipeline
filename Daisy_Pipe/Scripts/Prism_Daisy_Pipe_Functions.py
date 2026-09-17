@@ -281,10 +281,14 @@ class Prism_Daisy_Pipe_Functions(object):
 
         path = f"{path}\\{filename}"
         convertUsdAction = QAction(QIcon(self.daisyIcon(iconName)),f"Duplicate and Convert to {usd_out}", origin)
-        convertUsdAction.triggered.connect(lambda: self.onConvertUsd(path, usd_in, usd_out))
+        convertUsdAction.triggered.connect(lambda: self.onConvertUsd(path, usd_in, usd_out, origin))
         rcMenu.addAction(convertUsdAction)
 
-    def onConvertUsd(self, path, usd_in, usd_out):
+        ViewUsdViewAction = QAction(QIcon(self.daisyIcon(iconName)),f"View with UsdView", origin)
+        ViewUsdViewAction.triggered.connect(lambda: self.onViewUsdView(path, origin))
+        rcMenu.addAction(ViewUsdViewAction)
+
+    def onConvertUsd(self, path, usd_in, usd_out, origin):
         
         #-----------------------------------------------------------------------------------#
         # Get the selected product version from the Create USD option
@@ -296,6 +300,18 @@ class Prism_Daisy_Pipe_Functions(object):
         #-----------------------------------------------------------------------------------#
 
         self.Command_launcher.convert_usd_format(path, usd_in, usd_out)
+        origin.core.refreshUI()
+
+    def onViewUsdView(self, path, origin):
+        
+        #-----------------------------------------------------------------------------------#
+        # Get the selected product version from the Create USD option
+        # Launch the view with usdview script
+        #
+        #   path: path to the usd version folder
+        #-----------------------------------------------------------------------------------#
+
+        self.Command_launcher.view_usd_view(path)
         origin.core.refreshUI()
 
 
