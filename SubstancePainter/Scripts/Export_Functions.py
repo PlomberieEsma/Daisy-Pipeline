@@ -32,6 +32,8 @@ import re
 
 import substance_painter.project as sp_project
 
+import substance_painter.textureset as sp_ts
+
 VERSION_PATTERN = re.compile(r"^v(\d{4})$", re.IGNORECASE)
 VARIANT_PATTERN = re.compile(r"^var(\d{2})$", re.IGNORECASE)
 
@@ -39,10 +41,13 @@ VARIANT_PATTERN = re.compile(r"^var(\d{2})$", re.IGNORECASE)
 class ExportTexturesDialog(QDialog):
     MAP_TYPE_KEYWORDS = [
         "BaseColor", "Diffuse", "Albedo", "Normal", "Roughness", "Metallic", "Metalness",
-        "Height", "Displacement", "AmbientOcclusion", "AO", "Emissive",
-        "Opacity", "Specular", "Glossiness", "SSS", "Translucency", "ID",
-        "Curvature", "Thickness", "Anisotropy", "AnisotropyAngle", "Presence", "Transmission", "Sheen", "SheenTint", "Clearcoat", "ClearcoatGloss", "Subsurface", "SubsurfaceColor"
+        "Height", "Displacement", "AmbientOcclusion", "AO", "Emissive", "Alpha", "Reflection",
+        "Opacity", "Specular", "Glossiness", "SSS", "Translucency", "ID", "Glow", "GlowColor",
+        "Curvature", "Thickness", "Anisotropy", "AnisotropyAngle", "Presence", "Transmission",
+        "Sheen", "SheenTint", "Clearcoat", "ClearcoatGloss", "Subsurface", "SubsurfaceColor"
     ]
+    COLOR_SPACE_KEYWORDS = ["Utility - Raw", "Utility", "ACES", "ACEScg"]
+
     def __init__(self, core, assetName="", exportPath="", parent=None):
 
         #-----------------------------------------------------------------------------------#
@@ -440,6 +445,8 @@ class ExportTexturesDialog(QDialog):
         needsDilation = self.paddingCombo.currentData() in ["transparent", "color", "diffusion"]
         self.dilationBtn.setEnabled(needsDilation)
 
+
+
     #########################################################################################
     #   Textures to Export Functions
     #########################################################################################
@@ -543,7 +550,7 @@ class ExportTexturesDialog(QDialog):
                     continue
 
                 for filename in filenames:
-                    mapLabel = self.guessMapType(filename)
+                    mapLabel = self.guessMapType(filename) or os.path.splitext(os.path.basename(filename))[0]
                     texItem = QTreeWidgetItem([mapLabel])
                     texItem.setFlags(texItem.flags() | Qt.ItemIsUserCheckable)
                     texItem.setCheckState(
@@ -558,20 +565,6 @@ class ExportTexturesDialog(QDialog):
         self.textureTree.blockSignals(False)
         self.refreshExportSummary()
 
-
-    def guessMapType(self, filename):
-
-        #-----------------------------------------------------------------------------------#
-        # Try to extract a short, readable map type (BaseColor, Normal, ...) from a filename
-        #   filename : full path or filename of the exported texture
-        # Return - the matched keyword, or the filename stem if nothing matched
-        #-----------------------------------------------------------------------------------#
-
-        stem = os.path.splitext(os.path.basename(filename))[0]
-        for keyword in self.MAP_TYPE_KEYWORDS:
-            if keyword.lower() in stem.lower():
-                return keyword
-        return stem
 
     def refreshExportSummary(self):
 
@@ -609,85 +602,59 @@ class ExportTexturesDialog(QDialog):
             return value()
         return value
 
-
-
-
-    def buildCustomPreset(self, presetInfo, assetName, variant):
+    def guessMapType(self, filename):
 
         #-----------------------------------------------------------------------------------#
-        # Patch every "$mesh..." naming field in the raw .spexp binary, replacing the
-        # part before $textureSet with the custom naming, and fixing the single-byte
-        # length prefix that precedes each field accordingly
-        #   presetInfo : dict with "path" (raw .spexp filepath) for the base preset
-        # Return - ResourceID of the newly registered custom preset
+        # Try to extract a short, readable map type (BaseColor, Normal, ...) from a filename
+        #   filename : full path or filename of the exported texture
+        # Return - the matched keyword, or the filename stem if nothing matched
         #-----------------------------------------------------------------------------------#
 
-        with open(presetInfo["path"], "rb") as f:
-            rawBytes = f.read()
+        stem = os.path.splitext(os.path.basename(filename))[0]
+        for keyword in self.MAP_TYPE_KEYWORDS:
+            if keyword.lower() in stem.lower():
+                return keyword
+        return None  # plus de fallback ici, géré par l'appelant
+    
+    def guessColorSpace(self, filename):
 
-        customName = "blah"
-        marker = b"$mesh"
+        #-----------------------------------------------------------------------------------#
+        # Try to extract the color space token (Raw, Utility, Aces) from a filename
+        #   filename : full path or filename of the exported texture
+        # Return - the matched keyword, or None if nothing matched
+        #-----------------------------------------------------------------------------------#
 
-        result = bytearray()
-        pos = 0
-        patchedCount = 0
+        stem = os.path.splitext(os.path.basename(filename))[0]
+        for token in stem.split("_"):
+            if " - " in token:
+                return token
+        return None
 
-        while True:
-            idx = rawBytes.find(marker, pos)
-            if idx == -1:
-                result.extend(rawBytes[pos:])
-                break
+    def extractMapLabel(self, filepath, matName, colorSpace):
 
-            lengthBytePos = idx - 1
-            if lengthBytePos < 0:
-                result.extend(rawBytes[pos:idx + len(marker)])
-                pos = idx + len(marker)
-                continue
+        #-----------------------------------------------------------------------------------#
+        # Extract the map type label by taking the substring between matName and the
+        # colorSpace token (or the extension, if no colorSpace was found)
+        #   filepath : full path or filename of the exported texture
+        #   matName : texture set / material name, as found in mapNaming()
+        #   colorSpace : color space token returned by guessColorSpace(), or None
+        # Return - the isolated map label, or the file stem if matName wasn't found
+        #-----------------------------------------------------------------------------------#
 
-            oldLen = rawBytes[lengthBytePos]
-            oldField = rawBytes[idx:idx + oldLen]
+        stem = os.path.splitext(os.path.basename(filepath))[0]
 
-            # Sécurité : on ne patche que si le champ entier correspond bien
-            # à ce que le préfixe de longueur annonce, et commence par $mesh
-            if not oldField.startswith(marker) or len(oldField) != oldLen:
-                result.extend(rawBytes[pos:idx + len(marker)])
-                pos = idx + len(marker)
-                continue
+        idx = stem.find(matName)
+        if idx == -1:
+            return stem
 
-            suffix = oldField[len(marker):]  # tout ce qui suit "$mesh", ex: "_$textureSet_..."
-            newField = customName.encode("ascii") + suffix
+        after = stem[idx + len(matName):]
 
-            if len(newField) > 255:
-                self.core.popup("Le nom personnalisé est trop long pour ce champ du preset, il sera tronqué.")
-                newField = newField[:255]
+        if colorSpace and after.endswith(colorSpace):
+            after = after[: -len(colorSpace)]
 
-            result.extend(rawBytes[pos:lengthBytePos])  # tout ce qu'il y avait avant le préfixe
-            result.append(len(newField))                # nouveau préfixe de longueur, recalculé
-            result.extend(newField)                      # nouveau champ
+        return after.strip("_")
 
-            pos = idx + oldLen
-            patchedCount += 1
-
-        if patchedCount == 0:
-            return presetInfo["resourceId"]  # aucun champ $mesh trouvé, on garde l'original
-
-        tempPresetName = "%s_%s" % (
-            os.path.splitext(os.path.basename(presetInfo["path"]))[0], customName
-        )
-        tempPresetPath = os.path.join(tempfile.gettempdir(), "%s.spexp" % tempPresetName)
-
-        with open(tempPresetPath, "wb") as f:
-            f.write(bytes(result))
-
-        import substance_painter.resource
-        resourceId = substance_painter.resource.import_session_resource(
-            tempPresetPath,
-            substance_painter.resource.Usage.EXPORT,
-            name=tempPresetName,
-        )
-        return resourceId
-
-    def mapNaming(self, assetName, variant, textureFile):
+    def mapNaming(self, assetName, variant, textureFileDict):
 
         #-----------------------------------------------------------------------------------#
         # Build the custom naming string used to replace $mesh in the export preset
@@ -698,99 +665,53 @@ class ExportTexturesDialog(QDialog):
         #   materialDict : Dictionnary with texture set as key and texture maps names for each texture set
         #-----------------------------------------------------------------------------------#
 
-        # Dynamic maps set to be exported. We reformate the Dictionary to keep only what interest us to rename.
-        textureFile=str(textureFile)
-        textureFile=textureFile.replace("'", "")
+        materialDict = {}
+        for key, filepaths in textureFileDict.items():
+            matName = key[0]
+            texturePath = []
+            for filepath in filepaths:
+                colorSpace = self.guessColorSpace(filepath)
 
+                mapLabel = self.guessMapType(filepath)
+                if mapLabel is None:
+                    mapLabel = self.extractMapLabel(filepath, matName, colorSpace)
 
-        ########
-        ### Recupérer la key a l'emplacement 0 du tuple de textureFile
-        ########
-        
-        textureFileName=textureFile.split("[")[1:]
-        materialList=[]
-        for tf in textureFileName:
-            textureList=tf.split("]")[0]
-            textureList=textureList.split(",")
-            materialList.append(textureList)
+                ext = os.path.splitext(filepath)[1]
+            
+                if colorSpace:
+                    colorSpaceClean = colorSpace.replace(" - ", "_").replace(" ", "")
+                    newName = f"{assetName}_{variant}_{matName}_{mapLabel}_{colorSpaceClean}{ext}"
+                else:
+                    newName = f"{assetName}_{variant}_{matName}_{mapLabel}{ext}"
 
-        # Absolute Names of all materials in the scene
-        materialNames=self.availableTextureSets()
-
-        materialDict={}
-        # contreCompte to synchronize the dynamic list of maps with the absolute list of texturesSet
-        # in case the User only wants to Export the maps of a certain material
-        contreCompte=0
-        # previews_deleted = False
-        # try:
-        #     for i in range(len(materialNames)):
-        #         if previews_deleted:
-        #             # if a task has been popped previously
-        #             contreCompte += 1
-        #             previews_deleted = False
-                
-        #         self.core.popup(i)
-        #         currentMat=materialNames[i-contreCompte]
-        #         currentList=materialList[i-contreCompte]
-        #         if currentMat not in str(currentList):
-        #             materialNames.pop(i-contreCompte)
-        #             previews_deleted = True
-        #         else:
-        #             continue
-
-        #     self.core.popup(materialNames)
-        # except Exception as e:
-        #     self.core.popup(e)
-
-        self.core.popup(len(materialNames))
-
-        for i in range(len(materialNames)):
-            self.core.popup(i)
-            currentMat=materialNames[i]
-            currentList=materialList[i]
-            currentList=materialList[i-contreCompte]
-            # self.core.popup(f"{str(currentMat)=}\n{str(currentList)=}\n{str(contreCompte)=}")
-            if currentMat not in str(currentList):
-                if i != len(materialNames):
-                    contreCompte+=1
-                    continue
-            texturePath=[]
-            for path in currentList:
-                textureType=path.split(currentMat)[-1]
-                goodpath=f"{currentMat}{textureType}"
-                texturePath.append(f"{assetName}_{variant}_{goodpath}")
-            materialDict.update({currentMat:texturePath})
-
-        # self.core.popup(materialDict)
+                texturePath.append(newName)
+            materialDict[matName] = texturePath
         return materialDict
 
 
+    def stackHasChannel(self, textureSetName, channelType):
+        stack = sp_ts.Stack.from_name(textureSetName)
+        return stack.has_channel(channelType)
 
 
 
+    #########################################################################################
+    #   Textures to Export Functions
+    #########################################################################################
 
+    def isConfigExportable(self, config):
 
+        #-----------------------------------------------------------------------------------#
+        # Try list_project_textures with the current config: if it raises, or returns
+        # nothing, the preset is incompatible with the selected stacks' channels
+        #-----------------------------------------------------------------------------------#
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        import substance_painter.export
+        try:
+            result = substance_painter.export.list_project_textures(config)
+        except Exception:
+            return False
+        return any(filenames for filenames in result.values())
 
     def getExportConfig(self):
 
@@ -822,11 +743,7 @@ class ExportTexturesDialog(QDialog):
         selectedLabel = self.presetCombo.currentText()
         presetInfo = self.presetResources.get(selectedLabel)
 
-        if selectedLabel == "0_DaisyTemplate" and presetInfo:
-            customResourceId = self.buildCustomPreset(presetInfo, self.assetName, self.variant)
-            presetUrl = customResourceId.url()
-        else:
-            presetUrl = presetInfo["resourceId"].url() if presetInfo else None
+        presetUrl = presetInfo["resourceId"].url()
 
         return {
             "exportPath": self.pathEdit.text(),
@@ -853,17 +770,37 @@ class ExportTexturesDialog(QDialog):
 
         config = self.getExportConfig()
 
+        if not self.isConfigExportable(config):
+            self.core.popup(
+                "Ce preset ne correspond à aucun channel disponible sur les Texture Sets "
+                "sélectionnés (ex: workflow Spec/Gloss vs Metal/Rough). Choisissez un autre preset."
+            )
+            return
+
         import substance_painter.export
         try:
             result = substance_painter.export.export_project_textures(config)
             if result.status != substance_painter.export.ExportStatus.Success:
                 self.core.popup(result.message)
                 return
+            
+            # Renomme les fichiers réels pour qu'ils matchent exactement le summary
+            renamedTextures = self.mapNaming(self.assetName, self.variant, result.textures)
 
-            for filenames in result.textures.values():
-                for filepath in filenames:
-                    if filepath in self.excludedTextures and os.path.isfile(filepath):
-                        os.remove(filepath)
+            for key, filepaths in result.textures.items():
+                matName = key[0]
+                desiredNames = renamedTextures.get(matName, [])
+                for filepath, desiredName in zip(filepaths, desiredNames):
+                    if not os.path.isfile(filepath):
+                        continue
+                    newPath = os.path.join(os.path.dirname(filepath), desiredName)
+                    if filepath != newPath:
+                        if os.path.isfile(newPath):
+                            os.remove(newPath)
+                        os.rename(filepath, newPath)
+
+                    if desiredName in self.excludedTextures and os.path.isfile(newPath):
+                        os.remove(newPath)
 
             self.close()
         except Exception as e:
