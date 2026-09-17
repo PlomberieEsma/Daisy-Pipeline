@@ -64,7 +64,7 @@ class ExportTexturesDialog(QDialog):
 
         if "var" in exportPath:
             variant=exportPath.split("var")[-1]
-            variant=f"var{variant}"
+            variant=f"_var{variant}"
         else:
             variant=""
         self.variant=variant
@@ -680,9 +680,9 @@ class ExportTexturesDialog(QDialog):
             
                 if colorSpace:
                     colorSpaceClean = colorSpace.replace(" - ", "_").replace(" ", "")
-                    newName = f"{assetName}_{variant}_{matName}_{mapLabel}_{colorSpaceClean}{ext}"
+                    newName = f"{assetName}{variant}_{matName}_{mapLabel}_{colorSpaceClean}{ext}"
                 else:
-                    newName = f"{assetName}_{variant}_{matName}_{mapLabel}{ext}"
+                    newName = f"{assetName}{variant}_{matName}_{mapLabel}{ext}"
 
                 texturePath.append(newName)
             materialDict[matName] = texturePath
