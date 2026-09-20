@@ -1,0 +1,48 @@
+{
+    "common": {
+        "append": false,
+        "defaultUSDFormat": "usda",
+        "rootPrim": "",
+        "rootPrimType": "scope",
+        "exportSkels": "none",
+        "exportSkin": "none",
+        "exportBlendShapes": false,
+        "exportDisplayColor": false,
+        "exportColorSets": false,
+        "exportComponentTags": true,
+        "defaultMeshScheme": "catmullClark",
+        "normalizeNurbs": false,
+        "preserveUVSetNames": false,
+        "geomSidedness": "derived",
+        "referenceObjectMode": "none",
+        "exportUVs": true,
+        "exportAssignedMaterials": false,
+        "exportMaterials": false,
+        "upAxis": "y"
+    },
+
+    "presets": {
+        "mod": {
+
+            "exportInstances": true,
+            "exportVisibility": true,
+            "mergeTransformAndShape": true,
+            "includeEmptyTransforms": true,
+            "stripNamespaces": true,
+            "worldspace": false,
+            "exportStagesAsRefs": true
+
+        },
+
+        "lay":{
+            "exportInstances": true,
+            "exportVisibility": true,
+            "mergeTransformAndShape": true,
+            "includeEmptyTransforms": true,
+            "stripNamespaces": true,
+            "worldspace": false,
+            "exportStagesAsRefs": true
+        }
+
+    }
+}

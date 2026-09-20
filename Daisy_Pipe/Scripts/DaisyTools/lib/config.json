@@ -1,0 +1,20 @@
+{
+    "global": {
+        "usd_file_format": "usdc",
+        "sh_name_digit_number": 3,
+        "max_product_version": 10,
+        "max_scene_version": 25
+    },
+    "create_usd_asset": {
+        "autoproxy_polygone_number": 3000,
+        "variant_digit_number": 2
+    },
+    "software": {
+        "hython": "C:/Program Files/Side Effects Software/Houdini 20.5.1021/bin/hython.exe",
+        "usdview": "//minerva/3d5_2627/100_DEV_PIPE/DEEP_DIVE/00_Pipeline/Plugins/Daisy_Pipe/ExternalModules/usd_root/scripts/usdview.bat"
+    },
+    "network": {
+        "UNC_path": "//minerva/3D5_2627",
+        "mapped_drive_path": "Z:"
+    }
+}

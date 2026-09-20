@@ -1,0 +1,23 @@
+{
+    "plugins": [
+        {
+            "path": "C:\\ProgramData\\Prism2\\plugins\\Houdini"
+        },
+        {
+            "path": "C:\\ProgramData\\Prism2\\plugins\\Maya"
+        },
+        {
+            "path": "C:\\ProgramData\\Prism2\\plugins\\Hub"
+        },
+        {
+            "path": "C:\\ProgramData\\Prism2\\plugins\\PrismInternals"
+        },
+        { 
+            "path": "Z:\\Daisy_Pipe\\00_Pipeline\\Plugins\\SubstancePainter"
+        },
+        { 
+            "path": "C:\\Users\\3D5\\Documents\\Daisy_Pipe\\00_Pipeline\\Plugins\\Daisy_Pipe"
+        }
+    ],
+    "searchPaths": []
+}
