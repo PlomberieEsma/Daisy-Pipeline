@@ -35,7 +35,7 @@ import os, sys
 
 from DaisyTools.core.command_launcher import Command_launcher
 from DaisyTools.core.asset_browser import AssetBrowserUI
-from DaisyTools.ui.maya_state_manager import EsmaUsdExportClass
+from DaisyTools.ui.maya_state_manager import DaisyUsdExportClass
 
 from PrismUtils.Decorators import err_catcher_plugin as err_catcher
 
@@ -46,7 +46,7 @@ class Prism_Daisy_Pipe_Functions(object):
         self.plugin = plugin
 
         if self.isMaya():
-            self.mayastate = EsmaUsdExportClass()
+            self.mayastate = DaisyUsdExportClass()
 
         if self.isStandalone():
             self.importUsdPackages()
@@ -81,11 +81,13 @@ class Prism_Daisy_Pipe_Functions(object):
         import importlib
         from DaisyTools.ui import maya_state_manager
         importlib.reload(maya_state_manager)
-        origin.loadState(maya_state_manager.EsmaUsdExportClass)
+        origin.loadState(maya_state_manager.DaisyUsdExportClass)
+        origin.loadState(maya_state_manager.DaisyGeoExportClass)
 
         menu = QMenu(origin.b_createExport)
         menu.addAction("Export", lambda: origin.createState("Export", setActive=True))
-        menu.addAction("EsmaUsdExport", lambda: origin.createState("EsmaUsdExport", setActive=True))
+        menu.addAction("DaisyUsdExport", lambda: origin.createState("DaisyUsdExport", setActive=True))
+        menu.addAction("DaisyGeoExport", lambda: origin.createState("DaisyGeoExport", setActive=True))
         origin.b_createExport.setMenu(menu)
 
 
