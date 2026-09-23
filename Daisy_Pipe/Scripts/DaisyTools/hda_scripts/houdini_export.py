@@ -2,18 +2,12 @@ from Scripts.DaisyTools.core.core import get_core
 from Scripts.DaisyTools.core.get_entity_info import get_entity_info
 import hou
 
-def create_path()
+def update_path(hda=None):
+    hda = hda or hou.pwd()
+    hda.parm("path").set(create_path(hda))
+
+def create_path(hda):
     info = get_entity_info()
-
-    entity = info["entity"]
-    task = info["task"]
-
-    node = hou.pwd()
-    extension = node.parm("extension").evalAsString()
-
+    extension = hda.parm("extension").evalAsString()
     core = get_core()
-    path = core.products.generateProductPath(entity=entity, task=task, extension=f".{extension}", version=None, location="global")
-
-    return path
-
-
+    return core.products.generateProductPath(entity=info["entity"],task=info["task"],extension=f".{extension}",version=None,location="global")
