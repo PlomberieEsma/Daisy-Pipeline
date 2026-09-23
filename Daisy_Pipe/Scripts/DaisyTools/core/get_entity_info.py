@@ -6,14 +6,6 @@ def get_entity_info():
     # Ex:
     #   Type = Asset or Shot
     #   Entity = What we are working on (Ours ou Sq10_Sh10)
-    # 
-    # 
-    # 
-    # 
-    # 
-    # 
-    # 
-    # cc
     
 
     core = get_core()
