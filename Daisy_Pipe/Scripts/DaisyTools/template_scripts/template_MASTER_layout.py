@@ -34,7 +34,7 @@ from Scripts.DaisyTools.core.core import get_core
 from Scripts.DaisyTools.core.get_entity_info import get_entity_info
 from Scripts.DaisyTools.template_scripts.create_toolbox import create_toolbox
 
-print("execute template_MASTER_RLO.py\n\n")
+print("execute template_MASTER_layout.py\n\n")
 
 # title
 try:
@@ -90,14 +90,14 @@ usd_file_format = config_file["global"]["usd_file_format"]
 #         {"name": "terrain", "asset_path": "Enviro/terrain"},
 #         {"name": "grass_blade", "asset_path": "Item/grass_blade"}
 #     ]
-imported_assets = [
-        {"name": "Bobibob", "path": "//gandalf/3D4-2026/Dev_Pipe/03_Production/Assets/Char/Bobibob"},
-        {"name": "truc1", "path": "//gandalf/3D4-2026/Dev_Pipe/03_Production/Assets/Char/truc1"},
-        {"name": "ball", "path": "//gandalf/3D4-2026/Dev_Pipe/03_Production/Assets/Prop/ball"}
-    ]
-for i in range(len(imported_assets)):
-    imported_assets[i] = {"name": imported_assets[i]["name"], "asset_path":imported_assets[i]["path"].split("Assets/")[1]}
-    imported_assets[i]["asset_path"] = imported_assets[i]["asset_path"].replace("\\", "/")
+# imported_assets = [
+#         {"name": "Bobibob", "path": "//gandalf/3D4-2026/Dev_Pipe/03_Production/Assets/Char/Bobibob"},
+#         {"name": "truc1", "path": "//gandalf/3D4-2026/Dev_Pipe/03_Production/Assets/Char/truc1"},
+#         {"name": "ball", "path": "//gandalf/3D4-2026/Dev_Pipe/03_Production/Assets/Prop/ball"}
+#     ]
+# for i in range(len(imported_assets)):
+#     imported_assets[i] = {"name": imported_assets[i]["name"], "asset_path":imported_assets[i]["path"].split("Assets/")[1]}
+#     imported_assets[i]["asset_path"] = imported_assets[i]["asset_path"].replace("\\", "/")
 #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 #▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
 
@@ -117,11 +117,11 @@ def nodes_import_assets(imported_assets: list[dict[str,str]], input: Any) -> dic
     #-------------------------------- create nodes ---------------------------------#
     lopnet = hou.node("/stage")
 
-    graft_RLO1 = lopnet.createNode("graftstages")
-    graft_RLO1.setName("graft_RLO1")
-    graft_RLO1.setInput(0, input)
-    graft_RLO1.parm("primpath").set(f"/{seq_and_sht_name}/scene/")
-    graft_RLO1.parm("destpath").set("/")
+    graft_layout1 = lopnet.createNode("graftstages")
+    graft_layout1.setName("graft_layout1")
+    graft_layout1.setInput(0, input)
+    graft_layout1.parm("primpath").set(f"/{seq_and_sht_name}/scene/")
+    graft_layout1.parm("destpath").set("/")
 
     # Iterate through each imported asset
     for asset in imported_assets:
@@ -193,19 +193,19 @@ def nodes_import_assets(imported_assets: list[dict[str,str]], input: Any) -> dic
                           f"configure_prim_{asset_name}": configure_prim1,
                           f"OUT_import_{asset_name}": null1})
 
-        graft_RLO1.setInput(1000, null1)
+        graft_layout1.setInput(1000, null1)
 
-    node_list.update({"graft_RLO1": graft_RLO1})
+    node_list.update({"graft_layout1": graft_layout1})
 
     #-------------------------------- arange nodes ---------------------------------#
     lopnet.layoutChildren()
-    node_list["graft_RLO1"].setPosition([0,node_list["graft_RLO1"].position()[1]])
+    node_list["graft_layout1"].setPosition([0,node_list["graft_layout1"].position()[1]])
     
     # set input network box
     input_box = lopnet.createNetworkBox()
     input_box.setName("input_box")
     nodes_in_input_box = dict(node_list)
-    del nodes_in_input_box["graft_RLO1"]
+    del nodes_in_input_box["graft_layout1"]
     for node in nodes_in_input_box:
         input_box.addItem(node_list[node])
     input_box.setColor(hou.Color(color_input_box))
@@ -215,10 +215,10 @@ def nodes_import_assets(imported_assets: list[dict[str,str]], input: Any) -> dic
 
     return node_list
 
-def nodes_template_MASTER_RLO(imported_assets: list[dict[str,str]]) -> dict[str,Any]:
+def nodes_template_MASTER_layout(imported_assets: list[dict[str,str]]) -> dict[str,Any]:
 
     #-------------------------------------------------------------------------------#
-    # This function creates the houdini node template for the RLO department        #
+    # This function creates the houdini node template for the Layout department     #
     # works only for the MASTER shot                                                #
     # return the list of all nodes in a dictionary                                  #
     #-------------------------------------------------------------------------------#
@@ -259,7 +259,7 @@ def nodes_template_MASTER_RLO(imported_assets: list[dict[str,str]]) -> dict[str,
     null_cam1 = lopnet.createNode("null")
     null_cam1.setName("cameras")
     null_cam1.setColor(hou.Color(color_camera_box))
-    null_cam1.setInput(0, node_list["graft_RLO1"])
+    null_cam1.setInput(0, node_list["graft_layout1"])
 
     scale_up1 = lopnet.createNode("xform")
     scale_up1.setName("scale_up1")
@@ -336,7 +336,7 @@ def nodes_template_MASTER_RLO(imported_assets: list[dict[str,str]]) -> dict[str,
     node_list.update({"output_box" : output_box})
 
     # set display flag
-    node_list["graft_RLO1"].setDisplayFlag(True)
+    node_list["graft_layout1"].setDisplayFlag(True)
 
     #-------------------------------- create toolbox ---------------------------------#
     node_list.update(create_toolbox(["primitive",

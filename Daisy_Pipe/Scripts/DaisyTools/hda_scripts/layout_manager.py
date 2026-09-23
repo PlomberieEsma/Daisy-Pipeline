@@ -113,9 +113,8 @@ def command_check(kwargs: dict[str,str]):
             # destroy camera node
             camera.destroy()
 
-        # set FLO and TLO number to 0
-        kwargs["node"].parm("shots_FLO").set(0)
-        kwargs["node"].parm("shots_TLO").set(0)
+        # set Anim number to 0
+        kwargs["node"].parm("shots_anim").set(0)
         return
 
     # check the difference btw the cam number and the HDA shot number
@@ -143,7 +142,7 @@ def command_check(kwargs: dict[str,str]):
 def create_shot(kwargs: dict[str,str], digit_number: int, framerange: list[int]):
     #-----------------------------------------------------------------------------------------------#
     # Create new shot by creating a camera and naming the HDA multiParmBlock instance               #
-    # modifies the FLO and TLO multiParmBlock instances too                                         #
+    # modifies the Anim multiParmBlock instances too                                                #
     #                                                                                               #
     # kwargs = dict taken from the HDA multiParmBlock "shot_number"                                 #
     # digit_number = number of digits after the sequence and shot (e.g.: sq0020_sh0120 => 4 digits) #
@@ -152,7 +151,6 @@ def create_shot(kwargs: dict[str,str], digit_number: int, framerange: list[int])
     from Scripts.DaisyTools.hda_scripts.create_cam import create_cam
 
     node = kwargs["node"]
-    # shot_number = kwargs["script_value"]
     shot_number = node.parm("shot_number").eval()
 
     # mofifie script value to get the correct parameters if we create the shot automatically from get from Prism buton
@@ -180,20 +178,16 @@ def create_shot(kwargs: dict[str,str], digit_number: int, framerange: list[int])
     node.parm(f"sh_framerange_{shot_number}x").set(framerange[0])
     node.parm(f"sh_framerange_{shot_number}y").set(framerange[1])
 
-    # copy shot number and name from RLO to FLO and TLO
-    # FLO part
-    node.parm("shots_FLO").set(shot_number)
-    node.parm(f"sh_name_FLO_{shot_number}").set(new_shot_name)
-    # TLO part
-    node.parm("shots_TLO").set(shot_number)
-    node.parm(f"sh_name_TLO_{shot_number}").set(new_shot_name)
+    # copy shot number and name from RLO to Anim
+    node.parm("shots_anim").set(shot_number)
+    node.parm(f"sh_name_anim_{shot_number}").set(new_shot_name)
 
     print("add "+new_cam.name().replace("cam_", ""))
 
 def delete_shot(kwargs: dict[str,str], cameras_in_scene: Any):
     #-------------------------------------------------------------------#
     # Delete a camera by getting the shot deleted in the multiParmBlock #
-    # modifies the FLO and TLO multiParmBlock instances too             #
+    # modifies the Anim multiParmBlock instances too                    #
     #                                                                   #
     # kwargs = dict taken from the HDA multiParmBlock "shot_number"     #
     # cameras_in_scene = list of all well named cameras in the scene    #
@@ -213,10 +207,9 @@ def delete_shot(kwargs: dict[str,str], cameras_in_scene: Any):
             # delete the corresponding camera node
             cameras_in_scene[i].destroy()
 
-            # delete shot for RLO, FLO and TLO
+            # delete shot for RLO and Anim
             block.parm("shot_number").removeMultiParmInstance(i)
-            block.parm("shots_FLO").removeMultiParmInstance(i)
-            block.parm("shots_TLO").removeMultiParmInstance(i)
+            block.parm("shots_Anim").removeMultiParmInstance(i)
             break
 
         # when it comes from delete button
@@ -230,9 +223,8 @@ def delete_shot(kwargs: dict[str,str], cameras_in_scene: Any):
                 # delete the corresponding camera node
                 cameras_in_scene[i].destroy()
 
-                # delete shot for FLO and TLO
-                block.parm("shots_FLO").removeMultiParmInstance(i)
-                block.parm("shots_TLO").removeMultiParmInstance(i)
+                # delete shot for Anim
+                block.parm("shots_anim").removeMultiParmInstance(i)
                 break
 
         except AttributeError as e:
@@ -240,16 +232,15 @@ def delete_shot(kwargs: dict[str,str], cameras_in_scene: Any):
             print("del "+cameras_in_scene[i].name().replace("cam_", ""))
             cameras_in_scene[i].destroy()
 
-            # delete shot for FLO and TLO
-            block.parm("shots_FLO").removeMultiParmInstance(i)
-            block.parm("shots_TLO").removeMultiParmInstance(i)
+            # delete shot for Anim
+            block.parm("shots_anim").removeMultiParmInstance(i)
             break
 
 def issue_correction(kwargs: dict[str,str]):
     #---------------------------------------------------------------------------#
     # In case of node deletion without deleting the shot in multiParmBlock :    #
     # delete multiParmBlock instances which have empty "cam_selection_#" field  #
-    # modifies the FLO and TLO multiParmBlock instances too                     #
+    # modifies the Anim multiParmBlock instances too                            #
     #                                                                           #
     # kwargs = dict taken from the HDA multiParmBlock "shot_number"             #
     #---------------------------------------------------------------------------#
@@ -269,9 +260,8 @@ def issue_correction(kwargs: dict[str,str]):
                 # remove the corresponding shot in the HDA
                 block.parm("shot_number").removeMultiParmInstance(i)
 
-                # delete shot for FLO and TLO
-                block.parm("shots_FLO").removeMultiParmInstance(i)
-                block.parm("shots_TLO").removeMultiParmInstance(i)
+                # delete shot for Anim
+                block.parm("shots_anim").removeMultiParmInstance(i)
                 removed = True
         except Exception as e:
             print(f"Error : {e}")

@@ -225,8 +225,7 @@ def button_action(kwargs: dict[str,str], new_shot_name: str, renaming_window: An
     #-------------------------------- apply new values ---------------------------------#
     # apply to shot name in the HDA
     node.parm(f"sh_name{new_shot_HDA_number}").set(new_sq_and_sh_name)
-    node.parm(f"sh_name_FLO_{new_shot_HDA_number}").set(new_sq_and_sh_name)
-    node.parm(f"sh_name_TLO_{new_shot_HDA_number}").set(new_sq_and_sh_name)
+    node.parm(f"sh_name_anim_{new_shot_HDA_number}").set(new_sq_and_sh_name)
 
     # get all well named cameras in the scene
     cameras_in_scene = hou.lopNodeTypeCategory().nodeTypes()["camera"].instances()
