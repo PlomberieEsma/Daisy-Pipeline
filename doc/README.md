@@ -8,4 +8,4 @@ Ci-dessous, les liens vers chaque documentation :
 - [Zbrush](zbrush.md)
 
 [page suivante >](overview.md)
-*<sub>Daisy Pipeline 2025 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
+*<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
