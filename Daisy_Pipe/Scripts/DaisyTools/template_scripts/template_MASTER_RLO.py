@@ -279,7 +279,6 @@ def nodes_template_MASTER_RLO(imported_assets: list[dict[str,str]]) -> dict[str,
     usd_rop1.setName("usd_rop1")
     usd_rop1.setInput(0, config_layer1)
     usd_rop1.parm("lopoutput").set("")
-    usd_rop1.parm("postrender").set("$PRISMJOB/00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/saveas/create_version_info.py")
     usd_rop1.parm("lpostrender").set("python")
 
 #___________________________________________________________________________________________________________________________________________________________________________________________________
