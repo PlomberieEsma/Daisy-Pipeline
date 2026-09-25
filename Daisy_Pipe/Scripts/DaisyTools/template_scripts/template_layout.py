@@ -35,7 +35,7 @@ from Scripts.DaisyTools.core.get_entity_info import get_entity_info
 from Scripts.DaisyTools.core.framerange_convert import FramerangeFile
 from Scripts.DaisyTools.template_scripts.create_toolbox import create_toolbox
 
-print("execute template_RLO.py\n\n")
+print("execute template_layout.py\n\n")
 
 # title
 try:
@@ -138,7 +138,6 @@ def cam_to_delete(last_node) -> str:
     tmp_node.cook(force=True)
 
     cam_to_delete = tmp_node.parm("output_param").eval()
-    # print(f"{cam_to_delete = }")
 
     tmp_node.destroy()
     return cam_to_delete
@@ -157,9 +156,9 @@ def define_time_offset() -> int:
     time_offset = start_shot_frame - start_MASTER_frame
     return time_offset
 
-def nodes_template_RLO() -> dict[str,Any]:
+def nodes_template_layout() -> dict[str,Any]:
     #-------------------------------------------------------------------------------#
-    # This function creates the houdini node template for the RLO department        #
+    # This function creates the houdini node template for the Layout department        #
     # works only for the shot                                                       #
     #                                                                               #
     # return the list of all nodes in a dictionary                                  #
@@ -176,22 +175,22 @@ def nodes_template_RLO() -> dict[str,Any]:
     #-------------------------------- create nodes ---------------------------------#
     lopnet = hou.node("/stage")
 
-    ref_MASTER_RLO1 = lopnet.createNode("sublayer")
-    ref_MASTER_RLO1.setName("ref_MASTER_RLO1")
-    ref_MASTER_RLO1.parm("loadpayloads").set(0)
-    ref_MASTER_RLO1.parm("filepath1").set(f"$PRISM_JOB/03_production/shots/{sequence_name}/MASTER/Export/RLO/master/{sequence_name}_MASTER_RLO_master.{usd_file_format}")
-    ref_MASTER_RLO1.parm("timeoffset1").set(define_time_offset())
+    ref_MASTER_layout1 = lopnet.createNode("sublayer")
+    ref_MASTER_layout1.setName("ref_MASTER_layout1")
+    ref_MASTER_layout1.parm("loadpayloads").set(0)
+    ref_MASTER_layout1.parm("filepath1").set(f"$PRISM_JOB/03_production/shots/{sequence_name}/MASTER/Export/layout/master/{sequence_name}_MASTER_layout_master.{usd_file_format}")
+    ref_MASTER_layout1.parm("timeoffset1").set(define_time_offset())
 
-    scale_down_RLO1 = lopnet.createNode("xform")
-    scale_down_RLO1.setName("scale_down_RLO1")
-    scale_down_RLO1.setInput(0, ref_MASTER_RLO1)
-    scale_down_RLO1.setColor(hou.Color(color_input_box))
-    scale_down_RLO1.parm("scale").set(0.01)
-    scale_down_RLO1.parm("primpattern").set("/*")
+    scale_down_layout1 = lopnet.createNode("xform")
+    scale_down_layout1.setName("scale_down_layout1")
+    scale_down_layout1.setInput(0, ref_MASTER_layout1)
+    scale_down_layout1.setColor(hou.Color(color_input_box))
+    scale_down_layout1.parm("scale").set(0.01)
+    scale_down_layout1.parm("primpattern").set("/*")
 
     rename_assembly1 = lopnet.createNode("restructurescenegraph")
     rename_assembly1.setName("rename_assembly1")
-    rename_assembly1.setInput(0, scale_down_RLO1)
+    rename_assembly1.setInput(0, scale_down_layout1)
     rename_assembly1.setColor(hou.Color(color_input_box))
     rename_assembly1.parm("op").set(1)# rename primitives
     rename_assembly1.parm("primnewname").set(seq_and_sht_name)
@@ -245,8 +244,8 @@ def nodes_template_RLO() -> dict[str,Any]:
     usd_rop1.parm("lpostrender").set("python")
 
     node_list.update({
-        "ref_MASTER_RLO1": ref_MASTER_RLO1,
-        "scale_down_RLO1": scale_down_RLO1,
+        "ref_MASTER_layout1": ref_MASTER_layout1,
+        "scale_down_layout1": scale_down_layout1,
         "rename_assembly1": rename_assembly1,
         "unload_cam1": unload_cam1,
         "hide_cam1": hide_cam1,
@@ -266,7 +265,7 @@ def nodes_template_RLO() -> dict[str,Any]:
     node_list["usd_rop1"].move([0, -6])
 
     # set input network box
-    nodes_in_input_box = ["ref_MASTER_RLO1", "scale_down_RLO1", "rename_assembly1", "unload_cam1", "hide_cam1"]
+    nodes_in_input_box = ["ref_MASTER_layout1", "scale_down_layout1", "rename_assembly1", "unload_cam1", "hide_cam1"]
     input_box = lopnet.createNetworkBox()
     input_box.setName("input_box")
     for node in nodes_in_input_box:

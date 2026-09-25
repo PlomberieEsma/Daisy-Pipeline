@@ -261,3 +261,23 @@ def create_master_clips(frame_paths, frame_range, clips_path, default_prim=""):
     print(f"Fichier de clips créé : {clips_path}")
 
     return clips_path
+
+import os
+
+
+def houdini_relative_path(file_path, env_var="$PRISM_JOB"):
+    if not file_path:
+        return file_path
+
+    project_path = get_core().projectPath
+
+    norm_file = os.path.normpath(file_path).replace("\\", "/")
+    norm_project = os.path.normpath(project_path).replace("\\", "/").rstrip("/")
+
+    if norm_file.lower() == norm_project.lower():
+        return env_var
+
+    if norm_file.lower().startswith(norm_project.lower() + "/"):
+        return env_var + norm_file[len(norm_project):]
+
+    return norm_file
