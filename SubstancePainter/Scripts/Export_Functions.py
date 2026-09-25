@@ -40,7 +40,7 @@ VARIANT_PATTERN = re.compile(r"^var(\d{2})$", re.IGNORECASE)
 
 class ExportTexturesDialog(QDialog):
     MAP_TYPE_KEYWORDS = [
-        "BaseColor", "Diffuse", "Albedo", "Normal", "Roughness", "Metallic", "Metalness",
+        "BaseColor", "Diffuse", "Albedo", "Normal", "Roughness", "Metallic", "Metalness", "Scatering",
         "Height", "Displacement", "AmbientOcclusion", "AO", "Emissive", "Alpha", "Reflection",
         "Opacity", "Specular", "Glossiness", "SSS", "Translucency", "ID", "Glow", "GlowColor",
         "Curvature", "Thickness", "Anisotropy", "AnisotropyAngle", "Presence", "Transmission",
