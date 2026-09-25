@@ -1,4 +1,4 @@
-0_Prism.spexp
+0_PrismPreset.spexp
 C:\Users\3D5\Documents\Adobe\Adobe Substance 3D Painter\assets\export-presets
 
 PrismInit.py
