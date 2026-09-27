@@ -1,6 +1,6 @@
 <<<<<<< HEAD
 # Substance Painter Plugin
-[< Page précédente]()
+[< Page précédente](README.md)
 ## Général
 Ceci est la documentation du plugin Adobe Substance 3D Painter pour Prism.
 
@@ -17,10 +17,10 @@ Cette documentation est destinée à des utilisateurs maîtrisant déjà l'utili
 
 
 
-[< Page précédente]()
+[< Page précédente](README.md)
 [Page suivante >](SubstancePainter/installation.md)
 
-*<sub>Daisy Pipeline 2025 - by Noas Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
+*<sub>Daisy Pipeline 2025 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
 =======
 # Substance Painter
 [< page précédente](README.md)
