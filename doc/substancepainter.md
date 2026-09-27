@@ -14,14 +14,9 @@ Cette documentation est destinée à des utilisateurs maîtrisant déjà l'utili
 - [Exports](SubstancePainter/exports.md)
 - [Developpement](SubstancePainter/development.md)
 
-
-
+*<sub>Ce plugin a été développé pour fonctionner uniquement avec la version 2.1.2.1 de Prism.<sub>*
 
 [< Page précédente](README.md)
 [Page suivante >](SubstancePainter/installation.md)
 
 *<sub>Daisy Pipeline 2025 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
-=======
-# Substance Painter
-[< page précédente](README.md)
->>>>>>> 824e17696f2c6d1cff6802f78df8616af3f80e3f
