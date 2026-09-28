@@ -162,10 +162,20 @@ def export_geo(params=None):
     info_path = core.products.getVersionInfoPathFromProductFilepath(path)
     core.saveVersionInfo(filepath=info_path, details=details)
 
-    if update_thumbnail and core.products.getUseProductPreviews():
+    if update_thumbnail:
+        if not core.products.getUseProductPreviews():
+            core.setConfig("globals", "capture_viewport_products", True, config="user")
+
         preview = core.products.generateProductPreview()
         if preview:
             core.products.setProductPreview(os.path.dirname(path), preview)
+
+            # Preview à côté du fichier de scène : <Asset>_<Task>_v<version>preview.jpg
+            scene = core.getCurrentFileName()
+            if scene:
+                scene_preview = os.path.splitext(scene)[0] + "preview.jpg"
+                if not preview.save(scene_preview, "JPG"):
+                    print(f"export_usd: échec d'écriture {scene_preview}")
 
     if update_master:
         os.makedirs(os.path.dirname(master_path), exist_ok=True)
