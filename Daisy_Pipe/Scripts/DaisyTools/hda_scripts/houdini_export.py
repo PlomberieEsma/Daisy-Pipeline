@@ -25,8 +25,6 @@ def create_path(hda):
     return houdini_relative_path(_product_path(extension, None))
 
 def create_master_path(hda):
-    # Le master est un simple wrapper sublayer/clips : son format suit
-    # usd_file_format dans config.json, pas l'extension du fichier versionné
     return _product_path(USD_FILE_FORMAT, "master")
 
 def create_proxy_path(hda):
@@ -35,7 +33,8 @@ def create_proxy_path(hda):
 
 
 def create_proxy_master_path(hda):
-    return _product_path(USD_FILE_FORMAT, "master", wedge=PROXY_WEDGE)
+    base, ext = os.path.splitext(create_master_path(hda))
+    return f"{base}_{PROXY_WEDGE}{ext}"
 
 
 def has_proxy_input(hda):
@@ -82,7 +81,6 @@ def update_thumbnail(hda, core, path):
     if not hda.parm("updateThumbnail").evalAsInt():
         return
 
-    # Réglage Prism utilisateur : on l'active s'il ne l'est pas encore
     if not core.products.getUseProductPreviews():
         core.setConfig("globals", "capture_viewport_products", True, config="user")
 
@@ -93,15 +91,13 @@ def update_thumbnail(hda, core, path):
 
     core.products.setProductPreview(os.path.dirname(path), preview)
 
-    # Preview à côté du fichier de scène : <Asset>_<Task>_v<version>preview.jpg
     scene = core.getCurrentFileName()
     if scene:
         scene_preview = os.path.splitext(scene)[0] + "preview.jpg"
         if not preview.save(scene_preview, "JPG"):
             print(f"[{hda.path()}] update_thumbnail: échec d'écriture {scene_preview}")
 
-def _finalize_export(hda, file_parm, master_parm, thumbnail=True):
-    # Tout ce qui suit l'écriture d'un fichier : master, versioninfo, thumbnail, cleanup
+def _finalize_export(hda, file_parm, master_parm, thumbnail=True, master_info=True):
     core = get_core()
     info = get_entity_info()
     entity = info["entity"]
@@ -126,7 +122,7 @@ def _finalize_export(hda, file_parm, master_parm, thumbnail=True):
     if thumbnail:
         update_thumbnail(hda, core, path)
 
-    if update_master:
+    if update_master and master_info:
         master_info_path = core.products.getVersionInfoPathFromProductFilepath(master_path)
         core.saveVersionInfo(filepath=master_info_path, details=details)
 
@@ -134,17 +130,36 @@ def _finalize_export(hda, file_parm, master_parm, thumbnail=True):
 
 def post_export(hda=None):
     hda = hda or hou.pwd()
-    _finalize_export(hda, "path", "masterpath", thumbnail=True)
+    _finalize_export(hda, "path", "masterpath", thumbnail=True, master_info=True)
 
 def proxy_post_export(hda=None):
     hda = hda or hou.pwd()
     if not has_proxy_input(hda):
         return
-    _finalize_export(hda, "proxypath", "proxymasterpath", thumbnail=False)
+    _finalize_export(hda, "proxypath", "proxymasterpath", thumbnail=False, master_info=False)
+
+def _set_wait_text(wait, text):
+    if getattr(wait, "msg", None):
+        wait.msg.setText(text)
+    try:
+        from PySide6.QtCore import QCoreApplication
+    except ImportError:
+        from PySide2.QtCore import QCoreApplication
+    QCoreApplication.processEvents()
+
 
 def on_export(kwargs):
     hda = kwargs["node"]
-    update_path(hda)
-    hda.node("usd_rop1").parm("execute").pressButton()
-    if has_proxy_input(hda):
-        hda.node("usd_rop2").parm("execute").pressButton()
+    core = get_core()
+    export_proxy = has_proxy_input(hda)
+
+    wait = core.waitPopup(core, "Mise à jour des chemins...", title="Daisy Export")
+    with wait:
+        update_path(hda)
+
+        _set_wait_text(wait, "Export USD en cours...")
+        hda.node("usd_rop1").parm("execute").pressButton()
+
+        if export_proxy:
+            _set_wait_text(wait, "Export du proxy en cours...")
+            hda.node("usd_rop2").parm("execute").pressButton()
