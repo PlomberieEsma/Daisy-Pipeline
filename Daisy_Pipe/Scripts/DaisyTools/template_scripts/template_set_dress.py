@@ -247,7 +247,6 @@ def nodes_template_set_dress(imported_assets: list[dict[str,Any]]) -> dict[str,A
     usd_rop1.setName("usd_rop1")
     usd_rop1.setInput(0, config_layer1)
     usd_rop1.parm("lopoutput").set("")
-    usd_rop1.parm("postrender").set("$PRISMJOB/00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/saveas/create_version_info.py")
     usd_rop1.parm("lpostrender").set("python")
 
     node_list.update({"create_assembly1" : create_assembly1, 

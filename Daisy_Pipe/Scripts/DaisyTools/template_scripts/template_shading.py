@@ -206,7 +206,6 @@ def template_shading() -> Any:
     node_position[1] -= 1
     usd_rop1.move(node_position)
     usd_rop1.parm("lopoutput").set("")
-    usd_rop1.parm("postrender").set("$PRISMJOB/00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/saveas/create_version_info.py")
     usd_rop1.parm("lpostrender").set("python")
 
     node_list = {"ref_geo1" : ref_geo1,
