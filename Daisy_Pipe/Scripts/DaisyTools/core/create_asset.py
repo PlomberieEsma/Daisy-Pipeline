@@ -26,10 +26,10 @@
 
 #import modules
 import hou # type: ignore
-import os, argparse, json
-from time import perf_counter
+import os, argparse, json, shutil
+from time import perf_counter, sleep
 from typing import Any
-from pxr import Usd, UsdGeom # type: ignore
+from pxr import Usd, UsdGeom, Sdf # type: ignore
 
 print("execute create_asset.py\n\n")
 
@@ -100,6 +100,128 @@ print(f"tasks : {tasks}")
 ##########################################################################################################################################
 #=========================================================== SET FUNCTIONS ===============================================================
 ##########################################################################################################################################
+
+def override_detect(tasks: list[str]) -> bool:
+    #---------------------------------------------------------------------------------------------------#
+    # detect if there is already a USD asset                                                            #
+    #                                                                                                   #
+    # tasks : list of tasks to check for the presence of a USD asset                                    #
+    #                                                                                                   #
+    # return a boolean indicating whether a USD asset is present or not                                 #
+    #---------------------------------------------------------------------------------------------------#
+
+    tasks = list(tasks_save)
+    if "USD" in tasks:
+        return True
+    else:
+        return False
+
+def override_path(func):
+    #---------------------------------------------------------------------------------------------------#
+    # decorator to override the save path of the different layers for USD assets                        #
+    #                                                                                                   #
+    # func : the function to decorate                                                                   #
+    #---------------------------------------------------------------------------------------------------#
+
+    def wrapper(*args, **kwargs):
+        # check if there is already a USD asset
+        is_usd_asset = override_detect(tasks)
+        if not is_usd_asset:
+            return func(*args, **kwargs)
+
+        # if a USD asset was detected, modify the save path to override it
+        func_return = func(*args, **kwargs)
+
+        # change save path to move usd files to tmp directory
+        if "config_geo_layer1" in func_return:
+            func_return["config_geo_layer1"].parm("savepath").set(f"{env_var_path}/Export/tmp/layers/geo.{usd_file_format}")
+            print("override geo layer")
+        elif "config_grm_layer1" in func_return:
+            func_return["config_grm_layer1"].parm("savepath").set(f"{env_var_path}/Export/tmp/layers/grm.{usd_file_format}")
+            print("override grm layer")
+        elif "config_mtl_layer1" in func_return:
+            func_return["config_mtl_layer1"].parm("savepath").set(f"{env_var_path}/Export/tmp/layers/mtl.{usd_file_format}")
+            print("override mtl layer")
+        elif "config_payload_layer1" in func_return:
+            func_return["config_payload_layer1"].parm("savepath").set(f"{env_var_path}/Export/tmp/layers/payload.{usd_file_format}")
+            print("override payload layer")
+        elif "usd_rop1" in func_return:
+            func_return["usd_rop1"].parm("lopoutput").set(f"{env_var_path}/Export/tmp/master/{asset_name}_USD_master.{usd_file_format}")
+            print("override master layer")
+
+        return func_return
+    return wrapper
+
+def override_copy(detections: dict[str,dict[str,Any]]) -> None:
+    #---------------------------------------------------------------------------------------------------#
+    # detect what layers to copy based on the detections and remove the tmp directory                   #
+    #                                                                                                   #
+    # detections : dictionary containing detection results for each layer                               #
+    #---------------------------------------------------------------------------------------------------#
+
+    # detect what layers to copy based on the detections
+    if detections["geo"]["ModL"] or detections["geo"]["ModH"]:
+        old_geo_path = f"{path}/Export/USD/layers/geo.{usd_file_format}"
+        new_geo_path = f"{path}/Export/tmp/layers/geo.{usd_file_format}"
+        copy_layer(new_geo_path, old_geo_path)
+    if detections["grm"]["GrmL"] or detections["grm"]["GrmH"]:
+        old_grm_path = f"{path}/Export/USD/layers/grm.{usd_file_format}"
+        new_grm_path = f"{path}/Export/tmp/layers/grm.{usd_file_format}"
+        copy_layer(new_grm_path, old_grm_path)
+    if detections["mtl"]["Shading"]:
+        old_mtl_path = f"{path}/Export/USD/layers/mtl.{usd_file_format}"
+        new_mtl_path = f"{path}/Export/tmp/layers/mtl.{usd_file_format}"
+        copy_layer(new_mtl_path, old_mtl_path)
+
+    old_payload_path = f"{path}/Export/USD/layers/payload.{usd_file_format}"
+    new_payload_path = f"{path}/Export/tmp/layers/payload.{usd_file_format}"
+    copy_layer(new_payload_path, old_payload_path)
+
+    old_master_path = f"{path}/Export/USD/master/ground_USD_master.{usd_file_format}"
+    new_master_path = f"{path}/Export/tmp/master/ground_USD_master.{usd_file_format}"
+    copy_layer(new_master_path, old_master_path)
+
+    # delete the tmp directory
+    shutil.rmtree(f"{path}/Export/tmp")
+
+def copy_layer(source_path: str, destination_path: str) -> None:
+    #---------------------------------------------------------------------------------------------------#
+    # copy the entire layer from tmp directory to final usd layers                                      #
+    #                                                                                                   #
+    # source_path : path to the source USD layer                                                        #
+    # destination_path : path to the destination USD layer                                              #
+    #---------------------------------------------------------------------------------------------------#
+
+    # get stages from the source and destination paths
+    source_stage = Usd.Stage.Open(source_path)
+    destination_stage = Usd.Stage.Open(destination_path)
+
+    # get the root layers from the source and destination stages
+    source_layer = source_stage.GetRootLayer()
+    destination_layer = destination_stage.GetRootLayer()
+
+    # copy the usd preambles from the source layer to the destination layer
+    destination_stage.SetDefaultPrim(source_stage.GetDefaultPrim())
+    destination_stage.SetStartTimeCode(source_stage.GetStartTimeCode())
+    destination_stage.SetEndTimeCode(source_stage.GetEndTimeCode())
+    destination_stage.SetFramesPerSecond(source_stage.GetFramesPerSecond())
+    destination_stage.SetTimeCodesPerSecond(source_stage.GetTimeCodesPerSecond())
+    meters_per_unit = UsdGeom.GetStageMetersPerUnit(source_stage)
+    UsdGeom.SetStageMetersPerUnit(destination_stage, meters_per_unit)
+    up_axis = UsdGeom.GetStageUpAxis(source_stage)
+    UsdGeom.SetStageUpAxis(destination_stage, up_axis)
+
+    # copy every prim from the source layer to the destination layer
+    for prim in source_stage.GetPseudoRoot().GetChildren():
+        Sdf.CopySpec(
+            source_layer,
+            prim.GetPath(),
+            destination_layer,
+            prim.GetPath()
+        )
+
+    # save the destination layer
+    destination_layer.Save()
 
 def mod_detect(tasks: list[str]) -> dict[str,Any]:
 
@@ -862,6 +984,7 @@ def nodes_var_mtl(tasks: list[str], asset_name: str, node_input: Any, detections
 
 # ---------------------------------------- departements ------------------------------------------------
 
+@override_path
 def nodes_geo(tasks: list[str], asset_name: str, detetcions: dict[str,dict[str,Any]], meters_per_unit: float) -> dict[str,Any]:
 
     #-------------------------------------------------------------------#
@@ -912,6 +1035,7 @@ def nodes_geo(tasks: list[str], asset_name: str, detetcions: dict[str,dict[str,A
     outputs.update(nodes_var_geo_list)
     return outputs
 
+@override_path
 def nodes_groom(tasks: list[str], asset_name: str, input_nodes: dict[str,Any], detections: dict[str,dict[str,Any]], meters_per_unit: float) -> dict[str,Any]:
 
     #-------------------------------------------------------------------#
@@ -960,6 +1084,7 @@ def nodes_groom(tasks: list[str], asset_name: str, input_nodes: dict[str,Any], d
     outputs.update(nodes_var_grm_list)
     return outputs
 
+@override_path
 def nodes_mtl(tasks: list[str], asset_name: str, input_nodes: dict[str,Any], detections: dict[str,dict[str,Any]], meters_per_unit: float) -> dict[str,Any]:
 
     #-------------------------------------------------------------------#
@@ -1018,6 +1143,7 @@ def nodes_mtl(tasks: list[str], asset_name: str, input_nodes: dict[str,Any], det
     outputs.update(nodes_var_mtl_list["outputs"])
     return outputs
 
+@override_path
 def nodes_payload(asset_name: str, input_nodes: dict[str,Any], detections: dict[str,dict[str,Any]], meters_per_unit: float) -> dict[str,Any]:
 
     #-------------------------------------------------------------------#
@@ -1134,6 +1260,7 @@ def nodes_class(asset_name: str, input_nodes: dict[str,Any]) -> dict[str,Any]:
                "inherit_class1" : inherit_class1}
     return outputs
 
+@override_path
 def nodes_metadata_write(asset_name: str, input_nodes: dict[str,Any], detections: dict[str,dict[str,Any]], meters_per_unit: float) -> dict[str,Any]:
 
     #---------------------------------------------------------------------------#
@@ -1195,19 +1322,16 @@ def nodes_metadata_write(asset_name: str, input_nodes: dict[str,Any], detections
 
 
 def nodes_create_asset(tasks: list[str], asset_name: str):
-
     #-------------------------------------------------------#
     # create the global asset creation tree                 #
     #-------------------------------------------------------#
-
 
     start_counter = perf_counter()
 
     # set framerange to 1 to avoid writing the set extents on multiple frames
     hou.playbar.setFrameRange(1,1)
 
-    # detection and listing of the present departments
-
+    # detection and listing of the current departments
     is_mod_detect = mod_detect(tasks)
 
     is_grm_detect = grm_detect(tasks)
@@ -1233,7 +1357,6 @@ def nodes_create_asset(tasks: list[str], asset_name: str):
     nodes_list = {} # liste de tt les nodes
 
     # call the functions to create nodes for each department and update the nodes_list with the created nodes
-
     nodes_geo_list = nodes_geo(tasks, asset_name, detections, meters_per_unit)
     nodes_list.update(nodes_geo_list)
 
@@ -1266,6 +1389,11 @@ def nodes_create_asset(tasks: list[str], asset_name: str):
     os.makedirs(f"{path}/Scenefiles/USD/usd", exist_ok=True)
     hou.hipFile.save(f"{path}/Scenefiles/USD/usd/{asset_name}_create_USD_master.hip")
     print(f"\n\nHoudini file saved in : {path}/Scenefiles/USD/usd/{asset_name}_create_USD_master.hip")
+
+    if override_detect(tasks):
+        # copy tmp usd layer to old one with pxr module
+        override_copy(detections)
+        print("end of the override")
 
     elapsed_counter = perf_counter() - start_counter
     print(f"\n\nTotal time: {elapsed_counter:.2f} seconds")

@@ -36,11 +36,12 @@ import substance_painter.textureset as sp_ts
 
 VERSION_PATTERN = re.compile(r"^v(\d{4})$", re.IGNORECASE)
 VARIANT_PATTERN = re.compile(r"^var(\d{2})$", re.IGNORECASE)
+UDIM_PATTERN = re.compile(r"^\d{4}$")
 
 
 class ExportTexturesDialog(QDialog):
     MAP_TYPE_KEYWORDS = [
-        "BaseColor", "Diffuse", "Albedo", "Normal", "Roughness", "Metallic", "Metalness",
+        "BaseColor", "Diffuse", "Albedo", "Normal", "Roughness", "Metallic", "Metalness", "Scatering",
         "Height", "Displacement", "AmbientOcclusion", "AO", "Emissive", "Alpha", "Reflection",
         "Opacity", "Specular", "Glossiness", "SSS", "Translucency", "ID", "Glow", "GlowColor",
         "Curvature", "Thickness", "Anisotropy", "AnisotropyAngle", "Presence", "Transmission",
@@ -550,8 +551,17 @@ class ExportTexturesDialog(QDialog):
                     continue
 
                 for filename in filenames:
-                    mapLabel = self.guessMapType(filename) or os.path.splitext(os.path.basename(filename))[0]
-                    texItem = QTreeWidgetItem([mapLabel])
+                    namePart, udim, ext = self.splitUdimAndExt(filename)
+
+                    mapLabel = self.guessMapType(filename)
+                    if mapLabel:
+                        # Keyword trouvé -> on peut ajouter l'UDIM à côté proprement
+                        displayLabel = f"{mapLabel} [{udim}]" if udim else mapLabel
+                    else:
+                        # Pas de keyword -> fallback sur le nom complet (namePart et  udim, sans ext dedans)
+                        displayLabel = f"{namePart} [{udim}]" if udim else namePart
+
+                    texItem = QTreeWidgetItem([displayLabel])
                     texItem.setFlags(texItem.flags() | Qt.ItemIsUserCheckable)
                     texItem.setCheckState(
                         0, Qt.Unchecked if filename in previouslyUnchecked else Qt.Checked
@@ -630,6 +640,31 @@ class ExportTexturesDialog(QDialog):
                 return token
         return None
 
+    def splitUdimAndExt(self, filename):
+
+        #-----------------------------------------------------------------------------------#
+        # Sépare un nom de fichier texture au format <nom>.<UDIM>.<ext> (ou <nom>.<ext> sans UDIM)
+        #   filename : full path ou filename de la texture exportée
+        # Return - (namePart, udim, ext) où udim est None si absent
+        #-----------------------------------------------------------------------------------#
+
+        basename = os.path.basename(filename)
+        parts = basename.split(".")
+
+        if len(parts) >= 3 and UDIM_PATTERN.match(parts[-2]):
+            namePart = ".".join(parts[:-2])
+            udim = parts[-2]
+            ext = "." + parts[-1]
+        else:
+            namePart = ".".join(parts[:-1]) if len(parts) > 1 else parts[0]
+            udim = None
+            ext = "." + parts[-1] if len(parts) > 1 else ""
+
+        return namePart, udim, ext
+
+    def guessUdim(self, filename):
+        return self.splitUdimAndExt(filename)[1]
+
     def extractMapLabel(self, filepath, matName, colorSpace):
 
         #-----------------------------------------------------------------------------------#
@@ -670,19 +705,23 @@ class ExportTexturesDialog(QDialog):
             matName = key[0]
             texturePath = []
             for filepath in filepaths:
-                colorSpace = self.guessColorSpace(filepath)
+                namePart, udim, ext = self.splitUdimAndExt(filepath)
+                colorSpace = self.guessColorSpace(namePart)
 
-                mapLabel = self.guessMapType(filepath)
+                mapLabel = self.guessMapType(namePart)
                 if mapLabel is None:
-                    mapLabel = self.extractMapLabel(filepath, matName, colorSpace)
+                    mapLabel = self.extractMapLabel(namePart, matName, colorSpace)
+
+                # udim = self.guessUdim(filepath)
+                udimSuffix = f".{udim}" if udim else ""
 
                 ext = os.path.splitext(filepath)[1]
             
                 if colorSpace:
                     colorSpaceClean = colorSpace.replace(" - ", "_").replace(" ", "")
-                    newName = f"{assetName}{variant}_{matName}_{mapLabel}_{colorSpaceClean}{ext}"
+                    newName = f"{assetName}{variant}_{matName}_{mapLabel}_{colorSpaceClean}{udimSuffix}{ext}"
                 else:
-                    newName = f"{assetName}{variant}_{matName}_{mapLabel}{ext}"
+                    newName = f"{assetName}{variant}_{matName}_{mapLabel}{udimSuffix}{ext}"
 
                 texturePath.append(newName)
             materialDict[matName] = texturePath
@@ -692,6 +731,15 @@ class ExportTexturesDialog(QDialog):
     def stackHasChannel(self, textureSetName, channelType):
         stack = sp_ts.Stack.from_name(textureSetName)
         return stack.has_channel(channelType)
+
+
+
+
+
+
+
+
+
 
 
 
