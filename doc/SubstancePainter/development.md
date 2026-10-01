@@ -1,10 +1,10 @@
 # Développement
 [< Page précédente](exports.md)
 
-### EmptyScene Substance Painter
+## EmptyScene Substance Painter
 Fonctionnemeent par un fichier temporaire
 
-### Fonctionnemeent en réseau
+## Fonctionnemeent en réseau
 Farm Disk Z et Y spécifique à notre école
 
 [< Page précédente](exports.md)
