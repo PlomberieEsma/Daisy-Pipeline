@@ -80,7 +80,7 @@ class AssetBrowserUI(object):
         #-----------------------------------------------------------------------------------#
         # Window Asset Browser to select assets to load into a scene during layout          #
         # If opened from Task SetDress, simple double column view                           #
-        # If opened from Task RLO, the SetDress USD file is already being selected          #
+        # If opened from Task Layout, the SetDress USD file is already being selected          #
         #       only need to select Char and Props
         # Entity imported for shot and sequence 
         #-----------------------------------------------------------------------------------#
@@ -143,9 +143,9 @@ class AssetBrowserUI(object):
             rightColumnLayout = QVBoxLayout()
             columnsLayout.addLayout(rightColumnLayout)
 
-            if task == "RLO":
-                # Check if the Asset Browser will be in SetDress View or RLO View
-                # self.core.popup("RLO task detected.")
+            if task == "Layout":
+                # Check if the Asset Browser will be in SetDress View or Layout View
+                # self.core.popup("Layout task detected.")
 
                 # TOP RIGHT COLUMN : Shot SetDress
                 self.gb_setDress = QGroupBox("Shot SetDress")
@@ -195,7 +195,7 @@ class AssetBrowserUI(object):
                 rightColumnLayout.addWidget(self.gb_setDress)
                 self.gb_setDress.setFixedHeight(100)
 
-            # BOTTOM RIGHT (ou seul élément si pas RLO) : Selected Assets
+            # BOTTOM RIGHT (ou seul élément si pas Layout) : Selected Assets
             self.gb_selectedAssets = QGroupBox("Selected Assets")
             lo_selectedAssets = QVBoxLayout()
             self.gb_selectedAssets.setLayout(lo_selectedAssets)
