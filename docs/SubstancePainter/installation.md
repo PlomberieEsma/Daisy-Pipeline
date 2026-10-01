@@ -25,6 +25,5 @@ III. Ouvrez Substance Painter, dans l'onglet **Python**, cochez **PrismInit**
 Actuellement, le plugin est fonctionnel en réseau uniquement sur le réseau du campus de l'ESMA de Montpellier. Une amélioration est en cours pour généraliser ce fonctionnement.
 
 [< Page précédente](../substancepainter.md)
-[Page suivante >](imports.md)
-
+[Page suivante >](imports.md)<br>
 *<sub>Daisy Pipeline 2025 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

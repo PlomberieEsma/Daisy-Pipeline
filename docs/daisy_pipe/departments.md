@@ -12,5 +12,5 @@ Ici vous trouverez la liste des départements impactés par Daisy Pipe. Nous fer
 - [Compositing](departments/compositing.md)
 
 [< page précédente](../daisy_pipe.md)
-[page suivante >](departments/modeling.md)
+[page suivante >](departments/modeling.md)<br>
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

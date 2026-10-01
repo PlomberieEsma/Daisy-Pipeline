@@ -6,5 +6,5 @@ Vous vous demandez peut-être comment utiliser Prism. Si c'est le cas, vous ête
 - [Départements](prism/department.md)
 
 [< page précédente](../overview.md)
-[page suivante >](prism/general_use.md)
+[page suivante >](prism/general_use.md)<br>
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

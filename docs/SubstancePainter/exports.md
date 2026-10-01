@@ -33,6 +33,5 @@ Tout comme dans la fenêtre d'origine de Substance, vous pourrez voir les noms d
   ![Substance Painter Export Summary](src/ExportSummary.png)
 
 [< Page précédente](imports.md)
-[Page suivante >](development.md)
-
+[Page suivante >](development.md)<br>
 *<sub>Daisy Pipeline 2025 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
