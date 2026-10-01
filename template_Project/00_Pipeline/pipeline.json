@@ -1,0 +1,822 @@
+{
+    "globals": {
+        "project_name": "template_Project",
+        "prism_version": "v2.1.2.1",
+        "departments_asset": [
+            {
+                "abbreviation": "02_mod",
+                "defaultTasks": [
+                    "ModL",
+                    "ModH",
+                    "Sculpt"
+                ],
+                "name": "Modeling"
+            },
+            {
+                "abbreviation": "03_surf",
+                "defaultTasks": [
+                    "Texturing",
+                    "Shading",
+                    "ShadingGroom"
+                ],
+                "name": "Surfacing"
+            },
+            {
+                "abbreviation": "04_rig",
+                "defaultTasks": [
+                    "RigL",
+                    "RigH"
+                ],
+                "name": "Rigging"
+            },
+            {
+                "abbreviation": "05_grm",
+                "defaultTasks": [
+                    "Groom"
+                ],
+                "name": "Groom"
+            }
+        ],
+        "departments_shot": [
+            {
+                "abbreviation": "01_setDress",
+                "defaultTasks": [
+                    "SetDress"
+                ],
+                "name": "SetDress"
+            },
+            {
+                "abbreviation": "02_layout",
+                "defaultTasks": [
+                    "Layout"
+                ],
+                "name": "Layout"
+            },
+            {
+                "abbreviation": "03_anim",
+                "defaultTasks": [
+                    "Animation"
+                ],
+                "name": "Animation"
+            },
+            {
+                "abbreviation": "04_assembly",
+                "defaultTasks": [
+                    "Assembly",
+                    "MattePainting"
+                ],
+                "name": "Assembly"
+            },
+            {
+                "abbreviation": "05_fx",
+                "defaultTasks": [
+                    "FX"
+                ],
+                "name": "FX"
+            },
+            {
+                "abbreviation": "06_cfx",
+                "defaultTasks": [
+                    "CFXGroom",
+                    "CFXClothes"
+                ],
+                "name": "CFX"
+            },
+            {
+                "abbreviation": "07_lighting",
+                "defaultTasks": [
+                    "Lighting"
+                ],
+                "name": "Lighting"
+            },
+            {
+                "abbreviation": "08_compositing",
+                "defaultTasks": [
+                    "Compositing"
+                ],
+                "name": "Compositing"
+            }
+        ],
+        "taskpresets_asset": [
+            {
+                "departments": [
+                    {
+                        "name": "Modeling",
+                        "tasks": [
+                            "ModL",
+                            "ModH",
+                            "Sculpt",
+                            "Module"
+                        ]
+                    },
+                    {
+                        "name": "Surfacing",
+                        "tasks": [
+                            "Texturing",
+                            "Shading"
+                        ]
+                    },
+                    {
+                        "name": "Rigging",
+                        "tasks": [
+                            "RigL",
+                            "RigH"
+                        ]
+                    },
+                    {
+                        "name": "Concept",
+                        "tasks": [
+                            "Concept"
+                        ]
+                    }
+                ],
+                "name": "All"
+            },
+            {
+                "departments": [
+                    {
+                        "name": "Modeling",
+                        "tasks": [
+                            "ModL",
+                            "ModH",
+                            "Sculpt"
+                        ]
+                    },
+                    {
+                        "name": "Surfacing",
+                        "tasks": [
+                            "Texturing",
+                            "Shading",
+                            "ShadingGroom"
+                        ]
+                    },
+                    {
+                        "name": "Rigging",
+                        "tasks": [
+                            "RigL",
+                            "RigH"
+                        ]
+                    },
+                    {
+                        "name": "Groom",
+                        "tasks": [
+                            "Groom"
+                        ]
+                    }
+                ],
+                "name": "Char"
+            },
+            {
+                "departments": [
+                    {
+                        "name": "Modeling",
+                        "tasks": [
+                            "ModL",
+                            "ModH",
+                            "Sculpt"
+                        ]
+                    },
+                    {
+                        "name": "Surfacing",
+                        "tasks": [
+                            "Texturing",
+                            "Shading"
+                        ]
+                    },
+                    {
+                        "name": "Rigging",
+                        "tasks": [
+                            "RigL",
+                            "RigH"
+                        ]
+                    }
+                ],
+                "name": "Prop"
+            },
+            {
+                "departments": [
+                    {
+                        "name": "Modeling",
+                        "tasks": [
+                            "ModL",
+                            "ModH"
+                        ]
+                    },
+                    {
+                        "name": "Surfacing",
+                        "tasks": [
+                            "Texturing",
+                            "Shading"
+                        ]
+                    }
+                ],
+                "name": "Enviro"
+            },
+            {
+                "departments": [
+                    {
+                        "name": "Modeling",
+                        "tasks": [
+                            "ModL",
+                            "ModH",
+                            "Sculpt"
+                        ]
+                    },
+                    {
+                        "name": "Surfacing",
+                        "tasks": [
+                            "Texturing",
+                            "Shading"
+                        ]
+                    }
+                ],
+                "name": "Item"
+            },
+            {
+                "departments": [
+                    {
+                        "name": "Modeling",
+                        "tasks": [
+                            "ModH"
+                        ]
+                    }
+                ],
+                "name": "Module"
+            }
+        ],
+        "taskpresets_shot": [
+            {
+                "departments": [
+                    {
+                        "name": "SetDress",
+                        "tasks": [
+                            "SetDress"
+                        ]
+                    },
+                    {
+                        "name": "Layout",
+                        "tasks": [
+                            "Layout"
+                        ]
+                    },
+                    {
+                        "name": "Animation",
+                        "tasks": [
+                            "Animation"
+                        ]
+                    },
+                    {
+                        "name": "Assembly",
+                        "tasks": [
+                            "Assembly",
+                            "MattePainting"
+                        ]
+                    },
+                    {
+                        "name": "FX",
+                        "tasks": [
+                            "FX"
+                        ]
+                    },
+                    {
+                        "name": "CFX",
+                        "tasks": [
+                            "CFXGroom",
+                            "CFXClothes"
+                        ]
+                    },
+                    {
+                        "name": "Lighting",
+                        "tasks": [
+                            "Lighting"
+                        ]
+                    },
+                    {
+                        "name": "Compositing",
+                        "tasks": [
+                            "Compositing"
+                        ]
+                    }
+                ],
+                "name": "All"
+            },
+            {
+                "departments": [
+                    {
+                        "name": "SetDress",
+                        "tasks": [
+                            "SetDress"
+                        ]
+                    },
+                    {
+                        "name": "Layout",
+                        "tasks": [
+                            "Layout"
+                        ]
+                    },
+                    {
+                        "name": "Animation",
+                        "tasks": [
+                            "Animation"
+                        ]
+                    },
+                    {
+                        "name": "Assembly",
+                        "tasks": [
+                            "Assembly",
+                            "MattePainting"
+                        ]
+                    },
+                    {
+                        "name": "Lighting",
+                        "tasks": [
+                            "Lighting"
+                        ]
+                    },
+                    {
+                        "name": "Compositing",
+                        "tasks": [
+                            "Compositing"
+                        ]
+                    }
+                ],
+                "name": "Default (sans FX)"
+            },
+            {
+                "departments": [
+                    {
+                        "name": "Animation",
+                        "tasks": [
+                            "Animation"
+                        ]
+                    },
+                    {
+                        "name": "Assembly",
+                        "tasks": [
+                            "Assembly",
+                            "MattePainting"
+                        ]
+                    },
+                    {
+                        "name": "Lighting",
+                        "tasks": [
+                            "Lighting"
+                        ]
+                    },
+                    {
+                        "name": "Compositing",
+                        "tasks": [
+                            "Compositing"
+                        ]
+                    }
+                ],
+                "name": "Simple (anm,lgt,cmp)"
+            },
+            {
+                "departments": [
+                    {
+                        "name": "Lighting",
+                        "tasks": [
+                            "Lighting"
+                        ]
+                    },
+                    {
+                        "name": "Compositing",
+                        "tasks": [
+                            "Compositing"
+                        ]
+                    }
+                ],
+                "name": "Minimal (lgt,cmp)"
+            }
+        ],
+        "uselocalfiles": false,
+        "track_dependencies": "publish",
+        "checkframerange": true,
+        "forcefps": false,
+        "fps": 24.0,
+        "forceversions": false,
+        "forceResolution": false,
+        "resolution": [
+            1920,
+            1080
+        ],
+        "resolutionPresets": [
+            "3840x2160",
+            "2048x858",
+            "1920x1080",
+            "1998x1080",
+            "1280x720",
+            "960x540",
+            "640x360"
+        ],
+        "requirePublishComment": true,
+        "publishCommentLength": 4,
+        "versionPadding": 4,
+        "defaultImportStateName": "{entity}_{task}_{version}",
+        "useStrictAssetDetection": false,
+        "framePadding": 4,
+        "useMasterVersion": true,
+        "useMasterRenderVersion": false,
+        "useEpisodes": false,
+        "backupScenesOnPublish": false,
+        "scenefileLocking": false,
+        "productTasks": false,
+        "matchScenefileVersions": false,
+        "required_plugins": [],
+        "expectedPrjPath": "",
+        "allowAdditionalTasks": true,
+        "versionFormat": "v#",
+        "defaultMayaNamespace": "{entity}_{task}",
+        "presetScenes": [],
+        "disabled_plugins": []
+    },
+    "folder_structure": {
+        "pipeline": {
+            "value": "@project_path@/00_Pipeline"
+        },
+        "assets": {
+            "value": "@project_path@/03_Production/Assets/@asset_path@"
+        },
+        "sequences": {
+            "value": "@project_path@/03_Production/Shots/@sequence@"
+        },
+        "shots": {
+            "value": "@sequence_path@/@shot@"
+        },
+        "textures": {
+            "value": "@project_path@/03_Production/Assets/@asset_path@/Textures"
+        },
+        "departments": {
+            "value": "@entity_path@/Scenefiles/@department@"
+        },
+        "tasks": {
+            "value": "@department_path@/@task@"
+        },
+        "assetScenefiles": {
+            "value": "@task_path@/@asset@_@task@_@version@@extension@"
+        },
+        "shotScenefiles": {
+            "value": "@task_path@/@sequence@-@shot@_@task@_@version@@extension@"
+        },
+        "products": {
+            "value": "@entity_path@/Export/@product@"
+        },
+        "productVersions": {
+            "value": "@product_path@/@version@@_(wedge)@"
+        },
+        "productFilesAssets": {
+            "value": "@productversion_path@/@asset@_@product@_@version@@.(frame)@@extension@"
+        },
+        "productFilesShots": {
+            "value": "@productversion_path@/@sequence@-@shot@_@product@_@version@@.(frame)@@extension@"
+        },
+        "3drenders": {
+            "value": "@entity_path@/Renders/3dRender/@department@/@identifier@"
+        },
+        "2drenders": {
+            "value": "@entity_path@/Renders/2dRender/@department@/@identifier@"
+        },
+        "externalMedia": {
+            "value": "@entity_path@/Renders/external/@department@/@identifier@"
+        },
+        "renderVersions": {
+            "value": "@render_path@/@version@"
+        },
+        "aovs": {
+            "value": "[expression,#  available variables:\n#  \"core\" - PrismCore\n#  \"context\" - dict\n\nif context.get(\"mediaType\") == \"2drenders\":\n\ttemplate = \"@renderversion_path@\"\nelse:\n\ttemplate = \"@renderversion_path@/@aov@\"]"
+        },
+        "renderFilesAssets": {
+            "value": "[expression,#  available variables:\n#  \"core\" - PrismCore\n#  \"context\" - dict\n\nif context.get(\"mediaType\") == \"2drenders\":\n\ttemplate = \"@aov_path@/@asset@_@identifier@_@version@@.(frame)@@extension@\"\nelse:\n\ttemplate = \"@renderversion_path@/@asset@_@identifier@_@version@_@aov@@.(frame)@@extension@\"]"
+        },
+        "renderFilesShots": {
+            "value": "[expression,#  available variables:\n#  \"core\" - PrismCore\n#  \"context\" - dict\n\nif context.get(\"mediaType\") == \"2drenders\":\n\ttemplate = \"@aov_path@/@sequence@-@shot@_@identifier@_@version@@.(frame)@@extension@\"\nelse:\n\ttemplate = \"@renderversion_path@/@sequence@-@shot@_@identifier@_@version@_@aov@@.(frame)@@extension@\"]"
+        },
+        "playblasts": {
+            "value": "@entity_path@/Playblasts/@department@/@identifier@"
+        },
+        "playblastVersions": {
+            "value": "@playblast_path@/@version@"
+        },
+        "playblastFilesAssets": {
+            "value": "@playblastversion_path@/@asset@_@identifier@_@version@@.(frame)@@extension@"
+        },
+        "playblastFilesShots": {
+            "value": "@playblastversion_path@/@sequence@-@shot@_@identifier@_@version@@.(frame)@@extension@"
+        },
+        "houdini_HDAs": {
+            "value": "@project_path@/04_Resources/HDAs"
+        }
+    },
+    "defaultpasses": {
+        "maya_vray": {
+            "Background": "backgroundChannel",
+            "Caustics": "causticsChannel",
+            "Diffuse": "diffuseChannel",
+            "Extra Tex": "ExtraTexElement",
+            "GI": "giChannel",
+            "Lighting": "lightingChannel",
+            "Multi Matte": "MultiMatteElement",
+            "Normals": "normalsChannel",
+            "Reflection": "reflectChannel",
+            "Refraction": "refractChannel",
+            "SSS": "FastSSS2Channel",
+            "Self Illumination": "selfIllumChannel",
+            "Shadow": "shadowChannel",
+            "Specular": "specularChannel",
+            "Velocity": "velocityChannel",
+            "Z-depth": "zdepthChannel"
+        },
+        "maya_arnold": [
+            "N",
+            "Z",
+            "albedo",
+            "background",
+            "diffuse",
+            "direct",
+            "emission",
+            "indirect",
+            "motionvector",
+            "opacity",
+            "specular",
+            "sss",
+            "transmission",
+            "volume",
+            "shadow"
+        ],
+        "maya_redshift": [
+            "Ambient Occlusion",
+            "Background",
+            "Caustics",
+            "Depth",
+            "Diffuse Filter",
+            "Diffuse Lighting",
+            "Emission",
+            "Global Illumination",
+            "Matte",
+            "Motion Vectors",
+            "Normals",
+            "Puzzle Matte",
+            "Reflections",
+            "Refractions",
+            "Shadows",
+            "Specular Lighting",
+            "Volume Lighting",
+            "World Position"
+        ]
+    },
+    "products": {
+        "tags": {
+            "Modeling": [
+                "to_surf"
+            ],
+            "Surfacing": [
+                "to_rig, static"
+            ],
+            "Rigging": [
+                "to_anm"
+            ],
+            "Animation": [
+                "animated"
+            ]
+        }
+    },
+    "environmentVariables": {},
+    "export_paths": {},
+    "render_paths": {},
+    "maya": {
+        "setPrefix": "",
+        "useRelativePaths": false
+    },
+    "houdini": {
+        "useRelativePaths": false
+    },
+    "prjManagement": {
+        "showReviewTab": true,
+        "manager": "None"
+    },
+    "usd": {
+        "renderer": [
+            "Arnold",
+            "Karma",
+            "Redshift"
+        ],
+        "playblastRenderer": [
+            "GL"
+        ],
+        "createUsdContainer": true,
+        "useSimplifiedAssetStructure": true,
+        "createUsdLayers": true,
+        "useRelativePaths": false,
+        "useSublayerMasters": true,
+        "autoUpdateLayers": true,
+        "departmentOrder": [
+            {
+                "abbreviation": "09_compositing",
+                "name": "Compositing"
+            },
+            {
+                "abbreviation": "08_lighting",
+                "name": "Lighting"
+            },
+            {
+                "abbreviation": "07_tlo",
+                "name": "TLO"
+            },
+            {
+                "abbreviation": "06_cfx",
+                "name": "CharFX"
+            },
+            {
+                "abbreviation": "05_fx",
+                "name": "FX"
+            },
+            {
+                "abbreviation": "04_flo",
+                "name": "FLO"
+            },
+            {
+                "abbreviation": "03_anim",
+                "name": "Animation"
+            },
+            {
+                "abbreviation": "02_rlo",
+                "name": "RLO"
+            },
+            {
+                "abbreviation": "01_setDress",
+                "name": "SetDress"
+            },
+            {
+                "abbreviation": "05_grm",
+                "name": "Groom"
+            },
+            {
+                "abbreviation": "01_cpt",
+                "name": "Concept"
+            },
+            {
+                "abbreviation": "04_rig",
+                "name": "Rigging"
+            },
+            {
+                "abbreviation": "03_surf",
+                "name": "Surfacing"
+            },
+            {
+                "abbreviation": "02_mod",
+                "name": "Modeling"
+            }
+        ]
+    },
+    "studio": {
+        "stateDefaults": [],
+        "statePresets": []
+    },
+    "sceneBuilding": {
+        "maya_steps": [
+            {
+                "enabled": true,
+                "function": "self.core.entities.buildSceneSetFramerange",
+                "label": "Set Framerange",
+                "name": "setFramerange",
+                "settings": [
+                    {
+                        "items": [
+                            "Shotrange",
+                            "Shotrange + Handles"
+                        ],
+                        "label": "Framerange to apply",
+                        "type": "combobox",
+                        "value": "Shotrange"
+                    }
+                ]
+            },
+            {
+                "enabled": true,
+                "function": "self.core.entities.buildSceneSetFPS",
+                "label": "Set FPS",
+                "name": "setFps"
+            },
+            {
+                "enabled": true,
+                "function": "self.core.entities.buildSceneSetResolution",
+                "label": "Set Resolution",
+                "name": "setResolution"
+            },
+            {
+                "enabled": true,
+                "function": "self.core.entities.buildSceneImportShotcam",
+                "label": "Import Shot Cameras",
+                "name": "importShotcam"
+            },
+            {
+                "enabled": true,
+                "function": "self.core.appPlugin.buildSceneImportProducts",
+                "label": "Import Products",
+                "name": "importProducts",
+                "settings": [
+                    {
+                        "items": [
+                            "Reference",
+                            "Import"
+                        ],
+                        "label": "Mode",
+                        "name": "mode",
+                        "type": "combobox",
+                        "value": "Reference"
+                    },
+                    {
+                        "label": "Namespace",
+                        "name": "namespace",
+                        "type": "lineedit",
+                        "value": "{entity}_{task}"
+                    },
+                    {
+                        "label": "Ignore Master Versions",
+                        "name": "ignoreMaster",
+                        "type": "checkbox",
+                        "value": false
+                    }
+                ]
+            }
+        ],
+        "houdini_steps": [
+            {
+                "enabled": true,
+                "function": "self.core.entities.buildSceneSetFramerange",
+                "label": "Set Framerange",
+                "name": "setFramerange",
+                "settings": [
+                    {
+                        "items": [
+                            "Shotrange",
+                            "Shotrange + Handles"
+                        ],
+                        "label": "Framerange to apply",
+                        "type": "combobox",
+                        "value": "Shotrange"
+                    }
+                ]
+            },
+            {
+                "enabled": true,
+                "function": "self.core.entities.buildSceneSetFPS",
+                "label": "Set FPS",
+                "name": "setFps"
+            },
+            {
+                "enabled": true,
+                "function": "self.core.entities.buildSceneSetResolution",
+                "label": "Set Resolution",
+                "name": "setResolution"
+            },
+            {
+                "enabled": true,
+                "function": "self.core.entities.buildSceneImportProducts",
+                "label": "Import Products",
+                "name": "importProducts",
+                "settings": [
+                    {
+                        "label": "Ignore Master Versions",
+                        "type": "checkbox",
+                        "value": false
+                    }
+                ]
+            },
+            {
+                "enabled": true,
+                "function": "self.core.entities.buildSceneImportShotcam",
+                "label": "Import Shot Cameras",
+                "name": "importShotcam"
+            },
+            {
+                "description": "Run test.py",
+                "dftTasks": {
+                    "departments": [
+                        "*"
+                    ],
+                    "entities": [
+                        "*"
+                    ],
+                    "expression": "# set the variable \"result\" to True or False to decide when the default preset scenefile should get applied.\n# Example:\n#\n# context = core.getScenefileData(core.getCurrentFileName())\n# if context.get(\"department\") == \"rig\":\n#     result = True\n# else:\n#     result = False",
+                    "tasks": [
+                        "*"
+                    ],
+                    "useExpression": false
+                },
+                "enabled": true,
+                "function": "self.core.entities.buildSceneRunCode",
+                "label": "Run Code",
+                "name": "runCode",
+                "settings": [
+                    {
+                        "label": "Code",
+                        "type": "code",
+                        "value": "# Available variables: core, self, context, step\ntry:\n    from DaisyTools.core.test import Test\n    test = Test(core=self.core)\n    test.run()\nexcept Exception as e:\n    self.core.popup(\"Erreur lors du lancement du test: %s\" % e)"
+                    }
+                ]
+            }
+        ]
+    }
+}
