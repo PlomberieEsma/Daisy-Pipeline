@@ -1,3 +1,29 @@
+#                           .=     ,        =.
+#                   _  _   /'/    )\,/,/(_   \ \
+#                    `//-.|  (  ,\\)\//\)\/_  ) |
+#                    //___\   `\\\/\\/\/\\///'  /
+#                 ,-"~`-._ `"--'_   `"'"`  _ \`'"~-,_
+#                 \       `-.  '_`.      .'_` \ ,-"~`/
+#                  `.__.-'`/  ( -\        /- )|-.__,'
+#                    ||   |    \ O)  /^\ (O / |
+#                    `\\  |         /   `\    /
+#                      \\  \       /      `\ /
+#                       `\\ `-.  /' .---.--.\
+#                         `\\/`~(, '()      ('
+#                          /(O) \\   _,.-.,_)
+#                         //  \\ `\'`      /
+#                        / |  ||   `""'"~"`
+#                      /'  |__||
+#                            `o
+#      ___       _                    _          ___
+#     / _ \___ _(_)__ __ __     ___  (_)__  ___ / (_)__  ___
+#    / // / _ `/ (_-</ // /    / _ \/ / _ \/ -_) / / _ \/ -_)
+#   /____/\_,_/_/___/\_, /    / .__/_/ .__/\__/_/_/_//_/\__/
+#                   /___/    /_/    /_/
+#
+#   by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio
+#   art by Joan G. Stark (Spunk)
+
 from DaisyTools.core.dcc.launcher import get_dcc
 from DaisyTools.setupAsset.maya.setup_geo import setup_geo, geo_is_complete
 import json, os
@@ -181,7 +207,14 @@ def create_master(file_path, master_path, default_prim="", frame_range=None):
 
     #store the sublayer path relative to the master file so the project stays
     #portable across drives/machines instead of baking in an absolute path
-    relative_file_path = os.path.relpath(file_path, os.path.dirname(master_path)).replace("\\", "/")
+    try:
+        relative_file_path = os.path.relpath(file_path, os.path.dirname(master_path)).replace("\\", "/")
+        if not relative_file_path.startswith("."):
+            relative_file_path = "./" + relative_file_path
+    except ValueError:
+        # Disques différents : pas de relatif possible, on garde l'absolu
+        print(f"create_master: chemin relatif impossible entre {file_path} et {master_path}")
+        relative_file_path = file_path.replace("\\", "/")
 
     if not os.path.exists(master_path): #check if master usd file already exists if not we create it
 
