@@ -82,7 +82,3 @@ def on_click(kwargs):
         return
 
     set_import_path(hda, asset_list[0])
-
-
-def on_create(kwargs):
-    hda = kwargs["node"]
