@@ -101,7 +101,7 @@ print(f"tasks : {tasks}")
 #=========================================================== SET FUNCTIONS ===============================================================
 ##########################################################################################################################################
 
-def override_detect(tasks: list[str]) -> bool:
+def override_detect(tasks: list[str]) -> list:
     #---------------------------------------------------------------------------------------------------#
     # detect if there is already a USD asset                                                            #
     #                                                                                                   #
@@ -112,9 +112,12 @@ def override_detect(tasks: list[str]) -> bool:
 
     tasks = list(tasks_save)
     if "USD" in tasks:
-        return True
+        layer_folder = f"{path}/Export/USD/layers"
+        existing_layers = os.listdir(layer_folder)
+        existing_layers = [i.split(".")[0] for i in existing_layers]
+        return existing_layers
     else:
-        return False
+        return []
 
 def override_path(func):
     #---------------------------------------------------------------------------------------------------#
@@ -126,7 +129,7 @@ def override_path(func):
     def wrapper(*args, **kwargs):
         # check if there is already a USD asset
         is_usd_asset = override_detect(tasks)
-        if not is_usd_asset:
+        if is_usd_asset == []:
             return func(*args, **kwargs)
 
         # if a USD asset was detected, modify the save path to override it
@@ -136,16 +139,16 @@ def override_path(func):
         if "config_geo_layer1" in func_return:
             func_return["config_geo_layer1"].parm("savepath").set(f"{env_var_path}/Export/tmp/layers/geo.{usd_file_format}")
             print("override geo layer")
-        elif "config_grm_layer1" in func_return:
+        if "config_grm_layer1" in func_return:
             func_return["config_grm_layer1"].parm("savepath").set(f"{env_var_path}/Export/tmp/layers/grm.{usd_file_format}")
             print("override grm layer")
-        elif "config_mtl_layer1" in func_return:
+        if "config_mtl_layer1" in func_return:
             func_return["config_mtl_layer1"].parm("savepath").set(f"{env_var_path}/Export/tmp/layers/mtl.{usd_file_format}")
             print("override mtl layer")
-        elif "config_payload_layer1" in func_return:
+        if "config_payload_layer1" in func_return:
             func_return["config_payload_layer1"].parm("savepath").set(f"{env_var_path}/Export/tmp/layers/payload.{usd_file_format}")
             print("override payload layer")
-        elif "usd_rop1" in func_return:
+        if "usd_rop1" in func_return:
             func_return["usd_rop1"].parm("lopoutput").set(f"{env_var_path}/Export/tmp/master/{asset_name}_USD_master.{usd_file_format}")
             print("override master layer")
 
@@ -158,17 +161,25 @@ def override_copy(detections: dict[str,dict[str,Any]]) -> None:
     #                                                                                                   #
     # detections : dictionary containing detection results for each layer                               #
     #---------------------------------------------------------------------------------------------------#
+    
+    is_usd_asset = override_detect(tasks)
 
     # detect what layers to copy based on the detections
     if detections["geo"]["ModL"] or detections["geo"]["ModH"]:
+        if "geo" not in is_usd_asset:
+            create_empty_layer("geo", "USD")
         old_geo_path = f"{path}/Export/USD/layers/geo.{usd_file_format}"
         new_geo_path = f"{path}/Export/tmp/layers/geo.{usd_file_format}"
         copy_layer(new_geo_path, old_geo_path)
     if detections["grm"]["GrmL"] or detections["grm"]["GrmH"]:
+        if "grm" not in is_usd_asset:
+            create_empty_layer("grm", "USD")
         old_grm_path = f"{path}/Export/USD/layers/grm.{usd_file_format}"
         new_grm_path = f"{path}/Export/tmp/layers/grm.{usd_file_format}"
         copy_layer(new_grm_path, old_grm_path)
     if detections["mtl"]["Shading"]:
+        if "mtl" not in is_usd_asset:
+            create_empty_layer("mtl", "USD")
         old_mtl_path = f"{path}/Export/USD/layers/mtl.{usd_file_format}"
         new_mtl_path = f"{path}/Export/tmp/layers/mtl.{usd_file_format}"
         copy_layer(new_mtl_path, old_mtl_path)
@@ -177,12 +188,18 @@ def override_copy(detections: dict[str,dict[str,Any]]) -> None:
     new_payload_path = f"{path}/Export/tmp/layers/payload.{usd_file_format}"
     copy_layer(new_payload_path, old_payload_path)
 
-    old_master_path = f"{path}/Export/USD/master/ground_USD_master.{usd_file_format}"
-    new_master_path = f"{path}/Export/tmp/master/ground_USD_master.{usd_file_format}"
+    old_master_path = f"{path}/Export/USD/master/{asset_name}_USD_master.{usd_file_format}"
+    new_master_path = f"{path}/Export/tmp/master/{asset_name}_USD_master.{usd_file_format}"
     copy_layer(new_master_path, old_master_path)
 
     # delete the tmp directory
     shutil.rmtree(f"{path}/Export/tmp")
+
+def create_empty_layer(layer_name: str, task_dir: str) -> None:
+    layer_path = f"{path}/Export/{task_dir}/layers/{layer_name}.{usd_file_format}"
+    stage = Usd.Stage.CreateNew(layer_path)
+    root_layer = stage.GetRootLayer()
+    root_layer.Save()
 
 def copy_layer(source_path: str, destination_path: str) -> None:
     #---------------------------------------------------------------------------------------------------#
@@ -199,6 +216,7 @@ def copy_layer(source_path: str, destination_path: str) -> None:
     # get the root layers from the source and destination stages
     source_layer = source_stage.GetRootLayer()
     destination_layer = destination_stage.GetRootLayer()
+    # destination_layer = Usd.Stage.CreateNew(destination_path)
 
     # copy the usd preambles from the source layer to the destination layer
     destination_stage.SetDefaultPrim(source_stage.GetDefaultPrim())
@@ -210,6 +228,11 @@ def copy_layer(source_path: str, destination_path: str) -> None:
     UsdGeom.SetStageMetersPerUnit(destination_stage, meters_per_unit)
     up_axis = UsdGeom.GetStageUpAxis(source_stage)
     UsdGeom.SetStageUpAxis(destination_stage, up_axis)
+
+    # recreate sublayer
+    destination_layer.subLayerPaths.clear()
+    for path in source_layer.subLayerPaths:
+        destination_layer.subLayerPaths.append(path)
 
     # copy every prim from the source layer to the destination layer
     for prim in source_stage.GetPseudoRoot().GetChildren():
