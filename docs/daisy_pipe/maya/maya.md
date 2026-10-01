@@ -5,66 +5,43 @@ Cette page a pour but de documenter l'utilisation de l'entièreté du pipeline a
 
 - [Installation](#installation)
 - [Prism dans Maya](#prism-dans-maya)
-  - [Le Project Browser](#ProjectBowser)
-  - [Le StateManager](#StateManager)
+  - [Le Project Browser](#projectBowser)
+  - [Le StateManager](#stateManager)
   - [Sauvegardes](#sauvegardes)
+  - [Les PlayBlast](#playbalst)
 - [Alembic](#alembic)
-  - [Les exports](#alembic-exort)
-  - [Les imports](#alembic-import)
+  - [Les imports](#alembic-imports)
+  - [Les exports](#alembic-exports)
 - [USD](#USD)
-  - [Les exports](#alembic-exort)
-  - [Les imports](#alembic-import)
+  - [Les imports](#alembic-imports)
+  - [Les exports](#alembic-exports)
 
 ## Installation
-Pour installer les tools maya de **Daisy Pipeline** veuillez suivre le processus d'installation complet. Pour y revenir cliquez [ici](../installation.md) :
+
+Pour installer les tools maya de **Daisy Pipeline** veuillez suivre le processus d'installation complet. Pour y revenir cliquez **[ici](../installation.md)** :
+
+## Prism dans maya
+
+### projectBowser
+
+### stateManager
+
+### sauvegardes
+
+## Alembic
+
+Pour tous ce qui concerne la pipeline alembic veillez vous reférencer à la **[documentation alembic ](../../alembic.mb)**
+
+## USD
+
+Daisy Pipeline pour maya gere tous la gestion de la creation dans asset en USD, de la modélisation a 
+
+### usd-imports
+
+### usd-exports
+
 
 [< page précédente](../installation.md)
 [page suivante >](../houdini.md)  
 
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
-a  
-a  
-a  
-a  
-a  
-a  
-a  
-a  a  
-a  
-a  
-a  
-a  
-a  
-a  
-a  
-a  a  a  
-a  
-a  
-a  
-a  
-a  
-a  
-a  
-
-
-
-
-## Prism dans maya
-
-### ProjectBowser
-
-### StateManager
-
-### Sauvegardes
-
-## Alembic
-
-### Imports
-
-### Exports
-
-## USD
-
-### Imports
-
-### Exports
