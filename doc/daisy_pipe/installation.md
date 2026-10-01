@@ -9,7 +9,9 @@ Cette page a pour but de documenter l'installation de l'entièreté du pipeline 
     - [Les plugins Prism](#les-plugins-prism)
     - [Les variables d'environnement](#les-variables-denvironnement)
     - [usd-core](#usd-core)
-    - [Le disque virtuel](#le-disque-virtuel)
+    - [Le lecteur réseau](#le-lecteur-réseau)
+
+***
 
 ## Sur le server
 ### Les fondations du pipe
@@ -52,6 +54,8 @@ Maintenant que vous avez tout téléchargé et installé il vous reste une étap
 
 En règle générale vous n'aurez qu'à modifier la partie "software" et "network" pour faire fonctionner le pipe.
 
+***
+
 ## En local
 Maintenant il est temps d'installer sur votre PC tout ce dont vous aurez besoin pour que le pipe fonctionne, à savoir :
 - Prism et ses plugins pour Maya et Houdini
@@ -91,8 +95,34 @@ Pour Houdini, allez dans **Documents/houdini21.0/packages** (remplacez avec la b
 ### usd-core
 **Cette section n'est pas nécessaire pour la promo 2026-2027 de l'ESMA Montpellier. La manipulation a déjà été réalisée par les développeurs du pipe.**
 
-### le disque virtuel
+À présent, il va falloir installer l'USD sur votre machine. Pour cela il va falloir passer par une ligne de commande. MAIS PAS DE PANIQUE ! Je vais tout vous expliquer.
+Ouvrez un terminal comma Powershell par exemple. Et tapez la commande suivante :
+
+> pip install usd-core
+
+Voilà, c'est terminé, vous avez installé l'USD. Toutes mes félicitations !
+
+> Si Comme moi vous êtes curieux\.se et que vouv vous demandez ce que fait cette commande, laissez moi vous expliquer
+>> La commande "pip" fait référence à ce qu'on appel un "gestionnaire de paquets" qui sert à ajouter, supprimer et gérer des paquets en Python.
+>> "install" est une fonction de pip qui permet d'installer des paquets.
+>> Et "usd-core" est le nom du paquet, il sert à gérer les fonctions USD les plus essentielles.
+
+### Le lecteur réseau
 **Cette section n'est pas nécessaire pour la promo 2026-2027 de l'ESMA Montpellier. La manipulation a déjà été réalisée par les développeurs du pipe.**
+
+Maintenant que vous avez tout installé, il nous reste une toute dernière manipulation à réaliser. Cette manipulation va nous permettre de créer un lecteur (comme le disque C:/) qui va pointer vers votre réseau. Certains scripts de Daisy Pipeline en ont besoin pour bien fonctionner. Mais comment procéder ?
+
+Ouvrez l'explorateur de fichiers et allez dans Ce PC. Clickez ensuite sur "..." à côté de "Afficher". Puis clickez sur "Connecter un lecteur réseau" dans le menu déroulant.
+
+![file explorer](src/installation/connect_network.png)
+
+Une fenêtre apparait. Choisissez la lettre que vous voulez voir connectée au réseau (attention il faut la même pour tous les PC qui utiliseront Daisy Pipe). Puis ajoutez le chemin UNC vers le réseau juste en dessous. Clickez sur "Terminer" et c'est fini, vous devriez voir apparaitre un nouveau lecteur dans "Ce PC".
+
+![file explorer](src/installation/connect_network_window.png)
+
+> J'ai parlé de chemin UNC juste au dessus, mais qu'est-ce que c'est ?
+>> Un chemin UNC (Universal Name Convention) est une façon d'écrire un chemin vers une ressource sur un réseau sous Windows. Il s'écrit \\\\nom_du_réseau\\nom_du_dossier_de_partage\\...
+>> Un chemin mapped drive quand à lui est un lecteur réseau qui est associé à une lettre de lecteur. Il sert à accéder au réseau comme s'il était un disque local. C'est un chemin à éviter au maximum dans votre pipeline car si l'un des PC du réseau n'a pas la même lettre (ou pas de mapped drive du tout), il ne comprendra pas le lien.
 
 [< page précédente](../daisy_pipe.md)
 [page suivante >](daisy_pipe/maya.md)
