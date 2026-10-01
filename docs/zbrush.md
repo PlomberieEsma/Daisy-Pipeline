@@ -51,6 +51,6 @@ Dans Zbrush vous pouvez accéder au plugin en allant dans "**Zplugin/Prism/Float
 - **Turntable**: pour faire un turn de votre modèle 3D et le stocker dans les media de Prism
 - **Settings**: pour ouvrir les settings de Prism
 
-[< page précédente](README.md)
-*<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
+[< page précédente](README.md)<br>
+*<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*<br>
 <sub>*Zbrush plugin created by Mathieu Carrey (2025) and modified by Thomas Rubio (2026)*</sub>
