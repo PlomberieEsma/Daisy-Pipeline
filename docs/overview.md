@@ -9,6 +9,6 @@ Voici la présentation générale du pipeline (alembic et USD). Ici, nous allons
 - [USD](overview/usd.md)
 - [Optimisation](overview/optimisation.md)
 
-[< page précédente](README.md)  
+[< page précédente](README.md)
 [page suivante >](overview/hierarchy.md)<br>
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

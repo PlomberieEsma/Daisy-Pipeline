@@ -124,6 +124,6 @@ Une fenêtre apparait. Choisissez la lettre que vous voulez voir connectée au r
 >> Un chemin UNC (Universal Name Convention) est une façon d'écrire un chemin vers une ressource sur un réseau sous Windows. Il s'écrit \\\\nom_du_réseau\\nom_du_dossier_de_partage\\...
 >> Un chemin mapped drive quand à lui est un lecteur réseau qui est associé à une lettre de lecteur. Il sert à accéder au réseau comme s'il était un disque local. C'est un chemin à éviter au maximum dans votre pipeline car si l'un des PC du réseau n'a pas la même lettre (ou pas de mapped drive du tout), il ne comprendra pas le lien.
 
-[< page précédente](../daisy_pipe.md)   
+[< page précédente](../daisy_pipe.md)
 [page suivante >](maya/maya.md)<br>
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

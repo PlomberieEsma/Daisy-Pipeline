@@ -18,6 +18,6 @@ Daisy Pipeline est un plugin pour Prism Pipeline. Il a pour but gérer un pipe U
     - [Compositing](daisy_pipe/departments/compositing.md)
 - [DEV](daisy_pipe/dev.md)
 
-[< page précédente](README.md)  
+[< page précédente](README.md)
 [page suivante >](daisy_pipe/installation.md)<br>
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
