@@ -1,5 +1,5 @@
 # Zbrush
-[< page précédente](README.md)
+[< page précédente](README.md)<br>
 Cette page sert de documentation pour le plugin Zbrush de Daisy Pipeline. Nous passerons en revue l'installation et l'utilisation du plugin qui sert de lien entre Prism Pipeline et Zbrush 2022. Voici un sommaire pour naviguer sur cette page :
 
 - [Installation](#installation)
@@ -12,12 +12,12 @@ Cette page sert de documentation pour le plugin Zbrush de Daisy Pipeline. Nous p
 ## Installation
 Avant d'ajouter correctement le plugin, assurez-vous d'avoir installé préalable Prism2 (ou Prism) ainsi que Zbrush 2022. Retrouvez ci-dessous le processus d'installation.
 
-Tout d'abbord, récupérez le dossier Zbrush et entrez dedans. Copiez le dossier "**Integration**" dans **C:/Program Files/Pixologic/Zbrush 2022 FL/ZStartup/ZPlugs64**. 
+Tout d'abbord, récupérez le dossier Zbrush et entrez dedans. Copiez le dossier "**Integration**" dans **C:/Program Files/Pixologic/Zbrush 2022 FL/ZStartup/ZPlugs64**. <br>
 Si vous ne trouvez pas "Pixologic/Zbrush", vous pouvez chercher le dossier "Maxon Zbrush 2022" à la place et reprendre le chemin comme il était à partir de "ZStartup".
 
 Puis copiez le **dossier Zbrush complet** dans **C:/Program Files/Prism2/Plugins/Apps**.
 
-Ensuite vous deverez installer le plugin dans Prism. Mais comment faire ?
+Ensuite vous deverez installer le plugin dans Prism. Mais comment faire ?<br>
 Ouvrez Prism, allez dans **Options/Settings**.
 
 ![prism main window](src/zbrush/prism_main_window.png)
@@ -41,7 +41,7 @@ Dans Zbrush vous pouvez accéder au plugin en allant dans "**Zplugin/Prism/Float
 
 ![zbrush plugin window](src/zbrush/zbrush_plugin_window.png)
 
-- cases **.ztl** et **.zpr** : permet de choisir quel extension de fichier Zbrush vous voulez
+- Cases **.ztl** et **.zpr** : permet de choisir quel extension de fichier Zbrush vous voulez
 - **Save**: pour sauvegarder votre fichier (en mettant à jour le versioninfo.json de Prism)
 - **Save Version**: pour sauvegarder une nouvelle version
 - **Save Extended**: pour sauvegarder une nouvelle version avec des options en plus comme l'ajout d'un commentaire, d'une description et d'une image de preview

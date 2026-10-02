@@ -1,5 +1,5 @@
 # Installation
-[< page précédente](../daisy_pipe.md)
+[< page précédente](../daisy_pipe.md)<br>
 Cette page a pour but de documenter l'installation de l'entièreté du pipeline USD, de la hiérarchie des dossiers aux variables d'environnement de chaque logiciel. Dans cette documentation nous partirons du principe que vous travaillez en équipe sur un réseau local dédié au projet. L'installation de Daisy Pipeline se fait à 2 endroits distincts : le réseau sur lequel vous travaillez et en local sur votre PC. Nous allons vous montrer comment procéder aux 2 endroits. Voici un petit sommaire pour vous aider :
 
 - [Sur le server](#sur-le-server)
@@ -17,7 +17,7 @@ Cette page a pour but de documenter l'installation de l'entièreté du pipeline 
 ### Les fondations du pipe
 L'installation sur le server est la plus importante, elle comprend certes le pipeline USD mais aussi l'ensemble des dossiers dans lesquels ranger vos travaux. Vous trouverez la documentation de cette hiérarchie de dossiers [ici](../overview/hierarchy.md). Nous partirons donc du principe que vous avez la même hiérarchie que celle donnée précédement.
 
-Maintenant que cela est dit, il est temps d'installer Daisy Pipe. Copiez simplement le dossier **"Daisy_Pipe"** dans **PROJET/00_Pipeline/Plugins**.
+Maintenant que cela est dit, il est temps d'installer Daisy Pipe. Copiez simplement le dossier **"Daisy_Pipe"** dans **PROJET/00_Pipeline/Plugins**.<br>
 Puis entrez à l'intérieur. Vous devriez rerouver 3 dossiers : 
 - ExternalModules
 - Integration
@@ -74,16 +74,16 @@ Si vous l'avez déjà ouvert, vous devrez aller chercher dans "Options / Hub..."
 
 ![prism main window](src/installation/prism_project_window.png)
 
-Vous arriverez sur la fenêtre Hub de Prism qui vous permettra de télécharger vos plugins. Attention, il faut vous créer un compte Prism pour les installer.
+Vous arriverez sur la fenêtre Hub de Prism qui vous permettra de télécharger vos plugins. **Attention**, il faut vous créer un compte Prism pour les installer.<br>
 Suivez les consignes d'installation en prenant soin de cocher les bonnes versions de vos logiciels.
 
 ![prism hub window](src/installation/prism_hub.png)
 
 ### Les variables d'environnement
-Maintenant que Prism est installé, il est temps de lier Daisy Pipeline à Houdini et Maya. Mais comment faire ? Voici un petit tuto.
+Maintenant que Prism est installé, il est temps de lier Daisy Pipeline à Houdini et Maya. Mais comment faire ? Voici un petit tuto.<br>
 Nous allons créer des variables d'environnement pour chaque logiciel. **À noter que si vous faites partie de la promo 2026-2027 de l'ESMA Montpellier, vous avez déjà vos variables d'environnement de faites, vous n'avez plus qu'à les copier depuis le réseau 100_DEV_PIPE/00_INSTALLATION vers les dossiers ci dessous**. Néanmoins, vous avez toujours un preset de ces fichiers de disponible.
 
-Maintenant voici où placer les fichiers :
+Maintenant voici où placer les fichiers :<br>
 Pour Maya, allez dans **Documents/maya/2026** et remplacez (ou éditez) le fichier **Maya.env**. Voici son contenu :
 
 ![maya.env content](src/installation/maya_env.png)
@@ -95,7 +95,7 @@ Pour Houdini, allez dans **Documents/houdini21.0/packages** (remplacez avec la b
 ### usd-core
 **Cette section n'est pas nécessaire pour la promo 2026-2027 de l'ESMA Montpellier. La manipulation a déjà été réalisée par les développeurs du pipe.**
 
-À présent, il va falloir installer l'USD sur votre machine. Pour cela il va falloir passer par une ligne de commande. MAIS PAS DE PANIQUE ! Je vais tout vous expliquer.
+À présent, il va falloir installer l'USD sur votre machine. Pour cela il va falloir passer par une ligne de commande. MAIS PAS DE PANIQUE ! Je vais tout vous expliquer.<br>
 Ouvrez un terminal comma Powershell par exemple. Et tapez la commande suivante :
 
 > pip install usd-core
@@ -124,6 +124,6 @@ Une fenêtre apparait. Choisissez la lettre que vous voulez voir connectée au r
 >> Un chemin UNC (Universal Name Convention) est une façon d'écrire un chemin vers une ressource sur un réseau sous Windows. Il s'écrit \\\\nom_du_réseau\\nom_du_dossier_de_partage\\...
 >> Un chemin mapped drive quand à lui est un lecteur réseau qui est associé à une lettre de lecteur. Il sert à accéder au réseau comme s'il était un disque local. C'est un chemin à éviter au maximum dans votre pipeline car si l'un des PC du réseau n'a pas la même lettre (ou pas de mapped drive du tout), il ne comprendra pas le lien.
 
-[< page précédente](../daisy_pipe.md)
+[< page précédente](../daisy_pipe.md)   
 [page suivante >](maya/maya.md)<br>
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
