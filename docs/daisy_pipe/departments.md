@@ -1,5 +1,5 @@
 # Départements
-[< page précédente](../daisy_pipe.md)
+[< page précédente](../daisy_pipe.md)<br>
 Ici vous trouverez la liste des départements impactés par Daisy Pipe. Nous ferons un tours d'horizon de la production en expliquant le pipe étape par étape.
 
 - [Modeling](departments/modeling.md)
