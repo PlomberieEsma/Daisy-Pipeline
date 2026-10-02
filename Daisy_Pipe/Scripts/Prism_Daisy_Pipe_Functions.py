@@ -47,6 +47,7 @@ class Prism_Daisy_Pipe_Functions(object):
 
         if self.isMaya():
             self.mayastate = DaisyUsdExportClass()
+            self.core.appPlugin.onShelfClickedExport = self.onShelfClickedExport
 
         if self.isStandalone():
             self.importUsdPackages()
@@ -374,4 +375,48 @@ class Prism_Daisy_Pipe_Functions(object):
 
     def isHoudini(self):
 
-        return self.core.appPlugin.pluginName == "Houdni"
+        return self.core.appPlugin.pluginName == "Houdini"
+
+    @err_catcher(name=__name__)
+    def onShelfClickedExport(self, doubleclick=False):
+        import Prism_Maya_Functions
+
+        maya = self.core.appPlugin
+        sm = self.core.getStateManager()
+        if not sm:
+            return
+
+        if not self.core.fileInPipeline():
+            self.core.showFileNotInProjectWarning(title="Warning")
+            return False
+
+        stateName = "Default Export ({product})"
+
+        for state in sm.states:
+            ui = state.ui
+            if ui.className == "DaisyUsdExport" and hasattr(ui, "e_name") and ui.e_name.text() == stateName:
+                if hasattr(ui, "updateUi"):
+                    ui.updateUi()
+                break
+        else:
+            parent = maya.getDftStateParent()
+            state = sm.createState(
+                "DaisyUsdExport",
+                stateData={"stateName": stateName},
+                parent=parent,
+                applyDefaults=True,
+            )
+            if not state:
+                self.core.popup("Failed to create DaisyUsdExport state.")
+                return
+
+        if hasattr(maya, "dlg_export"):
+            maya.dlg_export.showSm = False
+            maya.dlg_export.close()
+
+        maya.dlg_export = Prism_Maya_Functions.ExporterDlg(maya, state)
+
+        for widget in ("w_name", "gb_previous"):
+            if hasattr(state.ui, widget):
+                getattr(state.ui, widget).setVisible(False)
+        maya.dlg_export.show()
