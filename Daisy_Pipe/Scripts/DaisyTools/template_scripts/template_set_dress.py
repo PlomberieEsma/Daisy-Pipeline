@@ -229,31 +229,15 @@ def nodes_template_set_dress(imported_assets: list[dict[str,Any]]) -> dict[str,A
 
     node_list.update(nodes_import_assets(imported_assets, create_set_dress1))
 
-    scale_up1 = lopnet.createNode("xform")
-    scale_up1.setName("scale_up1")
-    scale_up1.setInput(0, node_list["graft_set_dress1"])
-    scale_up1.parm("primpattern").set(f"/{seq_and_sht_name}/scene/set_dress/*")
-    scale_up1.parm("scale").set(100)
-
-    config_layer1 = lopnet.createNode("configurelayer")
-    config_layer1.setName("config_layer1")
-    config_layer1.setInput(0, scale_up1)
-    config_layer1.parm("setsavepath").set(1)
-    config_layer1.parm("savepath").set(f"{env_var_path}/Export/{shot_task}/{shot_version}/{seq_and_sht_name}_{shot_task}_{shot_version}.{usd_file_format}")
-    config_layer1.parm("setdefaultprim").set(1)
-    config_layer1.parm("defaultprim").set(f"{seq_and_sht_name}")
-
-    usd_rop1 = lopnet.createNode("usd_rop")
-    usd_rop1.setName("usd_rop1")
-    usd_rop1.setInput(0, config_layer1)
-    usd_rop1.parm("lopoutput").set("")
-    usd_rop1.parm("lpostrender").set("python")
+    daisy_export1 = lopnet.createNode("Daisy::daisy_export::1.0")
+    daisy_export1.setName("daisy_export1")
+    daisy_export1.setInput(0, node_list["graft_set_dress1"])
+    daisy_export1.parm("defaultprim").set("/`chs(\"../create_assembly1/primpath\")`")
+    # daisy_export1.parm("setmetersperunit").set(0)
 
     node_list.update({"create_assembly1" : create_assembly1, 
                       "create_set_dress1" : create_set_dress1,
-                      "scale_up1" : scale_up1,
-                      "config_layer1" : config_layer1,
-                      "usd_rop1" : usd_rop1})
+                      "daisy_export1" : daisy_export1})
 
     #-------------------------------- arange nodes ---------------------------------#
     lopnet.layoutChildren()
@@ -261,16 +245,12 @@ def nodes_template_set_dress(imported_assets: list[dict[str,Any]]) -> dict[str,A
     node_list["create_assembly1"].move([0,node_list["input_box"].size()[1]-2])
     node_list["create_set_dress1"].move([0,node_list["input_box"].size()[1]-2])
 
-    node_list["scale_up1"].setPosition([0,node_list["scale_up1"].position()[1]])
-    node_list["config_layer1"].setPosition([0,node_list["config_layer1"].position()[1]])
-    node_list["usd_rop1"].setPosition([0,node_list["usd_rop1"].position()[1]])
+    node_list["daisy_export1"].setPosition([0,node_list["daisy_export1"].position()[1]])
 
-    node_list["scale_up1"].move([0, -15])
-    node_list["config_layer1"].move([0, -15])
-    node_list["usd_rop1"].move([0, -15])
+    node_list["daisy_export1"].move([0, -15])
 
     # set output network box
-    nodes_in_output_box = ["scale_up1", "config_layer1", "usd_rop1"]
+    nodes_in_output_box = ["daisy_export1"]
     output_box = lopnet.createNetworkBox()
     for node in nodes_in_output_box:
         output_box.addItem(node_list[node])

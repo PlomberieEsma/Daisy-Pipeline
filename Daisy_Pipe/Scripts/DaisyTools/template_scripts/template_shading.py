@@ -105,14 +105,11 @@ def template_shading() -> Any:
     #-------------------------------- create nodes ---------------------------------#
     lopnet=hou.node("/stage")
 
-    ref_geo1 = lopnet.createNode("reference")
+    ref_geo1 = lopnet.createNode("Daisy::daisy_import")
     ref_geo1.setName("ref_geo1")
     ref_geo1.setPosition(node_position)
-    ref_geo1.parm("enable").set(0) #disable multi-input
-    ref_geo1.parm("primpath1").set("/`pythonexprs(\"__import__('pxr').Sdf.Layer.FindOrOpen(hou.pwd().evalParm('filepath1')).defaultPrim\")`") #re1ferenced file's default primitive
-    ref_geo1.parm("filepath1").set(f"{env_var_path}/Export/USD/master/{asset_name}_USD_master.{usd_file_format}")
-    ref_geo1.parm("filerefprim1").set("") #reference specific primitive
-    ref_geo1.parm("filerefprimpath1").set("`chs(\"primpath1\")`")
+    ref_geo1.parm("path").set(f"{env_var_path}/Export/USD/master/{asset_name}_USD_master.{usd_file_format}")
+    ref_geo1.parm("scale").set(meters_per_unit)
 
     set_variant1 = lopnet.createNode("setvariant")
     set_variant1.setName("set_variant1")
@@ -125,23 +122,9 @@ def template_shading() -> Any:
     set_variant1.parm("variantset2").set("grm")
     set_variant1.parm("variantname2").set("grm_var01")
 
-    layer_break1 = lopnet.createNode("layerbreak")
-    layer_break1.setName("layer_break1")
-    layer_break1.setInput(0, set_variant1)
-    layer_break1.setColor(hou.Color(color_input_box))
-    node_position[1] -= 1
-    layer_break1.move(node_position)
-
-    scale_down1 = lopnet.createNode("xform")
-    scale_down1.setName("scale_down1")
-    scale_down1.setInput(0, layer_break1)
-    node_position[1] -= 1
-    scale_down1.move(node_position)
-    scale_down1.parm("scale").set(meters_per_unit)
-
     create_component1 = lopnet.createNode("primitive")
     create_component1.setName("create_component1")
-    create_component1.setInput(0, scale_down1)
+    create_component1.setInput(0, set_variant1)
     create_component1.setColor(hou.Color(color_input_box))
     node_position[1] -= 1
     create_component1.move(node_position)
@@ -182,48 +165,26 @@ def template_shading() -> Any:
     node_position[1] -= 2
     assign_shader1.move(node_position)
 
-    scale_up1 = lopnet.createNode("xform")
-    scale_up1.setName("scale_up1")
-    scale_up1.setInput(0, assign_shader1)
+    daisy_export1 = lopnet.createNode("Daisy::daisy_export::1.0")
+    daisy_export1.setName("daisy_export1")
+    daisy_export1.setInput(0, assign_shader1)
     node_position[1] -= 5
-    scale_up1.move(node_position)
-    scale_up1.parm("primpattern").set("`chs(\"../create_component1/primpath\")`")
-    scale_up1.parm("scale").set(1/meters_per_unit)
-
-    config_mtl_layer1 = lopnet.createNode("configurelayer")
-    config_mtl_layer1.setName("config_mtl_layer1")
-    config_mtl_layer1.setInput(0, scale_up1)
-    node_position[1] -= 1
-    config_mtl_layer1.move(node_position)
-    config_mtl_layer1.parm("setsavepath").set(1)
-    config_mtl_layer1.parm("savepath").set(f"{env_var_path}/Export/{asset_task}/{asset_version}/{asset_name}_{asset_task}_{asset_version}.{usd_file_format}")
-    config_mtl_layer1.parm("setdefaultprim").set(1)
-    config_mtl_layer1.parm("defaultprim").set("/`chs(\"../create_component1/primpath\")`")
-
-    usd_rop1 = lopnet.createNode("usd_rop")
-    usd_rop1.setName("usd_rop1")
-    usd_rop1.setInput(0, config_mtl_layer1)
-    node_position[1] -= 1
-    usd_rop1.move(node_position)
-    usd_rop1.parm("lopoutput").set("")
-    usd_rop1.parm("lpostrender").set("python")
+    daisy_export1.move(node_position)
+    daisy_export1.parm("defaultprim").set("/`chs(\"../create_component1/primpath\")`")
+    # daisy_export1.parm("setmetersperunit").set(0)
 
     node_list = {"ref_geo1" : ref_geo1,
               "set_variant1" : set_variant1,
-              "layer_break1" : layer_break1,
-              "scale_down1" : scale_down1,
               "create_component1" : create_component1,
               "create_mtl1" : create_mtl1,
               "create_shader1" : create_shader1,
               "configure_mtl_primitives1" : configure_mtl_primitives1,
               "assign_shader1" : assign_shader1,
-              "scale_up1" : scale_up1,
-              "config_mtl_layer1" : config_mtl_layer1,
-              "usd_rop1" : usd_rop1}
+              "daisy_export1" : daisy_export1}
     
     #-------------------------------- arange nodes ---------------------------------#
     # set input network box
-    nodes_in_input_box = ["ref_geo1", "set_variant1", "layer_break1", "scale_down1", "create_component1", "create_mtl1"]
+    nodes_in_input_box = ["ref_geo1", "set_variant1", "create_component1", "create_mtl1"]
     input_box = lopnet.createNetworkBox()
     for node in nodes_in_input_box:
         input_box.addItem(node_list[node])
@@ -243,7 +204,7 @@ def template_shading() -> Any:
     material_box.setBounds(hou.BoundingRect(material_box.position()[0]-1, material_box.position()[1], material_box.position()[0]+material_box.size()[0]+3, material_box.position()[1]+material_box.size()[1]))
 
     # set output network box
-    nodes_in_output_box = ["scale_up1", "config_mtl_layer1", "usd_rop1"]
+    nodes_in_output_box = ["daisy_export1"]
     output_box = lopnet.createNetworkBox()
     for node in nodes_in_output_box:
         output_box.addItem(node_list[node])
