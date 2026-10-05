@@ -1,6 +1,6 @@
 # Installation
 [< page précédente](../daisy_pipe.md)<br>
-Cette page a pour but de documenter l'installation de l'entièreté du pipeline USD, de la hiérarchie des dossiers aux variables d'environnement de chaque logiciel. Dans cette documentation nous partirons du principe que vous travaillez en équipe sur un réseau local dédié au projet. L'installation de Daisy Pipeline se fait à 2 endroits distincts : le réseau sur lequel vous travaillez et en local sur votre PC. Nous allons vous montrer comment procéder aux 2 endroits. Voici un petit sommaire pour vous aider :
+Cette page a pour but de documenter l'installation de l'entièreté du pipeline USD, de la hiérarchie des dossiers aux variables d'environnement de chaque logiciel. Mais tout d'abord vous devez [télécherger Daisy Pipeline sur github via ce lien](https://github.com/PlomberieEsma/Daisy-Pipeline). Dans cette documentation nous partirons du principe que vous travaillez en équipe sur un réseau local dédié au projet. L'installation de Daisy Pipeline se fait à 2 endroits distincts : le réseau sur lequel vous travaillez et en local sur votre PC. Nous allons vous montrer comment procéder aux 2 endroits. Voici un petit sommaire pour vous aider :
 
 - [Sur le server](#sur-le-server)
     - [Les fondations du pipe](#les-fondations-du-pipe)
@@ -15,7 +15,7 @@ Cette page a pour but de documenter l'installation de l'entièreté du pipeline 
 
 ## Sur le server
 ### Les fondations du pipe
-L'installation sur le server est la plus importante, elle comprend certes le pipeline USD mais aussi l'ensemble des dossiers dans lesquels ranger vos travaux. Vous trouverez la documentation de cette hiérarchie de dossiers [ici](../overview/hierarchy.md). Nous partirons donc du principe que vous avez la même hiérarchie que celle donnée précédement.
+L'installation sur le server est la plus importante, elle comprend certes le pipeline USD mais aussi l'ensemble des dossiers dans lesquels ranger vos travaux. Vous trouverez la documentation de cette hiérarchie de dossiers ***[ici](../overview/hierarchy.md)***. Nous partirons donc du principe que vous avez la même hiérarchie que celle donnée précédement.
 
 Maintenant que cela est dit, il est temps d'installer Daisy Pipe. Copiez simplement le dossier **"Daisy_Pipe"** dans **PROJET/00_Pipeline/Plugins**.<br>
 Puis entrez à l'intérieur. Vous devriez rerouver 3 dossiers : 

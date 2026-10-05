@@ -7,5 +7,7 @@ Ci-dessous, les liens vers chaque documentation :
 - [Substance Painter](substancepainter.md)
 - [Zbrush](zbrush.md)
 
+Retrouvez le code source ***[ici](https://github.com/PlomberieEsma/Daisy-Pipeline)***.
+
 [page suivante >](overview.md)<br>
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
