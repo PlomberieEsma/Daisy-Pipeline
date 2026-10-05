@@ -108,6 +108,7 @@ def template_shading() -> Any:
     ref_geo1 = lopnet.createNode("Daisy::daisy_import")
     ref_geo1.setName("ref_geo1")
     ref_geo1.setPosition(node_position)
+    ref_geo1.parm("importAs").set(1) #reference
     ref_geo1.parm("path").set(f"{env_var_path}/Export/USD/master/{asset_name}_USD_master.{usd_file_format}")
     ref_geo1.parm("scale").set(meters_per_unit)
 
