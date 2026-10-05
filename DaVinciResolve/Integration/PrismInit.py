@@ -2,18 +2,30 @@ import os, sys
 
 PRISM_ROOT = os.getenv("PRISM_ROOT") or r"C:\Program Files\Prism2"
 sys.path.append(os.path.join(PRISM_ROOT, "Scripts"))
-# Si PySide n'est pas trouvé, ajoute ici le dossier PythonLibs de ton installation Prism
 
 import PrismCore
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QApplication, QWidget, QHBoxLayout, QPushButton
+from qtpy.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton
 
-pcore = PrismCore.create(app="DaVinciResolve")
+pcore = PrismCore.create(app="DaVinciResolve", prismArgs=["noProjectBrowser"])
+pcore.appPlugin.resolve = resolve
+
+def callPlugin(methodName):
+    plugin = getattr(pcore, "appPlugin", None)
+    method = getattr(plugin, methodName, None) if plugin else None
+    if method is None:
+        print("Prism: '%s' is not implemented in the DaVinciResolve plugin." % methodName)
+        return
+    method()
+
 
 ACTIONS = [
-    ("Project Browser",  lambda: pcore.projectBrowser()),
-    ("Save BackUp Version", SaveBackUpVersion()),
-    # ("Save and Comment", lambda: pcore.saveWithComment()),
+    ("Project Browser",     lambda: pcore.projectBrowser()),
+    ("Save Version",        lambda: callPlugin("SaveVersion")),
+    ("Save BackUp Version", lambda: callPlugin("SaveBackUpVersion")),
+    ("Add Shot",            lambda: callPlugin("AddShot")),
+    ("Bake Current Shot",   lambda: callPlugin("BakeCurrentShot")),
+    ("Render",              lambda: callPlugin("Render")),
 ]
 
 qapp = QApplication.instance() or QApplication([])
@@ -21,7 +33,7 @@ qapp = QApplication.instance() or QApplication([])
 win = QWidget()
 win.setWindowTitle("Prism")
 win.setWindowFlag(Qt.WindowStaysOnTopHint)
-layout = QHBoxLayout(win)
+layout = QVBoxLayout(win)
 
 for text, fn in ACTIONS:
     btn = QPushButton(text)
@@ -29,7 +41,4 @@ for text, fn in ACTIONS:
     layout.addWidget(btn)
 
 win.show()
-qapp.exec_()
-
-def SaveBackUpVersion():
-    print("The Function Save BackUp Version is not coded yet")
+qapp.exec()

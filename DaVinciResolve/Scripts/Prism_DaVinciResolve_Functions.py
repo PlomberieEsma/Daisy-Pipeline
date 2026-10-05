@@ -34,12 +34,17 @@
 
 import os
 import sys
+import os, re, shutil, tempfile, datetime, json
 
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 
 from PrismUtils.Decorators import err_catcher as err_catcher
+
+from Prism_DaVinciResolve_ShotBrowser import ShotBrowserUI
+
+# ShotBrowserUI.onShotBrowserTriggered()
 
 
 class Prism_DaVinciResolve_Functions(object):
@@ -414,3 +419,164 @@ class Prism_DaVinciResolve_Functions(object):
     @err_catcher(name=__name__)
     def sm_createRenderPressed(self, origin):
         origin.createPressed("Render")
+
+
+
+    ##############################################################################################################
+    # Specific functions scripting
+    ##############################################################################################################
+    
+    import os, re, shutil, tempfile, datetime
+
+    def getTaskFolder(self):
+        projectName=self.resolve.GetProjectManager().GetCurrentProject().GetName()
+        if "trailer" in projectName:
+            taskFolder="00_trailer"
+        elif "animatique_2D" in projectName:
+            taskFolder="01_animatique_2D"
+        elif "layout" in projectName:
+            taskFolder="02_layout"
+        elif "anim" in projectName:
+            taskFolder="03_anim"
+        elif "render" in projectName:
+            taskFolder="04_render"
+        elif "compo" in projectName:
+            taskFolder="05_compo"
+        elif "etalonnage" in projectName:
+            taskFolder="06_etalonnage"
+        elif "previz" in projectName:
+            taskFolder="07_previz"
+        elif "final" in projectName:
+            taskFolder="08_final"
+        else:
+            self.core.popup("Your ProjectName doesn't match the editing taskFolders names")
+        return taskFolder
+
+    def getTask(self):
+        projectName=self.resolve.GetProjectManager().GetCurrentProject().GetName()
+        if "trailer" in projectName:
+            task="trailer"
+        elif "animatique_2D" in projectName:
+            task="animatique_2D"
+        elif "layout" in projectName:
+            task="layout"
+        elif "anim" in projectName:
+            task="anim"
+        elif "render" in projectName:
+            task="render"
+        elif "compo" in projectName:
+            task="compo"
+        elif "etalonnage" in projectName:
+            task="etalonnage"
+        elif "previz" in projectName:
+            task="previz"
+        elif "final" in projectName:
+            task="final"
+        else:
+            self.core.popup("Your ProjectName doesn't match the editing tasks names")
+        return task
+
+    def getEditingScenefilePath(self):
+        task=self.getTaskFolder()
+        path=os.path.join(self.core.projectPath,"04_Editing", "Scenefiles", task)
+        return path
+
+    def getEditingRenderPath(self):
+        task=self.getTaskFolder()
+        path=os.path.join(self.core.projectPath,"04_Editing", "Output", task)
+        return path
+
+    def _projectName(self):
+        return self.resolve.GetProjectManager().GetCurrentProject().GetName()
+
+    def _masterFile(self):
+        return os.path.join(self.getEditingScenefilePath(), "%s.drp" % self._projectName())
+
+    # --- état local : "quelle version du master ai-je vue en dernier ?" ---
+
+    def _stateFile(self):
+        base = os.path.join(os.getenv("LOCALAPPDATA", tempfile.gettempdir()), "PrismResolve")
+        os.makedirs(base, exist_ok=True)
+        return os.path.join(base, "master_state.json")
+
+    def _loadState(self):
+        try:
+            with open(self._stateFile(), "r") as f:
+                return json.load(f)
+        except (OSError, ValueError):
+            return {}
+
+    def _recordMaster(self):
+        master = self._masterFile()
+        if os.path.exists(master):
+            state = self._loadState()
+            state[self._projectName()] = os.path.getmtime(master)
+            with open(self._stateFile(), "w") as f:
+                json.dump(state, f)
+
+    def _exportDrp(self, destFile):
+        pm = self.resolve.GetProjectManager()
+        project = pm.GetCurrentProject()
+        name = project.GetName()
+
+        tmpDir = tempfile.mkdtemp(prefix="prism_resolve_")
+        tmpFile = os.path.join(tmpDir, os.path.basename(destFile))
+        try:
+            ok = pm.ExportProject(name, tmpFile, True)   # True = avec stills et LUTs
+            if not ok or not os.path.exists(tmpFile):
+                raise RuntimeError("ExportProject a échoué pour '%s'" % name)
+            os.makedirs(os.path.dirname(destFile), exist_ok=True)
+            shutil.copy2(tmpFile, destFile)
+        finally:
+            shutil.rmtree(tmpDir, ignore_errors=True)
+        return name
+
+    @err_catcher(name=__name__)
+    def SaveVersion(self):
+        master = self._masterFile()
+
+        if os.path.exists(master):
+            known = self._loadState().get(self._projectName())
+            current = os.path.getmtime(master)
+            if known is None or abs(current - known) > 1:
+                answer = self.core.popupQuestion(
+                    "Le master a été modifié depuis votre dernière ouverture ou sauvegarde.\n"
+                    "L'écraser avec votre version ?",
+                    title="Master modifié",
+                    buttons=["Écraser", "Annuler"],
+                )
+                if answer != "Écraser":
+                    return
+
+        self._exportDrp(master)
+        self._recordMaster()
+        self.core.popup("Master mis à jour.")
+
+    @err_catcher(name=__name__)
+    def SaveBackUpVersion(self):
+        name = self._projectName()
+        backupsDir = os.path.join(self.getEditingScenefilePath(), "Backups")
+
+        pattern = re.compile(r"^%s_v(\d+)\.drp$" % re.escape(name))
+        files = os.listdir(backupsDir) if os.path.isdir(backupsDir) else []
+        numbers = [int(m.group(1)) for m in map(pattern.match, files) if m]
+        version = max(numbers, default=0) + 1
+
+        backupFile = os.path.join(backupsDir, "%s_v%04d.drp" % (name, version))
+        self._exportDrp(backupFile)
+        self.core.popup("Backup v%04d enregistré." % version)
+
+    @err_catcher(name=__name__)
+    def AddShot(self):
+        task=self.getTask()
+        print(task)
+        self.core.shotDlg=ShotBrowserUI.onShotBrowserTriggered(self, task)
+        print("addShot in Function found")
+
+    @err_catcher(name=__name__)
+    def BakeCurrentShot(self):
+        print("bakeCurrentShot in Function found")
+        
+    @err_catcher(name=__name__)
+    def Render(self):
+        print("Render in Function found")
