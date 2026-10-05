@@ -173,6 +173,7 @@ def template_shading() -> Any:
     daisy_export1.move(node_position)
     daisy_export1.parm("defaultprim").set("/`chs(\"../create_component1/primpath\")`")
     # daisy_export1.parm("setmetersperunit").set(0)
+    daisy_export1.parm("metersperunit").set(meters_per_unit)
 
     node_list = {"ref_geo1" : ref_geo1,
               "set_variant1" : set_variant1,
