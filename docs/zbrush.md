@@ -1,4 +1,4 @@
-# Zbrush
+# Zbrush 2022
 [< page précédente](README.md)<br>
 Cette page sert de documentation pour le plugin Zbrush de Daisy Pipeline. Nous passerons en revue l'installation et l'utilisation du plugin qui sert de lien entre Prism Pipeline et Zbrush 2022. Voici un sommaire pour naviguer sur cette page :
 
@@ -12,7 +12,7 @@ Cette page sert de documentation pour le plugin Zbrush de Daisy Pipeline. Nous p
 ## Installation
 Avant d'ajouter correctement le plugin, assurez-vous d'avoir installé préalable Prism2 (ou Prism) ainsi que Zbrush 2022. Retrouvez ci-dessous le processus d'installation.
 
-Tout d'abbord, récupérez le dossier Zbrush et entrez dedans. Copiez le dossier "**Integration**" dans **C:/Program Files/Pixologic/Zbrush 2022 FL/ZStartup/ZPlugs64**. <br>
+Tout d'abbord, récupérez le dossier Zbrush et entrez dedans. Copiez le contenu du dossier "**Integration**" dans **C:/Program Files/Pixologic/Zbrush 2022 FL/ZStartup/ZPlugs64**. <br>
 Si vous ne trouvez pas "Pixologic/Zbrush", vous pouvez chercher le dossier "Maxon Zbrush 2022" à la place et reprendre le chemin comme il était à partir de "ZStartup".
 
 Puis copiez le **dossier Zbrush complet** dans **C:/Program Files/Prism2/Plugins/Apps**.
