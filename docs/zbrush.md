@@ -7,6 +7,9 @@ Cette page sert de documentation pour le plugin Zbrush de Daisy Pipeline. Nous p
     - [Zbrush](#zbrush-1)
 - [Utilisation](#utilisation)
 
+> <img src="src/github_logo.png" width="20">
+> Retrouvez le code source <a href="https://github.com/PlomberieEsma/Daisy-Pipeline"><i><strong>ici</strong></i></a>.
+
 ***
 
 ## Installation

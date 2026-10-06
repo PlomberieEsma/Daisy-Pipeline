@@ -1,8 +1,7 @@
-# Prism - Utilisation générale
-[< page précédente](../overview.md)<br>
+# Utilisation générale
+[< page précédente](../prism.md)<br>
 
-Vous vous demandez peut-être comment utiliser Prism. Si c'est le cas, vous êtes au bon endroit. Cette partie de la documentation vous permettra d'appréhender l'utilisation de Prism ainsi que son implémentation dans le pipe.
-
+### En cours d'écriture ...
 
 [< page précédente](../prism.md)
 [page suivante >](department.md)<br>

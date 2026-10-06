@@ -13,7 +13,8 @@ Cette documentation est destinée à des utilisateurs maîtrisant déjà l'utili
 - [Exports](SubstancePainter/exports.md)
 - [Developpement](SubstancePainter/development.md)
 
-Retrouvez le code source ***[ici](https://github.com/PlomberieEsma/Daisy-Pipeline)***.<br>
+> <img src="src/github_logo.png" width="20">
+> Retrouvez le code source <a href="https://github.com/PlomberieEsma/Daisy-Pipeline"><i><strong>ici</strong></i></a>.
 *<sub>Ce plugin a été développé pour fonctionner uniquement avec la version 2.1.2.1 de Prism.<sub>*
 
 [< Page précédente](README.md)
