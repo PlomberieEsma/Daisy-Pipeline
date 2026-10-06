@@ -21,6 +21,7 @@ def callPlugin(methodName):
 
 ACTIONS = [
     ("Project Browser",     lambda: pcore.projectBrowser()),
+    ("Open Scene",          lambda: callPlugin("OpenScene")),
     ("Save Version",        lambda: callPlugin("SaveVersion")),
     ("Save BackUp Version", lambda: callPlugin("SaveBackUpVersion")),
     ("Add Shot",            lambda: callPlugin("AddShot")),

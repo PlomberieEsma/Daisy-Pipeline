@@ -46,6 +46,7 @@ from Prism_DaVinciResolve_ShotBrowser import ShotBrowserUI
 
 # ShotBrowserUI.onShotBrowserTriggered()
 
+TASK_FOLDER_PATTERN = re.compile(r"^\d{2}_(.+)$")   # "01_animatic_2D" -> "animatic_2D"
 
 class Prism_DaVinciResolve_Functions(object):
     def __init__(self, core, plugin):
@@ -425,56 +426,27 @@ class Prism_DaVinciResolve_Functions(object):
     ##############################################################################################################
     # Specific functions scripting
     ##############################################################################################################
-    
-    import os, re, shutil, tempfile, datetime
 
-    def getTaskFolder(self):
-        projectName=self.resolve.GetProjectManager().GetCurrentProject().GetName()
-        if "trailer" in projectName:
-            taskFolder="00_trailer"
-        elif "animatique_2D" in projectName:
-            taskFolder="01_animatique_2D"
-        elif "layout" in projectName:
-            taskFolder="02_layout"
-        elif "anim" in projectName:
-            taskFolder="03_anim"
-        elif "render" in projectName:
-            taskFolder="04_render"
-        elif "compo" in projectName:
-            taskFolder="05_compo"
-        elif "etalonnage" in projectName:
-            taskFolder="06_etalonnage"
-        elif "previz" in projectName:
-            taskFolder="07_previz"
-        elif "final" in projectName:
-            taskFolder="08_final"
-        else:
-            self.core.popup("Your ProjectName doesn't match the editing taskFolders names")
-        return taskFolder
+    def getScenefilesRoot(self):
+        return os.path.join(self.core.projectPath, "04_Editing", "Scenefiles")
 
     def getTask(self):
-        projectName=self.resolve.GetProjectManager().GetCurrentProject().GetName()
-        if "trailer" in projectName:
-            task="trailer"
-        elif "animatique_2D" in projectName:
-            task="animatique_2D"
-        elif "layout" in projectName:
-            task="layout"
-        elif "anim" in projectName:
-            task="anim"
-        elif "render" in projectName:
-            task="render"
-        elif "compo" in projectName:
-            task="compo"
-        elif "etalonnage" in projectName:
-            task="etalonnage"
-        elif "previz" in projectName:
-            task="previz"
-        elif "final" in projectName:
-            task="final"
-        else:
-            self.core.popup("Your ProjectName doesn't match the editing tasks names")
-        return task
+        # "animatic_2D_master" -> "animatic_2D"
+        return re.sub(r"_master$", "", self._projectName())
+
+    def getTaskFolder(self):
+        task = self.getTask()
+        root = self.getScenefilesRoot()
+        if not os.path.isdir(root):
+            raise RuntimeError("Dossier introuvable : %s" % root)
+
+        for folder in sorted(os.listdir(root)):
+            m = TASK_FOLDER_PATTERN.match(folder)
+            if m and m.group(1).lower() == task.lower() and os.path.isdir(os.path.join(root, folder)):
+                return folder
+
+        raise RuntimeError("Le projet Resolve '%s' ne correspond à aucun dossier de task dans :\n%s"
+                        % (self._projectName(), root))
 
     def getEditingScenefilePath(self):
         task=self.getTaskFolder()
@@ -510,7 +482,7 @@ class Prism_DaVinciResolve_Functions(object):
         master = self._masterFile()
         if os.path.exists(master):
             state = self._loadState()
-            state[self._projectName()] = os.path.getmtime(master)
+            state[master] = os.path.getmtime(master)
             with open(self._stateFile(), "w") as f:
                 json.dump(state, f)
 
@@ -536,7 +508,7 @@ class Prism_DaVinciResolve_Functions(object):
         master = self._masterFile()
 
         if os.path.exists(master):
-            known = self._loadState().get(self._projectName())
+            known = self._loadState().get(master)
             current = os.path.getmtime(master)
             if known is None or abs(current - known) > 1:
                 answer = self.core.popupQuestion(
@@ -568,10 +540,79 @@ class Prism_DaVinciResolve_Functions(object):
 
     @err_catcher(name=__name__)
     def AddShot(self):
-        task=self.getTask()
-        print(task)
-        self.core.shotDlg=ShotBrowserUI.onShotBrowserTriggered(self, task)
-        print("addShot in Function found")
+        task = self.getTask()
+        shotBrowser = ShotBrowserUI(self.core)
+        shots = shotBrowser.onShotBrowserTriggered(task)
+        if not shots:
+            return
+        for s in shots:
+            print(s["shot_path"])
+
+    def _projectNameFromFile(self, filePath):
+        base = os.path.splitext(os.path.basename(filePath))[0]
+        return re.sub(r"_v\d+$", "", base)
+
+    def _safetyExport(self, projectName):
+        folder = os.path.join(os.getenv("LOCALAPPDATA", tempfile.gettempdir()),
+                            "PrismResolve", "SafetyBackups")
+        os.makedirs(folder, exist_ok=True)
+        stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        dest = os.path.join(folder, "%s_%s.drp" % (projectName, stamp))
+        pm = self.resolve.GetProjectManager()
+        if not pm.ExportProject(projectName, dest, True):
+            raise RuntimeError("Export de sécurité impossible pour '%s'" % projectName)
+        return dest
+
+    @err_catcher(name=__name__)
+    def OpenScene(self):
+        filePath, _ = QFileDialog.getOpenFileName(
+            None, "Open scene", self.getScenefilesRoot(), "DaVinci Resolve project (*.drp)")
+        if not filePath:
+            return
+
+        pm = self.resolve.GetProjectManager()
+        projectName = self._projectNameFromFile(filePath)
+
+        if projectName in (pm.GetProjectListInCurrentFolder() or []):
+            answer = self.core.popupQuestion(
+                "Un projet nommé '%s' existe déjà sur ce PC.\n\n"
+                "Il va être supprimé et remplacé par le fichier choisi.\n"
+                "Si vous n'avez pas fait de Save Version, votre travail local ne sera conservé "
+                "que dans une copie de sécurité exportée automatiquement." % projectName,
+                title="Projet existant",
+                buttons=["Supprimer et ouvrir", "Annuler"],
+            )
+            if answer != "Supprimer et ouvrir":
+                return
+
+            current = pm.GetCurrentProject()
+            isCurrent = bool(current) and current.GetName() == projectName
+            if isCurrent and hasattr(pm, "SaveProject"):
+                pm.SaveProject()
+
+            safetyFile = self._safetyExport(projectName)
+
+            if isCurrent:
+                pm.CloseProject(current)
+
+            if not pm.DeleteProject(projectName):
+                raise RuntimeError("Suppression impossible de '%s'.\nCopie de sécurité : %s"
+                                % (projectName, safetyFile))
+
+        if not pm.ImportProject(filePath):
+            raise RuntimeError("Import impossible : %s" % filePath)
+
+        if not pm.LoadProject(projectName):
+            raise RuntimeError("Le projet '%s' a été importé mais n'a pas pu être ouvert." % projectName)
+
+        # On ne mémorise l'état du master que si c'est bien le master qu'on vient d'ouvrir
+        try:
+            isMaster = (os.path.normcase(os.path.abspath(filePath))
+                        == os.path.normcase(os.path.abspath(self._masterFile())))
+        except RuntimeError:
+            isMaster = False
+        if isMaster:
+            self._recordMaster()
 
     @err_catcher(name=__name__)
     def BakeCurrentShot(self):
