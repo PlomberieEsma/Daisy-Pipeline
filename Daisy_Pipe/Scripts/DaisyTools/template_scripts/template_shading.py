@@ -79,7 +79,6 @@ with open(config_file_path, mode="r", encoding="utf-8") as read_file:
     config_file = json.load(read_file)
 
 usd_file_format = config_file["global"]["usd_file_format"]
-print(f"{usd_file_format = }")
 
 asset_stage = Usd.Stage.Open(f"{project_path}/03_Production/Assets/{asset_path}/Export/USD/master/{asset_name}_USD_master.{usd_file_format}")
 meters_per_unit = UsdGeom.GetStageMetersPerUnit(asset_stage)
@@ -89,7 +88,7 @@ print(f"meters per unit : {meters_per_unit}")
 #=========================================================== SET FUNCTIONS ===============================================================
 ##########################################################################################################################################
 
-def template_shading() -> Any:
+def template_shading() -> dict[str, Any]:
 
     #-------------------------------------------------------------------------------#
     # This function creates the houdini node template for the Shading department    #
