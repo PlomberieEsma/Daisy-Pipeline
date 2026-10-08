@@ -538,16 +538,6 @@ class Prism_DaVinciResolve_Functions(object):
         self._exportDrp(backupFile)
         self.core.popup("Backup v%04d enregistré." % version)
 
-    @err_catcher(name=__name__)
-    def AddShot(self):
-        task = self.getTask()
-        shotBrowser = ShotBrowserUI(self.core)
-        shots = shotBrowser.onShotBrowserTriggered(task)
-        if not shots:
-            return
-        for s in shots:
-            print(s["shot_path"])
-
     def _projectNameFromFile(self, filePath):
         base = os.path.splitext(os.path.basename(filePath))[0]
         return re.sub(r"_v\d+$", "", base)
@@ -615,8 +605,24 @@ class Prism_DaVinciResolve_Functions(object):
             self._recordMaster()
 
     @err_catcher(name=__name__)
+    def AddShot(self):
+        task = self.getTask()
+        shotBrowser = ShotBrowserUI(self.core)
+        shots = shotBrowser.onShotBrowserTriggered(task, action="add")
+        if not shots:
+            return
+        for s in shots:
+            print(s["shot_path"])
+            
+    @err_catcher(name=__name__)
     def BakeCurrentShot(self):
-        print("bakeCurrentShot in Function found")
+        task = self.getTask()
+        shotBrowser = ShotBrowserUI(self.core)
+        shots = shotBrowser.onShotBrowserTriggered(task, action="bake")
+        if not shots:
+            return
+        for s in shots:
+            print(s["shot_path"])
         
     @err_catcher(name=__name__)
     def Render(self):
