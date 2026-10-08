@@ -7,6 +7,8 @@ Alors comment gérer ce département par logiciel ?
 - [Maya](#maya)
 - [Houdini](#houdini)
 
+***
+
 ## Prism
 Commençons par Prism, nous allons voir comment créer un nouvel asset puis une nouvelle scène Maya (on utilisera le même procédé pour Houdini).
 
@@ -23,6 +25,8 @@ Maintenant que notre asset d'algue est créé il est temps d'ajouter une scène 
 ![prism create scene from preset](src/modeling/prism_create_scene_from_preset.png)
 
 La manipulation fonctionne de la même manière pour Houdini ou n'importe quel autre logiciel associé avec Prism via un plugin.
+
+***
 
 ## Maya
 Il est maintenant temps d'ouvrir notre scène Maya fraîchement créée. Alors lancez Maya (vous pouvez aussi clicker sur la scène dans Prism mais c'est assez instable). Quand Maya s'ouvre, une fenêtre Prism devrait s'ouvrir aussi, **double clickez sur la scène que vous voulez ouvrir** et vous pouvez enfin modéliser.
@@ -86,6 +90,6 @@ Puis **allez sur le node "daisy export"** et clickez sur "**save to disk**". Voi
 Finalement, comme pour Maya : maintenant que nous avons fini notre ModL, il est temps de passer à la ModH. On peut créer un nouveau fichier de ModH à partir de la modL ?<br>
 Rendez-vous dans le **Project Browser** (la fenêtre Prism) à l'intérieur d'Houdini, mais gardez bien votre scène ouverte. Puis **allez dans la task ModH** et faites un **click droit dans "Files"** sélectionnez "**Create new version from current**". Votre scène est maintenant dupliquée dans ModH, pous pouvez travailler dessus et recommencer le processus d'export.
 
-[< page précédente](../departments.md)
+[< page précédente](../departments.md) - 
 [page suivante >](texturing.md)<br>
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

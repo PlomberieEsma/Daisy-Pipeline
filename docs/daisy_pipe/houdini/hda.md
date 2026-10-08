@@ -11,6 +11,8 @@ Cette page sert à lister les HDA (c'est à dire les nodes custom) de Daisy Pipe
 - [Save loaded paloads](#save-loaded-payloads)
 - [Load saved payloads](#load-saved-payloads)
 
+***
+
 ## Create template
 Ce node permet de créer un template pour chaque task de la production. Il est très simple d'utilisation : créez le node, clickez sur le bouton "Create template" et c'est fini.
 
@@ -30,7 +32,7 @@ Une autre fenêtre s'ouvre pour choisir cette fois-ci le product que vous voulez
 Ci dessous la liste des paramètres du node :
 
 |Nom du paramètre|Description
-|:---|---:
+|:---|:---
 |Import as|Permet de choisir entre 2 méthodes d'import, la référence ou le sublayer
 |Show path|Affiche le chemin d'import et permet de le modifier manuellement
 |**Advanced Settings**|
@@ -40,7 +42,7 @@ Ci dessous la liste des paramètres du node :
 |Use geometry sequence LOP for file sequences|Active l'import de séquence d'USD pour importer une animation
 |Has variant|Si votre asset a un ou des variants, cette case ajoute de nouveaux paramètres pour choisir vos variants
 |Uniform scale|Si la case "Maya scale" est cochée, permet de modifier l'échelle de l'asset
-|Import path prefix|
+|Import path prefix|Si la case "Use geometry sequence LOP for file sequence" est cochée
 
 ## Daisy Export
 
@@ -55,6 +57,6 @@ Ci dessous la liste des paramètres du node :
 ## Load saved payloads
 
 
-[< page précédente](../houdini.md)
+[< page précédente](../houdini.md) - 
 [page suivante >](../prism.md)<br>
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
