@@ -1,5 +1,5 @@
 # Hiérarchie
-[< page précédente](README.md)<br>
+[< page précédente](../overview.md)<br>
 
 Voici les dossiers de votre hiérarchie globale et l'utilité de chaques dossiers:
 
