@@ -50,11 +50,41 @@ Bravo, vous avez exporté votre première géo.
 Une dernière chose : maintenant que nous avons fini notre ModL, il est temps de passer à la ModH. Mais comment récupérer la ModL pour créer la ModH ?<br>
 Tout simplement en dupliquant la scène ! Rendez-vous dans le **Project Browser** (la fenêtre Prism) à l'intérieur de Maya, mais gardez bien votre scène ouverte. Puis **allez dans la task ModH** et faites un **click droit dans "Files"** sélectionnez "**Create new version from current**". Votre scène est maintenant dupliquée dans ModH, pous pouvez travailler dessus et recommencer le processus d'export.
 
-![maya state manager](src/modeling/maya_create_from_current.png)
+![maya create from current](src/modeling/maya_create_from_current.png)
+
+***
 
 ## Houdini
+Pour commencer votre modé dans Houdini, commencez par créer un nouveau projet (comme pour Maya au dessus), puis ouvrez Houdini et sélectionnez le projet. Vous arriverez sur cette fenêtre.
 
-*comming soon ...*
+![houdini home](src/modeling/houdini_home.png)
+1. Le viewport
+2. Le node editor
+3. Les parameters
+4. Le scene graph tree
+
+Tout d'abbord, assurez-vous que vous êtes bien dans le **contexte "Stage"** (Solaris). Vous pouvez le voir via le logo orangé en haut du node editor. Pour plus de confort je vais modifier l'organisation des fenêtres (mais ça ne change rien, pas de panique).
+
+![houdini layout_config](src/modeling/houdini_layout_config.png)
+
+Maintenant que Houdini est prêt à être utilisé, il est temps de créer le template de modeling (un template général, rien de très spécifique au département). Mais comment faire ? Créez un nouveau node **en appuyant sur TAB ou en faisant un click droit** dans le node editor et cherchez le node "**Create template**" rangé dans "Daisy Pipe". Puis dans les paramètres du node **clickez sur le bouton "Create template"**.<br>
+Magie !!! Un template est créé. Il peut prendre 2 formes :<br>
+<img src="src/modeling/general_template1.png" width=49%>
+<img src="src/modeling/general_template2.png" width=49%><br>
+Chaque forme se crée en fonction de la présence ou non d'un export USD de la task active. Et en français ? Par exemple, ici je suis dans la task ModL_var02, mais c'est la première fois que je crée ma modé, donc j'aurai la première forme. Mais si j'ai déjà fait un export dans cette task, j'aurai la seconde forme qui importe l'asset USD global (que nous verrons plus tard).
+
+Si vous n'avez pas compris le paragraphe du dessus, c'est pas grâve. Dans tous les cas, l'endroit où vous allez travailler sera le second node : le "**sop create**". Pour commencer votre modé, vous pouvez rentrer dedans en **double clickant dessus**. Et je vous souhaite bon courage pour votre modé.
+
+![houdini layout_config](src/modeling/houdini_sop_create.png)
+
+Une fois votre modé terminée, vous pouvez l'exporter. Assurez-vous qu'elle est bien placée dans ce type de hiérarchie : /\<asset\>/\<asset\>_geo/\<mesh\>
+
+![houdini layout_config](src/modeling/houdini_mesh_path.png)
+
+Puis **allez sur le node "daisy export"** et clickez sur "**save to disk**". Voilà, votre modé est exportée en USD.
+
+Finalement, comme pour Maya : maintenant que nous avons fini notre ModL, il est temps de passer à la ModH. On peut créer un nouveau fichier de ModH à partir de la modL ?<br>
+Rendez-vous dans le **Project Browser** (la fenêtre Prism) à l'intérieur d'Houdini, mais gardez bien votre scène ouverte. Puis **allez dans la task ModH** et faites un **click droit dans "Files"** sélectionnez "**Create new version from current**". Votre scène est maintenant dupliquée dans ModH, pous pouvez travailler dessus et recommencer le processus d'export.
 
 [< page précédente](../departments.md)
 [page suivante >](texturing.md)<br>
