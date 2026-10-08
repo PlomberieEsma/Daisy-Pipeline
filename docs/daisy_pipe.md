@@ -1,6 +1,11 @@
 # Daisy Pipeline
 [< page précédente](README.md)<br>
-Daisy Pipeline est un plugin pour Prism Pipeline. Il a pour but gérer un pipe USD tout en accélerant au maximum les processus techniques relatifs au cinéma d'Animation 3D. Dans cette documentation vous trouverez des informations relatives à l'utilisation de Daisy Pipe, nous partirons du principe que vous connaissez déjà Prism ainsi que les différents logiciels utilisés dans le Pipeline. Cette documentation pourra servir également de guide pour ldes développements ultérieurs. Ci dessous la documentation relative à :
+Daisy Pipeline est un plugin pour Prism Pipeline. Il a pour but gérer un pipe USD tout en accélerant au maximum les processus techniques relatifs au cinéma d'Animation 3D. Dans cette documentation vous trouverez des informations relatives à l'utilisation de Daisy Pipe, nous partirons du principe que vous connaissez déjà Prism ainsi que les différents logiciels utilisés dans le Pipeline. Cette documentation pourra servir également de guide pour ldes développements ultérieurs.
+
+> <img src="src/github_logo.png" width=20em>
+> Retrouvez le code source <a href="https://github.com/PlomberieEsma/Daisy-Pipeline"><i><strong>ici</strong></i></a>.
+
+Ci dessous la documentation relative à :
 
 - [Installation](daisy_pipe/installation.md)
 - [Maya](daisy_pipe/maya/maya.md)
