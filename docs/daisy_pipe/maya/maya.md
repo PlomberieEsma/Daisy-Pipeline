@@ -41,7 +41,7 @@ Daisy Pipeline pour maya gere tous la gestion de la creation dans asset en USD, 
 ### usd-exports
 
 
-[< page précédente](../installation.md)
+[< page précédente](../installation.md) - 
 [page suivante >](../houdini.md)  
 
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
