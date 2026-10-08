@@ -48,6 +48,12 @@ class DaisyUsdExportClass(QWidget):
         self.canSetVersion = True
         self.nodes = []
         self.setupUi()
+
+        # hidden label read by Prism's ExporterDlg.submit() (shelf export window)
+        # to get the path of the last export - shared by both state classes
+        self.l_pathLast = QLabel("")
+        self.l_pathLast.setVisible(False)
+
         self.connectEvents()
         self.initializeContextDefaults()
 
@@ -744,6 +750,9 @@ class DaisyUsdExportClass(QWidget):
         if not outputPath:
             return [self.state.text(0) + " - error"]
 
+        # read back by Prism's ExporterDlg.submit() after a shelf export
+        self.l_pathLast.setText(outputPath)
+
         result = self.core.popupQuestion(
             "USD export: %s" % outputPath,
             title="EsmaUsdExport",
@@ -1068,6 +1077,9 @@ class DaisyGeoExportClass(DaisyUsdExportClass):
 
         if not outputPath:
             return [self.state.text(0) + " - error"]
+
+        # read back by Prism's ExporterDlg.submit() after a shelf export
+        self.l_pathLast.setText(outputPath)
 
         result = self.core.popupQuestion(
             "%s export: %s" % (self.cb_outputType.currentText()[1:].upper(), outputPath),
