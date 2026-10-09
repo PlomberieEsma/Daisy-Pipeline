@@ -197,11 +197,38 @@ def write_usd(preset_name, file_path, default_prim="", selection_only=True, over
 
         cmds.mayaUSDExport(**config)
 
+def resolve_root_prim(layer_path, wanted=""):
+
+    #Return the name of the root prim actually present in a usd file:
+    #the wanted name if it exists, else the file's defaultPrim, else its only root prim
+
+    from pxr import Sdf
+
+    layer = Sdf.Layer.FindOrOpen(layer_path)
+    if layer is None:
+        raise RuntimeError(f"Impossible d'ouvrir {layer_path}")
+
+    roots = [p.name for p in layer.rootPrims]
+
+    if wanted in roots:
+        return wanted
+    if layer.defaultPrim and layer.defaultPrim in roots:
+        return layer.defaultPrim
+    if len(roots) == 1:
+        return roots[0]
+
+    raise RuntimeError(
+        f"{os.path.basename(layer_path)} contient plusieurs prims racines {roots} et aucun ne s'appelle "
+        f"'{wanted}' : regroupe l'export sous un seul groupe racine."
+    )
+
 def create_master(file_path, master_path, default_prim="", frame_range=None):
 
     #Create a master usd file with sublayer pointing to the lastest version of the entity usd file
 
     from pxr import Usd, Sdf #import Usd and Sdf library from Pxr
+
+    default_prim = resolve_root_prim(file_path, default_prim)
 
     start_frame, end_frame = frame_range if frame_range else (1, 1)
 
@@ -248,45 +275,33 @@ def create_master(file_path, master_path, default_prim="", frame_range=None):
 
 def create_master_clips(frame_paths, frame_range, clips_path, default_prim=""):
 
-    from pxr import Usd, Sdf
-
-    if os.path.exists(clips_path):
-        os.remove(clips_path)
+    from pxr import Sdf, UsdUtils
 
     start_frame, end_frame = frame_range
-    prim_path = "/" + default_prim
     frames = list(range(int(start_frame), int(end_frame) + 1))
 
     for frame, frame_path in zip(frames, frame_paths):
         promote_defaults_to_time_samples(frame_path, frame)
 
-    clips_stage = Usd.Stage.CreateNew(clips_path)
-    root_layer = clips_stage.GetRootLayer()
+    base = os.path.splitext(clips_path)[0]
+    for p in (clips_path, base + ".topology.usda", base + ".manifest.usda"):
+        if os.path.exists(p):
+            os.remove(p)
 
-    root_layer.defaultPrim = default_prim
-    root_layer.startTimeCode = start_frame
-    root_layer.endTimeCode = end_frame
-    clips_stage.SetMetadata("metersPerUnit", 0.01)
+    #the entity name isn't always the real root prim (Maya selection exports
+    #keep the Maya node names), so use the root prim actually in the frames
+    prim_name = resolve_root_prim(frame_paths[0], default_prim)
 
-    prim = clips_stage.DefinePrim(prim_path)
+    result = Sdf.Layer.CreateNew(clips_path)
+    UsdUtils.StitchClips(result, frame_paths, Sdf.Path("/" + prim_name), float(start_frame), float(end_frame))
 
-    prim.GetReferences().AddReference(frame_paths[0], prim_path)
-
-    clipsAPI = Usd.ClipsAPI(prim)
-    clipsAPI.SetClipAssetPaths([Sdf.AssetPath(p) for p in frame_paths])
-    clipsAPI.SetClipPrimPath(prim_path)
-    clipsAPI.SetClipManifestAssetPath(Sdf.AssetPath(frame_paths[0]))
-    clipsAPI.SetClipActive([(float(frame), float(i)) for i, frame in enumerate(frames)])
-    clipsAPI.SetClipTimes([(float(frame), float(frame)) for frame in frames])
-
-    root_layer.Save()
+    result.defaultPrim = prim_name
+    result.pseudoRoot.SetInfo("metersPerUnit", 0.01)
+    result.Save()
 
     print(f"Fichier de clips créé : {clips_path}")
 
     return clips_path
-
-import os
-
 
 def houdini_relative_path(file_path, env_var="$PRISM_JOB"):
     if not file_path:
