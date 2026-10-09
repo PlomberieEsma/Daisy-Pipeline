@@ -248,22 +248,17 @@ def create_master(file_path, master_path, default_prim="", frame_range=None):
 
 def create_master_clips(frame_paths, frame_range, clips_path, default_prim=""):
 
-    #Build a usd file that stitches multiple per-frame usd files together using
-    #USD Value Clips, so a "File per Frame" export still plays back as continuous
-    #animation instead of a single static frame.
-    #This file is NOT the master itself: it's meant to be handed to create_master()
-    #as its file_path, so the master stays a plain sublayer wrapper either way.
-
     from pxr import Usd, Sdf
 
     if os.path.exists(clips_path):
         os.remove(clips_path)
-        #clips are always rebuilt from the current export rather than merged with
-        #a previous one, since the clip list has to match the frames on disk
 
     start_frame, end_frame = frame_range
     prim_path = "/" + default_prim
     frames = list(range(int(start_frame), int(end_frame) + 1))
+
+    for frame, frame_path in zip(frames, frame_paths):
+        promote_defaults_to_time_samples(frame_path, frame)
 
     clips_stage = Usd.Stage.CreateNew(clips_path)
     root_layer = clips_stage.GetRootLayer()
@@ -275,12 +270,7 @@ def create_master_clips(frame_paths, frame_range, clips_path, default_prim=""):
 
     prim = clips_stage.DefinePrim(prim_path)
 
-    #Value Clips only override time-varying attribute VALUES - they never bring in
-    #the prim hierarchy/mesh topology itself. Without this reference the clip prim
-    #stays empty/untyped and no geometry shows up, so we reference frame 0 to get
-    #the actual mesh/hierarchy/material structure, then let the clips drive the
-    #time-sampled attributes (points, xforms, ...) on top of it.
-    prim.GetReferences().AddReference(frame_paths[0])
+    prim.GetReferences().AddReference(frame_paths[0], prim_path)
 
     clipsAPI = Usd.ClipsAPI(prim)
     clipsAPI.SetClipAssetPaths([Sdf.AssetPath(p) for p in frame_paths])
@@ -314,3 +304,37 @@ def houdini_relative_path(file_path, env_var="$PRISM_JOB"):
         return env_var + norm_file[len(norm_project):]
 
     return norm_file
+
+def promote_defaults_to_time_samples(frame_path, frame):
+
+    #Value Clips only read time samples: any value Houdini wrote as a default
+    #in a per-frame file is ignored. Convert those defaults into a time sample
+    #at the file's frame so the clip actually animates.
+
+    from pxr import Sdf
+
+    layer = Sdf.Layer.FindOrOpen(frame_path)
+    if layer is None:
+        return
+
+    to_promote = []
+
+    def visit(path):
+        if not path.IsPropertyPath():
+            return
+        spec = layer.GetAttributeAtPath(path)
+        if spec is None or not spec.HasDefaultValue():
+            return
+        if spec.variability == Sdf.VariabilityUniform:
+            return
+        if layer.GetNumTimeSamplesForPath(path):
+            return
+        to_promote.append((path, spec.default))
+
+    layer.Traverse(Sdf.Path.absoluteRootPath, visit)
+
+    for path, value in to_promote:
+        layer.SetTimeSample(path, float(frame), value)
+
+    if to_promote:
+        layer.Save()
