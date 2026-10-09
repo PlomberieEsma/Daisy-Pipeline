@@ -26,6 +26,7 @@ ACTIONS = [
     ("Save BackUp Version", lambda: callPlugin("SaveBackUpVersion")),
     ("Add Shot",            lambda: callPlugin("AddShot")),
     ("Bake Current Shot",   lambda: callPlugin("BakeCurrentShot")),
+    ("Modify Current Shot",   lambda: callPlugin("ModifyCurrentShot")),
     ("Render",              lambda: callPlugin("Render")),
 ]
 

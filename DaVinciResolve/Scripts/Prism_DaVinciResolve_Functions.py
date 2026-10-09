@@ -623,6 +623,16 @@ class Prism_DaVinciResolve_Functions(object):
             return
         for s in shots:
             print(s["shot_path"])
+                        
+    @err_catcher(name=__name__)
+    def ModifyCurrentShot(self):
+        task = self.getTask()
+        shotBrowser = ShotBrowserUI(self.core)
+        shots = shotBrowser.onShotBrowserTriggered(task, action="modify")
+        if not shots:
+            return
+        for s in shots:
+            print(s["shot_path"])
         
     @err_catcher(name=__name__)
     def Render(self):

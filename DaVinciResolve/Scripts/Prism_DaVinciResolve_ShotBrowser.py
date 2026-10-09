@@ -15,6 +15,9 @@ _AUTO_TRISTATE = getattr(Qt, "ItemIsAutoTristate", None) or getattr(Qt, "ItemIsT
 
 THUMB_SIZE = QSize(100, 56)
 
+SEQ_TOOL, SEQ_INPUT = "SeqCounter", "Number"      # à adapter
+SHOT_TOOL, SHOT_INPUT = "ShotCounter", "Number"   # à adapter
+
 
 # Ordre croissant d'avancement : du premier niveau au dernier.
 # Chaque niveau = (label, [motifs glob relatifs au dossier du shot])
@@ -54,6 +57,45 @@ def rank(label, path):
 def rankText(label, path):
     return "%s v%04d" % (label, versionNumber(path))
 
+# (node, "name" | "frame", "seq" | "shot")
+COUNTERS = [
+    ("SqName",  "name",  "seq"),
+    ("SqFrame", "frame", "seq"),
+    # ("ShName",  "name",  "shot"),    # à décommenter quand tes nodes plan existent
+    # ("ShFrame", "frame", "shot"),
+]
+COUNTER_BASE = 1    # 1 : la 1re frame s'affiche " - 0001" ; 0 : " - 0000"
+
+def sqLabel(seq):
+    # "sq010" -> "Sq0010"
+    digits = re.sub(r"\D", "", seq)
+    return "Sq%04d" % int(digits) if digits else "Sq----"
+
+def shLabel(shotPath):
+    # "sq010/sh020" -> "Sh0020"  (format à confirmer)
+    shot = shotPath.split("/")[-1]
+    digits = re.sub(r"\D", "", shot)
+    return "Sh%04d" % int(digits) if digits else "Sh----"
+
+def getInput(tool, inputId):
+    for _, inp in tool.GetInputList().items():
+        if inp.GetAttrs().get("INPS_ID") == inputId:
+            return inp
+    return None
+
+def counterExpression(rows, mode):
+    """rows = [(début, fin, début de référence, label)] en frames de la comp."""
+    if mode == "name":
+        table = ",".join('{%d,%d,"%s"}' % (s, e, label) for s, e, ref, label in rows)
+        result = "r[3]"
+    else:
+        table = ",".join("{%d,%d,%d}" % (s, e, ref) for s, e, ref, label in rows)
+        result = 'string.format(" - %%04d", t - r[3] + %d)' % COUNTER_BASE
+    return ("(function() local t = math.floor(time + 0.5) "
+            "for _, r in ipairs({" + table + "}) do "
+            "if t >= r[1] and t < r[2] then return " + result + " end end "
+            "return '' end)()")
+
 
 
 class ShotBrowserUI(object):
@@ -64,12 +106,12 @@ class ShotBrowserUI(object):
 
     def onShotBrowserTriggered(self, task="", action="add"):
         self.toImportShot = []
-        self.action = action if action in ("add", "bake") else "add"
+        self.action = action if action in ("add", "bake", "modify") else "add"
+        self.timelineMode = self.action in ("bake", "modify")   # modes qui lisent la timeline
+        self.onTimeline = {}
 
         try:
-            # Mode bake : on a besoin de la timeline pour savoir ce qui est déjà posé
-            self.onTimeline = {}
-            if self.action == "bake":
+            if self.timelineMode:
                 resolve = self.getResolve()
                 project = resolve.GetProjectManager().GetCurrentProject() if resolve else None
                 timeline = project.GetCurrentTimeline() if project else None
@@ -81,10 +123,11 @@ class ShotBrowserUI(object):
                     self.core.popup("Aucun shot du Shot Browser trouvé sur la timeline.")
                     return []
 
+            titles = {"add": "Add", "bake": "Bake", "modify": "Modify"}
             self.dlg = QDialog()
             self.core.parentWindow(self.dlg)
-            self.dlg.setWindowTitle("Shot Browser - %s" % ("Bake" if self.action == "bake" else "Add"))
-            self.dlg.resize(700, 650)
+            self.dlg.setWindowTitle("Shot Browser - %s" % titles[self.action])
+            self.dlg.resize(750, 650)
 
             layout = QVBoxLayout(self.dlg)
 
@@ -112,8 +155,9 @@ class ShotBrowserUI(object):
             layout.addLayout(lo_top)
 
             self.tw_shots = QTreeWidget()
-            if self.action == "bake":
-                headers = ["Shot", "Thumbnail", "Actuel (timeline)", "Nouveau"]
+            if self.timelineMode:
+                lastCol = "Nouveau" if self.action == "bake" else "Version à poser"
+                headers = ["Shot", "Thumbnail", "Actuel (timeline)", lastCol]
             else:
                 headers = ["Shot", "Thumbnail", "Task Level"]
             self.tw_shots.setColumnCount(len(headers))
@@ -124,17 +168,21 @@ class ShotBrowserUI(object):
             header.setSectionResizeMode(0, QHeaderView.Stretch)
             for col in range(1, len(headers)):
                 header.setSectionResizeMode(col, QHeaderView.ResizeToContents)
-            if self.action == "bake":
+            if self.timelineMode:
                 header.setSectionResizeMode(3, QHeaderView.Interactive)
                 self.tw_shots.setColumnWidth(3, 200)
             layout.addWidget(self.tw_shots)
 
             count = self.populateTree()
-            if self.action == "bake" and count == 0:
-                self.core.popup("Tous les shots de la timeline sont à jour.")
+            if self.timelineMode and count == 0:
+                if self.action == "bake":
+                    self.core.popup("Tous les shots de la timeline sont à jour.")
+                else:
+                    self.core.popup("Aucun shot de la timeline n'a été retrouvé dans le projet.")
                 return []
 
-            self.btn_validate = QPushButton("Bake" if self.action == "bake" else "Add to new track")
+            labels = {"add": "Add to new track", "bake": "Bake", "modify": "Apply"}
+            self.btn_validate = QPushButton(labels[self.action])
             self.btn_validate.clicked.connect(self.onValidate)
             layout.addWidget(self.btn_validate)
 
@@ -201,6 +249,8 @@ class ShotBrowserUI(object):
         for entity in shots:
             sequences.setdefault(entity.get("sequence", ""), []).append(entity)
 
+        defaultState = Qt.Unchecked if self.action == "modify" else Qt.Checked
+
         count = 0
         for seq in sorted(sequences, key=naturalKey):
             seqItem = None
@@ -209,17 +259,28 @@ class ShotBrowserUI(object):
                 shotName = entity.get("shot", "")
                 shotPath = "%s/%s" % (seq, shotName) if seq else shotName
 
-                if self.action == "bake":
+                versions, curRank = None, None
+                if self.timelineMode:
                     refs = self.onTimeline.get(shotPath)
                     if not refs:
-                        continue                     # pas sur la timeline
-                    versions = self.getShotVersions(entity)
-                    if not versions:
-                        continue
+                        continue                         # pas sur la timeline
                     cur = refs[0]
                     curRank = rank(cur["taskLevel"], cur["mediaPath"])
-                    if versions[0]["rank"] <= curRank:
-                        continue                     # déjà à jour
+                    versions = list(self.getShotVersions(entity))
+
+                    if self.action == "bake":
+                        if not versions or versions[0]["rank"] <= curRank:
+                            continue                     # déjà à jour
+                    elif not any(v["rank"] == curRank for v in versions):
+                        # Version actuelle absente du disque : on la garde dans le menu
+                        versions.append({
+                            "label": cur["taskLevel"],
+                            "version": versionNumber(cur["mediaPath"]),
+                            "path": cur["mediaPath"],
+                            "rank": curRank,
+                        })
+                        versions.sort(key=lambda v: v["rank"], reverse=True)
+
                     infos = self.getShotInfos(entity)
                     columns = [shotName, "", rankText(cur["taskLevel"], cur["mediaPath"]), ""]
                 else:
@@ -235,22 +296,30 @@ class ShotBrowserUI(object):
 
                 shotItem = QTreeWidgetItem(seqItem, columns)
                 shotItem.setFlags(shotItem.flags() | Qt.ItemIsUserCheckable)
-                shotItem.setCheckState(0, Qt.Checked)
+                shotItem.setCheckState(0, defaultState)
                 shotItem.setIcon(1, QIcon(infos["pixmap"]))
                 shotItem.setSizeHint(1, THUMB_SIZE)
                 shotItem.setData(0, Qt.UserRole, entity)
-                if self.action == "bake":
+
+                if self.timelineMode:
                     combo = QComboBox()
                     for v in versions:
                         text = "%s v%04d" % (v["label"], v["version"])
                         if v["rank"] == curRank:
                             text += "  (actuel)"
-                        combo.addItem(text, v)       # le dict de la version est stocké dans le menu
-                    self.tw_shots.setItemWidget(shotItem, 3, combo)   # index 0 = la plus avancée
+                        combo.addItem(text, v)
+
+                    if self.action == "modify":
+                        # Présélection = version actuelle ; tout changement coche le shot
+                        combo.setCurrentIndex(next(i for i, v in enumerate(versions) if v["rank"] == curRank))
+                        combo.currentIndexChanged.connect(
+                            lambda _i, it=shotItem: it.setCheckState(0, Qt.Checked))
+
+                    self.tw_shots.setItemWidget(shotItem, 3, combo)
                 count += 1
 
             if seqItem is not None:
-                seqItem.setCheckState(0, Qt.Checked)
+                seqItem.setCheckState(0, defaultState)
 
         self.tw_shots.expandAll()
         return count
@@ -402,6 +471,7 @@ class ShotBrowserUI(object):
 
         if warnings:
             self.core.popup("Shots non ajoutés ou incomplets :\n" + "\n".join(warnings))
+        self.updateFrameCounters()
         return tlItems
 
     def bakeShotsOnTimeline(self, shots):
@@ -671,6 +741,124 @@ class ShotBrowserUI(object):
 
         return tlItems
 
+    def getCounterRanges(self, timeline, origin):
+        """Plages (frames relatives au début du clip comp) par plan et par séquence."""
+        shots = self.getTimelineShots(timeline)
+        perShot, perSeq = [], {}
+        for shotPath, refs in shots.items():
+            seq = shotPath.split("/")[0] if "/" in shotPath else ""
+            for ref in refs:
+                s = ref["start"] - origin
+                e = s + ref["duration"]
+                perShot.append({"shot": shotPath, "seq": seq, "start": s, "end": e})
+                lo, hi = perSeq.get(seq, (s, e))
+                perSeq[seq] = (min(lo, s), max(hi, e))
+        perShot.sort(key=lambda r: r["start"])
+        return perShot, perSeq
+    
+    def findCounterComp(self, timeline):
+        """Clip portant la comp qui contient les nodes de compteur."""
+        for t in range(1, timeline.GetTrackCount("video") + 1):
+            for item in timeline.GetItemListInTrack("video", t) or []:
+                for idx in range(1, (item.GetFusionCompCount() or 0) + 1):
+                    comp = item.GetFusionCompByIndex(idx)
+                    if comp and comp.FindTool(COUNTERS[0][0]):
+                        return item, comp
+        return None, None
+
+    def buildCounterRows(self, timeline, overlay, scope):
+        perShot, perSeq = self.getCounterRanges(timeline, overlay.GetStart())
+        rows = []
+        for r in perShot:
+            if scope == "seq":
+                ref, label = perSeq[r["seq"]][0], sqLabel(r["seq"])
+            else:
+                ref, label = r["start"], shLabel(r["shot"])
+            rows.append((r["start"], r["end"], ref, label))
+        return rows
+
+    def updateFrameCounters(self):
+        """Met à jour les expressions Lua des Text+ SqName et SqFrame dans la comp Fusion."""
+        ctx = self.getTimelineContext()
+        if not ctx:
+            return
+        _, timeline, _ = ctx
+
+        overlayItem, comp = self.findCounterComp(timeline)
+        if not comp:
+            # Aucun node 'SqName' trouvé dans les Fusion Compositions de la timeline
+            return
+
+        # Origine temporelle du clip Fusion
+        compStart = overlayItem.GetStart()
+
+        # 1. Récupération et consolidation des plages par séquence
+        perShot, _ = self.getCounterRanges(timeline, compStart)
+        if not perShot:
+            return
+
+        # Fusionne les shots adjacents de la même séquence pour créer des plages [start, end, seqLabel]
+        seqBlocks = []
+        for r in perShot:
+            s_label = sqLabel(r["seq"])
+            if seqBlocks and seqBlocks[-1]["seq"] == r["seq"]:
+                seqBlocks[-1]["end"] = max(seqBlocks[-1]["end"], r["end"])
+            else:
+                seqBlocks.append({
+                    "seq": r["seq"],
+                    "label": s_label,
+                    "start": r["start"],
+                    "end": r["end"]
+                })
+
+        # 2. Construction des expressions Lua Fusion
+
+        # Table Lua des blocs : { {start, end, "Sq0010"}, ... }
+        luaBlocksTable = ",".join(
+            '{%d,%d,"%s"}' % (b["start"], b["end"], b["label"])
+            for b in seqBlocks
+        )
+
+        # Expression pour SqName (affiche le nom de la séquence)
+        expr_sqName = (
+            "Text((function() "
+            "local t = math.floor(time + 0.5) "
+            "for _, b in ipairs({" + luaBlocksTable + "}) do "
+            "if t >= b[1] and t < b[2] then return b[3] end "
+            "end "
+            "return '' "
+            "end)())"
+        )
+
+        # Expression pour SqFrame (compte les frames relatives au début de la séquence)
+        expr_sqFrame = (
+            "Text((function() "
+            "local t = math.floor(time + 0.5) "
+            "for _, b in ipairs({" + luaBlocksTable + "}) do "
+            "if t >= b[1] and t < b[2] then "
+            "return string.format(' - %%04d', t - b[1] + %d) "
+            "end "
+            "end "
+            "return '' "
+            "end)())"
+        )
+
+        # 3. Application des expressions sur les nodes Text+
+        sqNameTool = comp.FindTool("SqName")
+        if sqNameTool:
+            sqNameTool.SetInput("StyledText", comp.ParseExpression(expr_sqName))
+
+        sqFrameTool = comp.FindTool("SqFrame")
+        if sqFrameTool:
+            sqFrameTool.SetInput("StyledText", comp.ParseExpression(expr_sqFrame))
+
+    def printToolInputs(self, toolName):
+        overlay, comp = self.findCounterComp(self.getTimelineContext()[1])
+        tool = comp.FindTool(toolName)
+        for i, inp in tool.GetInputList().items():
+            attrs = inp.GetAttrs()
+            print(attrs.get("INPS_ID"), "|", attrs.get("INPS_Name"), "|", attrs.get("INPS_DataType"))
+
     # ------------------------------------------------------------------ #
     def onValidate(self):
         result = []
@@ -685,13 +873,13 @@ class ShotBrowserUI(object):
                 shot = entity.get("shot", "")
                 shotPath = "%s/%s" % (seq, shot) if seq else shot
 
-                if self.action == "bake":
+                if self.timelineMode:
                     # Version choisie dans le menu déroulant
                     combo = self.tw_shots.itemWidget(child, 3)
                     chosen = combo.itemData(combo.currentIndex())
                     level, mediaPath = chosen["label"], chosen["path"]
 
-                    # Rien à faire si la version choisie est déjà celle de la timeline
+                    # Rien à faire si c'est déjà la version posée sur la timeline
                     cur = self.onTimeline[shotPath][0]
                     if rank(level, mediaPath) == rank(cur["taskLevel"], cur["mediaPath"]):
                         continue
@@ -709,7 +897,10 @@ class ShotBrowserUI(object):
         self.toImportShot = result
         self.dlg.accept()
 
-        if self.action == "bake":
+        if self.timelineMode:
+            if not result:
+                self.core.popup("Aucune modification à appliquer.")
+                return
             self.bakeShotsOnTimeline(result)
         else:
             self.addShotsToTimeline(result)
