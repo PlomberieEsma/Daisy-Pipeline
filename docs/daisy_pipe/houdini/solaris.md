@@ -7,6 +7,8 @@ Ce document est un peu long donc voici un sommaire de la page pour aller directe
 - [Solaris, qu'est-ce que c'est ?](#solaris-quest-ce-que-cest-)
 - [Le viewport](#le-viewport)
 - [Le Scene Graph Tree](#le-scene-graph-tree)
+    - [Le scene graph tree](#le-scene-graph-tree-1)
+    - [Le scene graph details](#le-scene-graph-details)
 - [Le Scene Graph Layers](#le-scene-graph-layers)
 - [Les nodes utils](#les-nodes-utils)
 
@@ -135,8 +137,20 @@ sur le deuxième emplacement sert à gérer les **overrides du viewport**. Lorsq
 ![houdini selection rule icon](src/solaris/houdini_selection_rule_icon.png)
 sert à gérer les selection rules, c'est à dire les filtres.<br>
 ![houdini selection rule window](src/solaris/houdini_selection_rule_window.png)
+4. La **roue crantée**
+![houdini gear icon](src/solaris/houdini_gear_icon.png)
+sert à **sélectionner les colonnes qu'on souhaite afficher**, par exemple, vous pouvez ajouter les matériaux associés à chaque primitive ou encore leurs variants si elles en ont.
+5. L'**étiquette**
+![houdini label icon](src/solaris/houdini_label_icon.png)
+à droite permet d'**afficher la légende** du scene graph tree avec des informations sur les couleurs, icones ...
 
-***À suivre ...***
+### Le Scene Graph Details
+Si vous sélectionnez une primitive, il est fort probable que quelque chose s'affiche dans cette fenêtre. C'est le Scene Graph Details.
+
+![houdini scene graph details](src/solaris/houdini_scene_graph_details.png)
+
+Cette partie du scene graph tree vous permet d'inspecter en détail les données contenues dans chaque primitive.<br>
+Vous n'aurez normalement pas à l'utiliser mais si c'est le cas il peut vous permettre de voir les données brutes de la scène.
 
 ***
 
