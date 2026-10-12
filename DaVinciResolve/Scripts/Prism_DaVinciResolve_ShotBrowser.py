@@ -6,7 +6,7 @@ import json
 from qtpy.QtCore import Qt, QSize
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QCheckBox,
     QTreeWidget, QTreeWidgetItem, QPushButton, QHeaderView, QComboBox
 )
 
@@ -30,6 +30,14 @@ TASK_LEVELS = [
 ]
 
 NO_LEVEL = "-"
+
+# Association personnalisée des lettres pour chaque TaskLevel
+TASK_LETTERS = {
+    "Layout": "Ly",
+    "Anim": "A",
+    "Lighting": "Lg",       # Par exemple 'G' pour Lighting ou 'L'
+    "Compositing": "C",
+}
 
 def naturalKey(s):
     # sh2 avant sh10
@@ -57,19 +65,36 @@ def rank(label, path):
 def rankText(label, path):
     return "%s v%04d" % (label, versionNumber(path))
 
-# (node, "name" | "frame", "seq" | "shot")
-COUNTERS = [
-    ("SqName",  "name",  "seq"),
-    ("SqFrame", "frame", "seq"),
-    # ("ShName",  "name",  "shot"),    # à décommenter quand tes nodes plan existent
-    # ("ShFrame", "frame", "shot"),
-]
 COUNTER_BASE = 1    # 1 : la 1re frame s'affiche " - 0001" ; 0 : " - 0000"
+COUNTERS = [
+    ("SqName",     "name",     "seq"),
+    ("SqFrame",    "frame",    "seq"),
+    ("ShName",     "name",     "shot"),
+    ("ShFrame",    "frame",    "shot"),
+    ("TaskLevel",  "task",     "shot"),
+]
+
+def counterExpression(rows, mode):
+    if mode == "name":
+        table = ",".join('{%d,%d,"%s"}' % (s, e, label) for s, e, ref, label in rows)
+        result = "r[3]"
+    elif mode == "duration":
+        table = ",".join("{%d,%d,%d}" % (s, e, e - s) for s, e, ref, label in rows)
+        result = 'string.format("%d f", r[3])'
+    elif mode == "task":
+        # r[3] contiendra la lettre personnalisée choisie
+        table = ",".join('{%d,%d,"%s"}' % (s, e, TASK_LETTERS.get(label, label[:1].upper())) for s, e, ref, label in rows)
+        result = "r[3]"
+    else:
+        table = ",".join("{%d,%d,%d}" % (s, e, ref) for s, e, ref, label in rows)
+        result = 'string.format(" - %%04d", t - r[3] + %d)' % COUNTER_BASE
+    return ("(function() local t = math.floor(time + 0.5) "
+            "for _, r in ipairs({" + table + "}) do "
+            "if t >= r[1] and t < r[2] then return " + result + " end end "
+            "return '' end)()")
 
 def sqLabel(seq):
-    # "sq010" -> "Sq0010"
-    digits = re.sub(r"\D", "", seq)
-    return "Sq%04d" % int(digits) if digits else "Sq----"
+    return seq        # "sq010" -> "sq010"
 
 def shLabel(shotPath):
     # "sq010/sh020" -> "Sh0020"  (format à confirmer)
@@ -83,20 +108,17 @@ def getInput(tool, inputId):
             return inp
     return None
 
-def counterExpression(rows, mode):
-    """rows = [(début, fin, début de référence, label)] en frames de la comp."""
-    if mode == "name":
-        table = ",".join('{%d,%d,"%s"}' % (s, e, label) for s, e, ref, label in rows)
-        result = "r[3]"
-    else:
-        table = ",".join("{%d,%d,%d}" % (s, e, ref) for s, e, ref, label in rows)
-        result = 'string.format(" - %%04d", t - r[3] + %d)' % COUNTER_BASE
-    return ("(function() local t = math.floor(time + 0.5) "
-            "for _, r in ipairs({" + table + "}) do "
-            "if t >= r[1] and t < r[2] then return " + result + " end end "
-            "return '' end)()")
+SHOTINFO_REL = os.path.join("00_Pipeline", "Shotinfo", "shotInfo.json")
 
-
+def loadShotRanges(core):
+    """{"sq010": {"sh010": [1001, 1100], ...}, ...}"""
+    path = os.path.join(core.projectPath, SHOTINFO_REL)
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f).get("shotRanges", {})
+    except Exception as e:
+        print("[ShotBrowser] shotInfo.json illisible (%s) : %s" % (path, e))
+        return {}
 
 class ShotBrowserUI(object):
     def __init__(self, core, plugin=None):
@@ -105,10 +127,19 @@ class ShotBrowserUI(object):
         self.toImportShot = []
 
     def onShotBrowserTriggered(self, task="", action="add"):
+        import inspect
+        for name in ("addShotsToTimeline", "placeShot", "updateFrameCounters", "bakeShotsOnTimeline"):
+            try:
+                fn = getattr(self, name)
+                print("[ShotBrowser] %s -> %s : ligne %d"
+                      % (name, inspect.getsourcefile(fn), inspect.getsourcelines(fn)[1]))
+            except Exception as e:
+                print("[ShotBrowser] %s -> ABSENTE (%s)" % (name, e))
         self.toImportShot = []
         self.action = action if action in ("add", "bake", "modify") else "add"
         self.timelineMode = self.action in ("bake", "modify")   # modes qui lisent la timeline
         self.onTimeline = {}
+        self.shotRanges = loadShotRanges(self.core)
 
         try:
             if self.timelineMode:
@@ -139,6 +170,11 @@ class ShotBrowserUI(object):
                 lo_ctx.addWidget(QLabel(str(task)))
                 lo_ctx.addStretch()
                 layout.addLayout(lo_ctx)
+
+            self.cb_masters = QCheckBox("Afficher les MASTER")
+            self.cb_masters.setChecked(False)                  # décoché par défaut
+            self.cb_masters.toggled.connect(self.filterTree)
+            layout.addWidget(self.cb_masters)
 
             lo_top = QHBoxLayout()
             self.e_search = QLineEdit()
@@ -174,6 +210,7 @@ class ShotBrowserUI(object):
             layout.addWidget(self.tw_shots)
 
             count = self.populateTree()
+            self.filterTree()
             if self.timelineMode and count == 0:
                 if self.action == "bake":
                     self.core.popup("Tous les shots de la timeline sont à jour.")
@@ -379,10 +416,23 @@ class ShotBrowserUI(object):
         if nFrames < 1:
             return None, "%s : durée illisible" % shot["shot_path"]
 
-        variants = [None]
-        if isinstance(importItem, dict):
-            variants.append((importItem["StartIndex"], importItem["EndIndex"]))
-        variants.append((0, nFrames - 1))
+        # Durée de référence côté Prism
+        target = self.getShotLength(shot["sequence"], shot["name"])
+        isStill = isinstance(importItem, str)       # fichier unique, pas une séquence
+        try:
+            isStill = isStill and mpItem.GetClipProperty("Type") in ("Still", "Image")
+        except Exception:
+            pass
+        exact = bool(isStill and target)
+
+        if exact:
+            expectedFrames = target
+            variants = [(0, target - 1), None]
+        else:
+            variants = [None]
+            if isinstance(importItem, dict):
+                variants.append((importItem["StartIndex"], importItem["EndIndex"]))
+            variants.append((0, nFrames - 1))
 
         def append(frameRange):
             info = {
@@ -401,7 +451,10 @@ class ShotBrowserUI(object):
             item = append(frameRange)
             if not item:
                 continue
-            if expectedFrames and item.GetDuration() < expectedFrames:
+            dur = item.GetDuration()
+            tooShort = expectedFrames and dur < expectedFrames
+            wrongStill = exact and dur != expectedFrames
+            if tooShort or wrongStill:
                 timeline.DeleteClips([item])
                 continue
             tlItem = item
@@ -449,8 +502,9 @@ class ShotBrowserUI(object):
         project, timeline, pool = ctx
 
         fps = float(timeline.GetSetting("timelineFrameRate"))
-        cursor = tcToFrames(timeline.GetCurrentTimecode(), fps)
+        cursor = tcToFrames(timeline.GetCurrentTimecode(), fps)    # curseur rouge
 
+        # Nouvelle piste vidéo pour cet import
         if not timeline.AddTrack("video"):
             self.core.popup("Impossible de créer une nouvelle piste vidéo.")
             return []
@@ -459,6 +513,7 @@ class ShotBrowserUI(object):
             timeline.SetTrackName("video", newTrack, "ShotBrowser")
         except Exception:
             pass
+        print("[ShotBrowser] nouvelle piste vidéo : V%d" % newTrack)
 
         tlItems, warnings = [], []
         for shot in shots:
@@ -467,10 +522,12 @@ class ShotBrowserUI(object):
                 warnings.append(warn)
             if tlItem:
                 tlItems.append(tlItem)
-                cursor += tlItem.GetDuration()
+                cursor += tlItem.GetDuration()       # le shot suivant démarre à la fin du précédent
 
         if warnings:
             self.core.popup("Shots non ajoutés ou incomplets :\n" + "\n".join(warnings))
+
+        print("[ShotBrowser] ajout terminé, mise à jour des compteurs")
         self.updateFrameCounters()
         return tlItems
 
@@ -521,15 +578,21 @@ class ShotBrowserUI(object):
             if not seqItem.isHidden():
                 seqItem.setCheckState(0, state)
 
-    def filterTree(self, text):
-        text = text.lower()
+    def isMaster(self, item):
+        entity = item.data(0, Qt.UserRole) or {}
+        return str(entity.get("shot", "")).upper() == "MASTER"
+
+    def filterTree(self, *args):
+        text = self.e_search.text().lower()
+        showMasters = self.cb_masters.isChecked()
         for i in range(self.tw_shots.topLevelItemCount()):
             seqItem = self.tw_shots.topLevelItem(i)
             seqMatch = text in seqItem.text(0).lower()
             visible = 0
             for j in range(seqItem.childCount()):
                 child = seqItem.child(j)
-                match = seqMatch or text in child.text(0).lower()
+                match = (seqMatch or text in child.text(0).lower()) \
+                        and (showMasters or not self.isMaster(child))
                 child.setHidden(not match)
                 visible += match
             seqItem.setHidden(visible == 0)
@@ -617,130 +680,6 @@ class ShotBrowserUI(object):
         }
         return item, frames[-1] - frames[0] + 1
 
-    def addShotsToTimeline(self, shots):
-        resolve = self.getResolve()
-        if not resolve:
-            self.core.popup("Impossible de joindre DaVinci Resolve.")
-            return []
-
-        project = resolve.GetProjectManager().GetCurrentProject()
-        timeline = project.GetCurrentTimeline()
-        if not timeline:
-            self.core.popup("Aucune timeline active.")
-            return []
-
-        pool = project.GetMediaPool()
-        fps = float(timeline.GetSetting("timelineFrameRate"))
-        cursor = tcToFrames(timeline.GetCurrentTimecode(), fps)
-
-        # Nouvelle piste vidéo dédiée à cet import
-        if not timeline.AddTrack("video"):
-            self.core.popup("Impossible de créer une nouvelle piste vidéo.")
-            return []
-        newTrack = timeline.GetTrackCount("video")   # la nouvelle piste est la dernière
-        try:
-            timeline.SetTrackName("video", newTrack, "ShotBrowser")
-        except Exception:
-            pass
-        print("[ShotBrowser] nouvelle piste vidéo : V%d" % newTrack)
-
-        tlItems, failed = [], []
-
-        for shot in shots:
-            path = shot.get("mediaPath")
-            if not path:
-                failed.append("%s : aucun média trouvé" % shot["shot_path"])
-                continue
-
-            importItem, expectedFrames = self.buildImportItem(path)
-            imported = pool.ImportMedia([importItem])
-            if not imported:
-                failed.append("%s : ImportMedia a échoué (%s)" % (shot["shot_path"], importItem))
-                continue
-
-            mpItem = imported[0]
-            print("[ShotBrowser] props %s : Frames=%s Start=%s End=%s Type=%s" % (
-                shot["shot_path"],
-                mpItem.GetClipProperty("Frames"), mpItem.GetClipProperty("Start"),
-                mpItem.GetClipProperty("End"), mpItem.GetClipProperty("Type")))
-
-            try:
-                nFrames = int(float(mpItem.GetClipProperty("Frames")))
-            except (TypeError, ValueError):
-                nFrames = 0
-            if expectedFrames and nFrames < 2:
-                nFrames = expectedFrames
-            if nFrames < 1:
-                failed.append("%s : durée illisible" % shot["shot_path"])
-                continue
-
-            # Variantes de startFrame/endFrame : aucune, numérotation réelle, 0-based
-            variants = [None]
-            if isinstance(importItem, dict):
-                variants.append((importItem["StartIndex"], importItem["EndIndex"]))
-            variants.append((0, nFrames - 1))
-
-            def append(frameRange):
-                info = {
-                    "mediaPoolItem": mpItem,
-                    "mediaType": 1,
-                    "trackIndex": newTrack,
-                    "recordFrame": int(cursor),
-                }
-                if frameRange:
-                    info["startFrame"], info["endFrame"] = frameRange
-                res = pool.AppendToTimeline([info])
-                if not res or not res[0]:
-                    print("[ShotBrowser] append refusé, frameRange=%s" % (frameRange,))
-                    return None
-                return res[0]
-
-            tlItem = None
-            for frameRange in variants:
-                item = append(frameRange)
-                if not item:
-                    continue
-                dur = item.GetDuration()
-                print("[ShotBrowser] %s frameRange=%s -> durée timeline=%s (attendu %s)"
-                      % (shot["shot_path"], frameRange, dur, expectedFrames))
-                if expectedFrames and dur < expectedFrames:
-                    timeline.DeleteClips([item])   # trop court : on retire et on essaie la suivante
-                    continue
-                tlItem = item
-                break
-
-            # Dernier recours : on garde quand même le clip, en le signalant
-            if not tlItem:
-                tlItem = append(None)
-                if not tlItem:
-                    failed.append("%s : AppendToTimeline refusé" % shot["shot_path"])
-                    continue
-                failed.append("%s : durée %s au lieu de %s"
-                              % (shot["shot_path"], tlItem.GetDuration(), expectedFrames))
-
-            tlItems.append(tlItem)
-            cursor += tlItem.GetDuration()   # durée réelle posée sur la timeline
-
-            # Transmission des infos
-            mp = tlItem.GetMediaPoolItem()
-            mp.SetMetadata("Scene", shot["sequence"])
-            mp.SetMetadata("Shot", shot["name"])
-            tlItem.AddMarker(
-                0, "Blue", shot["shot_path"],
-                "taskLevel: %s" % shot["taskLevel"], 1,
-                json.dumps({
-                    "sequence": shot["sequence"],
-                    "shot": shot["name"],
-                    "taskLevel": shot["taskLevel"],
-                    "mediaPath": shot["mediaPath"],
-                }),
-            )
-
-        if failed:
-            self.core.popup("Shots non ajoutés ou incomplets :\n" + "\n".join(failed))
-
-        return tlItems
-
     def getCounterRanges(self, timeline, origin):
         """Plages (frames relatives au début du clip comp) par plan et par séquence."""
         shots = self.getTimelineShots(timeline)
@@ -768,96 +707,100 @@ class ShotBrowserUI(object):
 
     def buildCounterRows(self, timeline, overlay, scope):
         perShot, perSeq = self.getCounterRanges(timeline, overlay.GetStart())
+        
+        # Récupérer les infos détaillées depuis getTimelineShots pour avoir le taskLevel
+        timelineShots = self.getTimelineShots(timeline)
+        
         rows = []
         for r in perShot:
+            shotPath = r["shot"]
             if scope == "seq":
                 ref, label = perSeq[r["seq"]][0], sqLabel(r["seq"])
             else:
-                ref, label = r["start"], shLabel(r["shot"])
+                # Mode plan (shot)
+                ref = r["start"]
+                # Déterminer quel label passer selon le nœud traité (si on est sur TaskLevel ou ShName)
+                # On peut récupérer le taskLevel stocké dans la timeline
+                t_level = NO_LEVEL
+                if shotPath in timelineShots and timelineShots[shotPath]:
+                    t_level = timelineShots[shotPath][0].get("taskLevel", NO_LEVEL)
+                
+                # Astuce : on gère dynamiquement selon le besoin, ou on enrichit perShot
+                label = shLabel(shotPath) # par défaut pour ShName
+            
             rows.append((r["start"], r["end"], ref, label))
         return rows
 
     def updateFrameCounters(self):
-        """Met à jour les expressions Lua des Text+ SqName et SqFrame dans la comp Fusion."""
         ctx = self.getTimelineContext()
         if not ctx:
             return
-        _, timeline, _ = ctx
+        project, timeline, pool = ctx
 
-        overlayItem, comp = self.findCounterComp(timeline)
+        overlay, comp = self.findCounterComp(timeline)
         if not comp:
-            # Aucun node 'SqName' trouvé dans les Fusion Compositions de la timeline
+            print("[ShotBrowser] comp des compteurs introuvable")
             return
 
-        # Origine temporelle du clip Fusion
-        compStart = overlayItem.GetStart()
+        perShot, perSeq = self.getCounterRanges(timeline, overlay.GetStart())
+        timelineShots = self.getTimelineShots(timeline)
 
-        # 1. Récupération et consolidation des plages par séquence
-        perShot, _ = self.getCounterRanges(timeline, compStart)
-        if not perShot:
-            return
+        for nodeName, mode, scope in COUNTERS:
+            tool = comp.FindTool(nodeName)
+            if not tool:
+                print("[ShotBrowser] node '%s' introuvable" % nodeName)
+                continue
+            inp = getInput(tool, "StyledText")
+            if not inp:
+                continue
 
-        # Fusionne les shots adjacents de la même séquence pour créer des plages [start, end, seqLabel]
-        seqBlocks = []
-        for r in perShot:
-            s_label = sqLabel(r["seq"])
-            if seqBlocks and seqBlocks[-1]["seq"] == r["seq"]:
-                seqBlocks[-1]["end"] = max(seqBlocks[-1]["end"], r["end"])
-            else:
-                seqBlocks.append({
-                    "seq": r["seq"],
-                    "label": s_label,
-                    "start": r["start"],
-                    "end": r["end"]
-                })
+            rows = []
+            for r in perShot:
+                shotPath = r["shot"]
+                if scope == "seq":
+                    ref, label = perSeq[r["seq"]][0], sqLabel(r["seq"])
+                else:
+                    if mode == "task":
+                        # On récupère le taskLevel brut (ex: "Anim", "Lighting")
+                        refs = timelineShots.get(shotPath, [])
+                        label = refs[0].get("taskLevel", NO_LEVEL) if refs else NO_LEVEL
+                    else:
+                        label = shLabel(shotPath)
+                    ref = r["start"]
+                rows.append((r["start"], r["end"], ref, label))
 
-        # 2. Construction des expressions Lua Fusion
-
-        # Table Lua des blocs : { {start, end, "Sq0010"}, ... }
-        luaBlocksTable = ",".join(
-            '{%d,%d,"%s"}' % (b["start"], b["end"], b["label"])
-            for b in seqBlocks
-        )
-
-        # Expression pour SqName (affiche le nom de la séquence)
-        expr_sqName = (
-            "Text((function() "
-            "local t = math.floor(time + 0.5) "
-            "for _, b in ipairs({" + luaBlocksTable + "}) do "
-            "if t >= b[1] and t < b[2] then return b[3] end "
-            "end "
-            "return '' "
-            "end)())"
-        )
-
-        # Expression pour SqFrame (compte les frames relatives au début de la séquence)
-        expr_sqFrame = (
-            "Text((function() "
-            "local t = math.floor(time + 0.5) "
-            "for _, b in ipairs({" + luaBlocksTable + "}) do "
-            "if t >= b[1] and t < b[2] then "
-            "return string.format(' - %%04d', t - b[1] + %d) "
-            "end "
-            "end "
-            "return '' "
-            "end)())"
-        )
-
-        # 3. Application des expressions sur les nodes Text+
-        sqNameTool = comp.FindTool("SqName")
-        if sqNameTool:
-            sqNameTool.SetInput("StyledText", comp.ParseExpression(expr_sqName))
-
-        sqFrameTool = comp.FindTool("SqFrame")
-        if sqFrameTool:
-            sqFrameTool.SetInput("StyledText", comp.ParseExpression(expr_sqFrame))
+            inp.SetExpression(counterExpression(rows, mode))
 
     def printToolInputs(self, toolName):
         overlay, comp = self.findCounterComp(self.getTimelineContext()[1])
+        print("[ShotBrowser] comp trouvée : %s | clip : %s" % (bool(comp), overlay.GetName() if overlay else None))
         tool = comp.FindTool(toolName)
         for i, inp in tool.GetInputList().items():
             attrs = inp.GetAttrs()
             print(attrs.get("INPS_ID"), "|", attrs.get("INPS_Name"), "|", attrs.get("INPS_DataType"))
+
+    def getShotLength(self, sequence, shotName):
+        """Renvoie la durée en frames d'après shotInfo.json avec tolérance sur la casse."""
+        if not sequence or not shotName:
+            return None
+        
+        seq_data = self.shotRanges.get(sequence, {})
+        if not seq_data:
+            # Essai sans tenir compte de la casse de la séquence
+            for sq_key, sq_val in self.shotRanges.items():
+                if sq_key.lower() == sequence.lower():
+                    seq_data = sq_val
+                    break
+                    
+        shot_range = None
+        for k, v in seq_data.items():
+            if k.lower() == shotName.lower() or naturalKey(k) == naturalKey(shotName):
+                shot_range = v
+                break
+        
+        if shot_range and isinstance(shot_range, list) and len(shot_range) >= 2:
+            return shot_range[1] - shot_range[0] + 1
+        return None
 
     # ------------------------------------------------------------------ #
     def onValidate(self):
