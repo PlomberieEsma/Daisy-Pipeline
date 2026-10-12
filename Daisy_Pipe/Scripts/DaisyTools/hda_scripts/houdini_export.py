@@ -1,5 +1,6 @@
 import hou
 import os
+from pxr import Sdf
 from Scripts.DaisyTools.core.core import get_core, houdini_relative_path, USD_FILE_FORMAT, create_master, create_master_clips
 from Scripts.DaisyTools.core.get_entity_info import get_entity_info
 from Scripts.DaisyTools.core.version_cleanup import check_version_limit_for_output
@@ -9,6 +10,22 @@ PROXY_WEDGE = "proxy"
 FILE_PER_FRAME = "fileperframe"
 FRAME_TOKEN = ".$F4"
 
+NEXT_VERSION_PARM = "versions"
+VERSION_NUM_PARM = "selectedversion"
+
+
+# ---------- Version ----------
+
+def _selected_version(hda):
+    # None = Prism prend la prochaine version dispo
+    if hda.parm(NEXT_VERSION_PARM).evalAsInt():
+        return None
+    num = max(1, hda.parm(VERSION_NUM_PARM).evalAsInt())
+    padding = getattr(get_core(), "versionPadding", 4)
+    return f"v{num:0{padding}d}"
+
+
+# ---------- Chemins ----------
 
 def _product_path(extension, version, wedge=None):
     info = get_entity_info()
@@ -26,7 +43,7 @@ def _product_path(extension, version, wedge=None):
 
 def create_path(hda):
     extension = hda.parm("extension").evalAsString()
-    return houdini_relative_path(_product_path(extension, None))
+    return houdini_relative_path(_product_path(extension, _selected_version(hda)))
 
 
 def create_master_path(hda):
@@ -35,12 +52,18 @@ def create_master_path(hda):
 
 def create_proxy_path(hda):
     extension = hda.parm("extension").evalAsString()
-    return houdini_relative_path(_product_path(extension, None, wedge=PROXY_WEDGE))
+    return houdini_relative_path(_product_path(extension, _selected_version(hda), wedge=PROXY_WEDGE))
 
 
 def create_proxy_master_path(hda):
     base, ext = os.path.splitext(create_master_path(hda))
     return f"{base}_{PROXY_WEDGE}{ext}"
+
+
+MASTER_PATH_BUILDERS = {
+    "masterpath": create_master_path,
+    "proxymasterpath": create_proxy_master_path,
+}
 
 
 def has_proxy_input(hda):
@@ -77,6 +100,15 @@ def _base_path(hda, parm_name):
     return hou.text.expandString(raw)
 
 
+def _master_path(hda, master_parm):
+    # Fallback si le parm est vide (update_path a échoué en silence)
+    path = hda.parm(master_parm).eval()
+    if not path:
+        path = MASTER_PATH_BUILDERS[master_parm](hda)
+        _set_path(hda.parm(master_parm), path)
+    return path
+
+
 def _set_path(parm, value):
     # Si le parm a une expression/keyframe, set() écrirait dans l'expression
     parm.deleteAllKeyframes()
@@ -109,6 +141,24 @@ def _frame_paths(hda, file_parm):
     return [parm.evalAtFrame(frame) for frame in range(int(start), int(end) + 1)]
 
 
+# ---------- Cache USD ----------
+
+def _reload_layers(paths):
+    # En écrasement, Houdini garde l'ancienne version en mémoire :
+    # sans reload, le master serait construit sur des données périmées
+    for path in paths:
+        if not path:
+            continue
+        layer = Sdf.Layer.Find(path)
+        if layer:
+            try:
+                layer.Reload(force=True)
+            except Exception as e:
+                print(f"reload {path}: {e}")
+
+
+# ---------- Master ----------
+
 def save_master(hda=None, file_parm="path", master_parm="masterpath"):
     hda = hda or hou.pwd()
 
@@ -116,7 +166,7 @@ def save_master(hda=None, file_parm="path", master_parm="masterpath"):
         return None
 
     file_path = _base_path(hda, file_parm)
-    master_path = hda.parm(master_parm).eval()
+    master_path = _master_path(hda, master_parm)
 
     if not file_path or not master_path:
         raise hou.NodeError(f"Chemins manquants : {file_parm}='{file_path}' {master_parm}='{master_path}'")
@@ -127,11 +177,24 @@ def save_master(hda=None, file_parm="path", master_parm="masterpath"):
     if is_file_per_frame(hda):
         frame_paths = _frame_paths(hda, file_parm)
         clips_path = f"{os.path.splitext(file_path)[0]}.clips.usda"
+        _reload_layers(frame_paths + [clips_path, master_path])
         create_master_clips(frame_paths, frame_range, clips_path, default_prim=default_prim)
-        return create_master(clips_path, master_path, default_prim=default_prim, frame_range=frame_range)
+        _reload_layers([clips_path])
+        result = create_master(clips_path, master_path, default_prim=default_prim, frame_range=frame_range)
+    else:
+        _reload_layers([file_path, master_path])
+        result = create_master(file_path, master_path, default_prim=default_prim, frame_range=frame_range)
 
-    return create_master(file_path, master_path, default_prim=default_prim, frame_range=frame_range)
+    _reload_layers([master_path])
 
+    if not os.path.isfile(master_path):
+        raise hou.NodeError(f"Master non écrit : '{master_path}'")
+
+    print(f"[{hda.path()}] master mis à jour : {master_path}")
+    return result
+
+
+# ---------- Thumbnail ----------
 
 def update_thumbnail(hda, core, path):
     if not hda.parm("updateThumbnail").evalAsInt():
@@ -154,6 +217,8 @@ def update_thumbnail(hda, core, path):
             print(f"[{hda.path()}] update_thumbnail: échec d'écriture {scene_preview}")
 
 
+# ---------- Post-export ----------
+
 def _check_written(hda, file_parm):
     if is_file_per_frame(hda):
         missing = [p for p in _frame_paths(hda, file_parm) if not os.path.isfile(p)]
@@ -172,13 +237,14 @@ def _finalize_export(hda, file_parm, master_parm, thumbnail=True, master_info=Tr
     task = info["task"]
 
     path = _base_path(hda, file_parm)
-    master_path = hda.parm(master_parm).eval()
     update_master = hda.parm("updatemaster").evalAsInt()
 
     _check_written(hda, file_parm)
 
+    master_path = None
     if update_master:
         save_master(hda, file_parm=file_parm, master_parm=master_parm)
+        master_path = _master_path(hda, master_parm)
 
     details = dict(entity)
     details["version"] = core.products.getProductDataFromFilepath(path).get("version", "")
@@ -192,7 +258,7 @@ def _finalize_export(hda, file_parm, master_parm, thumbnail=True, master_info=Tr
     if thumbnail:
         update_thumbnail(hda, core, path)
 
-    if update_master and master_info:
+    if master_path and master_info:
         master_info_path = core.products.getVersionInfoPathFromProductFilepath(master_path)
         core.saveVersionInfo(filepath=master_info_path, details=details)
 
@@ -211,6 +277,8 @@ def proxy_post_export(hda=None):
     _finalize_export(hda, "proxypath", "proxymasterpath", thumbnail=False, master_info=False)
 
 
+# ---------- Export ----------
+
 def _set_wait_text(wait, text):
     if getattr(wait, "msg", None):
         wait.msg.setText(text)
@@ -228,23 +296,37 @@ def _render_rop(rop):
         raise hou.NodeError(f"{rop.path()} : {' / '.join(errors)}")
 
 
+def _report_error(hda, step, error):
+    msg = f"{step} : {error}"
+    print(f"[{hda.path()}] {msg}")
+    if hou.isUIAvailable():
+        hou.ui.displayMessage(msg, severity=hou.severityType.Error, title="Daisy Export")
+
+
 def on_export(kwargs):
     hda = kwargs["node"]
     core = get_core()
     export_proxy = has_proxy_input(hda)
 
-    wait = core.waitPopup(core, "Mise à jour des chemins...", title="Daisy Export")
-    with wait:
-        update_path(hda, strict=True)
+    try:
+        wait = core.waitPopup(core, "Mise à jour des chemins...", title="Daisy Export")
+        with wait:
+            update_path(hda, strict=True)
 
-        _set_wait_text(wait, "Export USD en cours...")
-        _render_rop(hda.node("usd_rop1"))
+            _set_wait_text(wait, "Export USD en cours...")
+            _render_rop(hda.node("usd_rop1"))
 
-        if export_proxy:
-            _set_wait_text(wait, "Export du proxy en cours...")
-            _render_rop(hda.node("usd_rop2"))
+            if export_proxy:
+                _set_wait_text(wait, "Export du proxy en cours...")
+                _render_rop(hda.node("usd_rop2"))
+    except Exception as e:
+        _report_error(hda, "Export", e)
+        return
 
     # Post-export hors du render loop et hors du popup
-    post_export(hda)
-    if export_proxy:
-        proxy_post_export(hda)
+    try:
+        post_export(hda)
+        if export_proxy:
+            proxy_post_export(hda)
+    except Exception as e:
+        _report_error(hda, "Post-export", e)

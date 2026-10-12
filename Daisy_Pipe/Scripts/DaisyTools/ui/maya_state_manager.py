@@ -688,14 +688,13 @@ class DaisyUsdExportClass(QWidget):
         return stateComment or self.stateManager.publishComment
 
     @err_catcher(name=__name__)
+    def getOutputName(self, useVersion="next"):
+
+        return None
+
+    @err_catcher(name=__name__)
     def getExportParams(self):
 
-        #-----------------------------------------------------------------------------------#
-        # Collect this state's UI values into the plain dict                                #
-        # that exportUSD.export_usd() expects                                               #
-        #-----------------------------------------------------------------------------------#
-
-        # plain dict, no Qt objects - this is what exportUSD.export_usd() consumes
         return {
             "whole_scene": self.chb_wholeScene.isChecked(),
             "nodes": list(self.nodes),
