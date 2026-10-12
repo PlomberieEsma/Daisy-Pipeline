@@ -1,11 +1,13 @@
 # Shading
-[< page précédente](texturing.md)<br>
+[< page précédente](../departments.md)<br>
 Ok, Maintenant que nous avons un asset texturé, il est temps de lui créer un shaderdans Houdini. "Quoi ?!" me direz-vous "Mais je ne connais pas Houdini ! Comment je vais faire ?! Suis-je condamné aux méandres de l'incompréhension et du désespoir ?!". Pas de panique, on va vour tout ça ensemble, étape par étape, et vous allez voir que ça ressemble plus à Maya que ce que vous pouvez croire.
 
 - [Création du template](#création-du-template)
 - [Présentation du template](#présentation-du-template)
 - [Création des shaders](#création-des-shaders)
 - [Scène de lookdev](#scène-de-lookdev)
+
+***
 
 ## Création du template
 Tout d'abbord, ouvrez Houdini. Avec le Project Browser créez un nouveau fichier dans la task "Shading", puis ouvrez-le. Vous devriez vous retrouver avec une configuration similaire à celle-ci :
@@ -30,6 +32,8 @@ Votre node est créé, dans les parameters vous avez un bouton "create template"
 
 Avant de modifier le template il est important de savoir que si un node est de la même couleur que son backdrop, il vaut mieux éviter d'y toucher. Notons également qu'il y a un backdrop en haut à gauche nommé "Toolbox", c'est un répertoir de nodes qui pourraient vous être utils (ou pas), à vous d'explorer et les tester. Maintenant passons en revue les nodes qui composent le template.
 
+***
+
 ## Présentation du template
 1. **Dans le backdrop "Inputs"** sont rangés les nodes qui servent à l'import de votre asset et à la création de votre hiérarchie de primitives.
     - daisy import : Import l'asset sélectionné
@@ -42,6 +46,8 @@ Avant de modifier le template il est important de savoir que si un node est de l
     - assign shader : permet d'assigner chaque shader à la bonne primitive
 3. **Le backdrop "Outputs"** qui sert à exporter votre shading en USD
     - daisy export : permet d'exporter les shaders en usd
+
+***
 
 ## Création des shaders
 Maintenant que nous avons fait les présentations, passons à la pratique. Il est temps de créer nos shaders. Pour cela nous allons utiliser notre asset "pufferfish". Rentrez dans le node "**create shader**" en double clickant dessus.
@@ -75,6 +81,8 @@ Allez en haut à droite du viewport et ouvrez le menu indiquant "Persp" et chois
 
 ![houdini ipr](src/shading/houdini_ipr.png)
 
+***
+
 ## Scène de lookdev
 Il est finalement temps de vous présenter un petit outil que j'ai créé et qui peut vous être utile. Allez chercher le node "Lookdev scene" dans "Daisy Pipe" et connectez le à la sortie du node "assign shader".
 
@@ -105,6 +113,6 @@ Le turn est ensuite stocké dans Prism sous forme d'une séquence d'images dans 
 ![houdini lookdev scene node](src/shading/prism_turn_result.png)
 ![houdini lookdev scene node](src/shading/turn_pufferfish.gif)
 
-[< page précédente](texturing.md)
+[< page précédente](../departments.md) - 
 [page suivante >](set_dress.md)<br>
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

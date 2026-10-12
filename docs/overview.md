@@ -12,6 +12,6 @@ Voici la présentation générale du pipeline (alembic et USD). Ici, nous allons
 > <img src="src/github_logo.png" width=20em>
 > Retrouvez le code source <a href="https://github.com/PlomberieEsma/Daisy-Pipeline"><i><strong>ici</strong></i></a>.
 
-[< page précédente](README.md)
+[< page précédente](README.md) - 
 [page suivante >](overview/hierarchy.md)<br>
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

@@ -10,6 +10,8 @@ Ci dessous la documentation relative à :
 - [Installation](daisy_pipe/installation.md)
 - [Maya](daisy_pipe/maya/maya.md)
 - [Houdini](daisy_pipe/houdini.md)
+    - [Solaris](daisy_pipe/houdini/solaris.md)
+    - [Templates](daisy_pipe/houdini/templates.md)
     - [HDA](daisy_pipe/houdini/hda.md)
 - [Prism](daisy_pipe/prism.md)
     - [Create USD asset](daisy_pipe/prism/create_usd_asset.md)
@@ -24,6 +26,6 @@ Ci dessous la documentation relative à :
     - [Compositing](daisy_pipe/departments/compositing.md)
 - [DEV](daisy_pipe/dev.md)
 
-[< page précédente](README.md)
+[< page précédente](README.md) - 
 [page suivante >](daisy_pipe/installation.md)<br>
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
