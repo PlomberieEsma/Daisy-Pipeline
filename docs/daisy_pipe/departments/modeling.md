@@ -56,6 +56,9 @@ Tout simplement en dupliquant la scène ! Rendez-vous dans le **Project Browser*
 
 ![maya create from current](src/modeling/maya_create_from_current.png)
 
+><img src="../../src/warning_red.png" width=50em><br>
+> Important : chers modelers, ayez une petite pensée pour vos collègues, et pensez bien avant vos exports à faire vos UVs mais aussi à mettre des presets de materials sur vos geo (standard surface, lambert, blin ...). Cela facilitera le travail des texture artists et des riggeurs.
+
 ***
 
 ## Houdini
@@ -89,6 +92,10 @@ Puis **allez sur le node "daisy export"** et clickez sur "**save to disk**". Voi
 
 Finalement, comme pour Maya : maintenant que nous avons fini notre ModL, il est temps de passer à la ModH. On peut créer un nouveau fichier de ModH à partir de la modL ?<br>
 Rendez-vous dans le **Project Browser** (la fenêtre Prism) à l'intérieur d'Houdini, mais gardez bien votre scène ouverte. Puis **allez dans la task ModH** et faites un **click droit dans "Files"** sélectionnez "**Create new version from current**". Votre scène est maintenant dupliquée dans ModH, pous pouvez travailler dessus et recommencer le processus d'export.
+
+><img src="../../src/warning_red.png" width=50em><br>
+> Important : chers modelers, ayez une petite pensée pour vos collègues, et pensez bien avant vos exports à faire vos UVs mais aussi à mettre des presets de materials sur vos geo (standard surface, lambert, blin ...). Cela facilitera le travail des texture artists et des riggeurs.<br>
+> Pensez aussi à donner un nom à vos geo avec l'attribute "name". Histoire d'hygiène.
 
 [< page précédente](../departments.md) - 
 [page suivante >](texturing.md)<br>
