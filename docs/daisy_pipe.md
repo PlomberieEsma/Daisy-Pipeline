@@ -1,5 +1,6 @@
 # Daisy Pipeline
-[< page précédente](README.md)<br>
+[< page précédente](README.md)
+
 Daisy Pipeline est un plugin pour Prism Pipeline. Il a pour but gérer un pipe USD tout en accélerant au maximum les processus techniques relatifs au cinéma d'Animation 3D. Dans cette documentation vous trouverez des informations relatives à l'utilisation de Daisy Pipe, nous partirons du principe que vous connaissez déjà Prism ainsi que les différents logiciels utilisés dans le Pipeline. Cette documentation pourra servir également de guide pour ldes développements ultérieurs.
 
 > <img src="src/github_logo.png" width=20em>
@@ -14,7 +15,6 @@ Ci dessous la documentation relative à :
     - [Templates](daisy_pipe/houdini/templates.md)
     - [HDA](daisy_pipe/houdini/hda.md)
 - [Prism](daisy_pipe/prism.md)
-    - [Create USD asset](daisy_pipe/prism/create_usd_asset.md)
 - [Départements](daisy_pipe/departments.md)
     - [Modeling](daisy_pipe/departments/modeling.md)
     - [Texturing](daisy_pipe/departments/texturing.md)

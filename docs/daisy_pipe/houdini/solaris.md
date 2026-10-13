@@ -6,17 +6,23 @@ Ce document est un peu long donc voici un sommaire de la page pour aller directe
 
 - [Solaris, qu'est-ce que c'est ?](#solaris-quest-ce-que-cest-)
 - [Le viewport](#le-viewport)
+    - [Outils du viewport](#outils-du-viewport)
+    - [Options d'outils](#options-doutils)
+    - [Options d'affichage](#options-daffichage)
+    - [Paramètres du viewport](#paramètres-du-viewport)
 - [Le Scene Graph Tree](#le-scene-graph-tree)
     - [Le scene graph tree](#le-scene-graph-tree-1)
     - [Le scene graph details](#le-scene-graph-details)
 - [Le Scene Graph Layers](#le-scene-graph-layers)
-- [Les nodes utils](#les-nodes-utils)
 
 ***
 
 ## Solaris, qu'est-ce que c'est ?
 Tout d'abord, il faut savoir qu'houdini fonctionne en "**contextes**". "Mais qu'est-ce qu'un contexte ?" me demanderez-vous. Un contexte est une section d'Houdini spécialisée dans une tâche spécifique. Par exemple il existe un contexte pour gérer la géométrie (SOP), pour le compositing (COP ou Copernicus), pour les rendus (ROP) ou encore pour l'USD (LOP aussi appelé Solaris).<br>
 Ce qui est plutôt pratique c'est que dans Houdini, vous pouvez passer très facilement d'un contexte à l'autre. Soit en créant un node (par exemple si je suis dans un SOP, je peux créer un node LOP et rentrer dedans pour accéder à Solaris), soit en allant en haut du node graph pour choisir un contexte.
+
+><img src="../../src/information.png" width=50em><br>
+>Pour plus d'informations sur Solaris, retrouvez la ***[documentation officielle ici](https://www.sidefx.com/docs/houdini21.0/solaris/index.html)***.
 
 Donc comment aller dans Solaris ? Assurez-vous que vous avez bien le petit logo orangé en haut du node editor.
 <img src="src/solaris/houdini_stage_icon.png" width=200em><br>
@@ -155,10 +161,23 @@ Vous n'aurez normalement pas à l'utiliser mais si c'est le cas il peut vous per
 ***
 
 ## Le Scene Graph Layers
+Le scene graph layers sert à faire la liste des layers de la scène et à donner des informations sur chacun d'entre eux.
+
+![houdini scene graph layers](src/solaris/houdini_scene_graph_layers.png)
+
+On peut retrouver certaines fonctionnalité similaires au scene graph tree comme la possibilité de mute des layers (pour qu'Houdini ne les charge pas), afficher une partie du scene graph details, afficher une légende ...<br>
+On peut également afficher le contenu d'un layer (son code) en clickant sur le bouton en forme de liste en haut à gauche.
+
+><img src="../../src/warning_yellow.png" width=50em><br>
+> À propos de la case "Mute in Viewer", il est important de comprendre que l'action sera réalisée uniquement dans le viewport, elle ne sera pas écrite dans le futur fichier USD.<br>
+> Vous avez une autre façon de mute des layers, en utilisant le node "configure stage". Cette façon de faire nous permet une utilisation plus stable et ancrée dans le fichier Houdini (mais toujours pas écrit dans l'USD).
 
 ***
 
-## Les nodes utils
+Voilà, la torture est terminée. C'était un morceau très dense, difficile à appréhender et non exhaustif, mais c'était un morceau nécessaire. Vous allez passer beaucoup de temps dans cette interface alors c'est important d'apprendre à l'apprivoiser.
+
+><img src="../../src/information.png" width=50em><br>
+>Pour plus d'informations sur Solaris, retrouvez la ***[documentation officielle ici](https://www.sidefx.com/docs/houdini21.0/solaris/index.html)***.
 
 [< page précédente](../houdini.md) - 
 [page suivante >](templates.md)<br>
