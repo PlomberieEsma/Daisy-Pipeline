@@ -11,7 +11,7 @@ Cette page a pour but de documenter l'installation de l'entièreté du pipeline 
     - [usd-core](#usd-core)
     - [Le lecteur réseau](#le-lecteur-réseau)
 
-> <img src="../src/github_logo.png" width="20">
+> <img src="../src/github_logo.png" width="20" class="github-icon">
 > Retrouvez le code source <a href="https://github.com/PlomberieEsma/Daisy-Pipeline"><i><strong>ici</strong></i></a>.
 
 ***
