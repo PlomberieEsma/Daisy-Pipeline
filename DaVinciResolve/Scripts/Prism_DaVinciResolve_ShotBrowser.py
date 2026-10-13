@@ -2,6 +2,7 @@ import os
 import glob
 import re
 import json
+import time
 
 from qtpy.QtCore import Qt, QSize
 from qtpy.QtGui import QIcon
@@ -72,18 +73,20 @@ COUNTERS = [
     ("ShName",     "name",     "shot"),
     ("ShFrame",    "frame",    "shot"),
     ("TaskLevel",  "task",     "shot"),
+    ("TaskDate",   "date",     "shot"),       # date du fichier
+    ("FilmName",   "project",  "project"),    # nom du projet, constant
 ]
 
 def counterExpression(rows, mode):
-    if mode == "name":
-        table = ",".join('{%d,%d,"%s"}' % (s, e, label) for s, e, ref, label in rows)
+    if mode in ("name", "date"):
+        table = ",".join("{%d,%d,%s}" % (s, e, luaStr(label)) for s, e, ref, label in rows)
         result = "r[3]"
     elif mode == "duration":
         table = ",".join("{%d,%d,%d}" % (s, e, e - s) for s, e, ref, label in rows)
         result = 'string.format("%d f", r[3])'
     elif mode == "task":
-        # r[3] contiendra la lettre personnalisée choisie
-        table = ",".join('{%d,%d,"%s"}' % (s, e, TASK_LETTERS.get(label, label[:1].upper())) for s, e, ref, label in rows)
+        table = ",".join("{%d,%d,%s}" % (s, e, luaStr(TASK_LETTERS.get(label, label[:1].upper())))
+                         for s, e, ref, label in rows)
         result = "r[3]"
     else:
         table = ",".join("{%d,%d,%d}" % (s, e, ref) for s, e, ref, label in rows)
@@ -119,6 +122,25 @@ def loadShotRanges(core):
     except Exception as e:
         print("[ShotBrowser] shotInfo.json illisible (%s) : %s" % (path, e))
         return {}
+
+def luaStr(s):
+    # Chaîne Lua sûre (guillemets et antislashs échappés)
+    return '"%s"' % str(s).replace("\\", "\\\\").replace('"', '\\"')
+
+def constantExpression(text):
+    return "(function() return %s end)()" % luaStr(text)
+
+def fileDateText(path):
+    """Date de modification du fichier au format AA/MM/JJ (ex : 26/10/13)."""
+    try:
+        return time.strftime("%y/%m/%d", time.localtime(os.path.getmtime(path)))
+    except Exception:
+        return ""
+
+def getFilmName(core):
+    """Nom du projet Prism sans préfixe du type '12_'."""
+    name = getattr(core, "projectName", None) or os.path.basename(os.path.normpath(core.projectPath))
+    return re.sub(r"^\d+_", "", str(name))
 
 class ShotBrowserUI(object):
     def __init__(self, core, plugin=None):
@@ -689,7 +711,8 @@ class ShotBrowserUI(object):
             for ref in refs:
                 s = ref["start"] - origin
                 e = s + ref["duration"]
-                perShot.append({"shot": shotPath, "seq": seq, "start": s, "end": e})
+                perShot.append({"shot": shotPath, "seq": seq, "start": s, "end": e,
+                                "taskLevel": ref["taskLevel"], "mediaPath": ref["mediaPath"]})
                 lo, hi = perSeq.get(seq, (s, e))
                 perSeq[seq] = (min(lo, s), max(hi, e))
         perShot.sort(key=lambda r: r["start"])
@@ -743,7 +766,7 @@ class ShotBrowserUI(object):
             return
 
         perShot, perSeq = self.getCounterRanges(timeline, overlay.GetStart())
-        timelineShots = self.getTimelineShots(timeline)
+        filmName = getFilmName(self.core)
 
         for nodeName, mode, scope in COUNTERS:
             tool = comp.FindTool(nodeName)
@@ -754,19 +777,23 @@ class ShotBrowserUI(object):
             if not inp:
                 continue
 
+            if scope == "project":
+                inp.SetExpression(constantExpression(filmName))
+                print("[ShotBrowser] %s -> %s" % (nodeName, filmName))
+                continue
+
             rows = []
             for r in perShot:
-                shotPath = r["shot"]
                 if scope == "seq":
                     ref, label = perSeq[r["seq"]][0], sqLabel(r["seq"])
                 else:
-                    if mode == "task":
-                        # On récupère le taskLevel brut (ex: "Anim", "Lighting")
-                        refs = timelineShots.get(shotPath, [])
-                        label = refs[0].get("taskLevel", NO_LEVEL) if refs else NO_LEVEL
-                    else:
-                        label = shLabel(shotPath)
                     ref = r["start"]
+                    if mode == "task":
+                        label = r["taskLevel"]
+                    elif mode == "date":
+                        label = fileDateText(r["mediaPath"])
+                    else:
+                        label = shLabel(r["shot"])
                 rows.append((r["start"], r["end"], ref, label))
 
             inp.SetExpression(counterExpression(rows, mode))
