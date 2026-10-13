@@ -225,7 +225,6 @@ def button_action(kwargs: dict[str,str], new_shot_name: str, renaming_window: An
     #-------------------------------- apply new values ---------------------------------#
     # apply to shot name in the HDA
     node.parm(f"sh_name{new_shot_HDA_number}").set(new_sq_and_sh_name)
-    node.parm(f"sh_name_anim_{new_shot_HDA_number}").set(new_sq_and_sh_name)
 
     # get all well named cameras in the scene
     cameras_in_scene = hou.lopNodeTypeCategory().nodeTypes()["camera"].instances()
@@ -243,21 +242,10 @@ def button_action(kwargs: dict[str,str], new_shot_name: str, renaming_window: An
     # apply to camera selection in the HDA and camera primpath
     camera_path.set(new_camera_path)
 
-    # change shot name in Prism
-    new_sh_name = new_sq_and_sh_name[-digit_number-2:]
-    try:
-        selected_shot = core.entities.getShot(sq_name, sh_name)
-        new_selected_shot = dict(selected_shot)
-        if selected_shot["shot"] != new_sh_name:
-            new_selected_shot.update({"shot": new_sh_name})
-            core.entities.renameShot(selected_shot, new_selected_shot)
-    except Exception as e:
-        # if the shot doesn't exist in Prism
-        print("Unable to rename this shot in the pipeline because it deosn't exist in Prism")
-    else:
-        # change shot name in json framerange file
-        framerange_file = FramerangeFile()
-        old_master_framerange = framerange_file.get_master_range(sq_name, sh_name)
-        framerange_file.set_shot(sq_name, new_sh_name, old_master_framerange)
-    finally:
-        print(f"rename shot : \n{sq_and_sh_name} to\n{new_sq_and_sh_name}")
+    # change shot name in json framerange file
+    framerange_file = FramerangeFile()
+    old_master_framerange = framerange_file.get_master_range(sq_name, sh_name)
+    framerange_file.set_shot(sq_name, f"sh{new_sh_name}", old_master_framerange)
+    framerange_file.delete_shot(sq_name, sh_name)
+    
+    print(f"rename shot : \n{sq_and_sh_name} to\n{new_sq_and_sh_name}")

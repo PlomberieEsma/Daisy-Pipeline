@@ -194,3 +194,33 @@ class FramerangeFile():
 
         self.write(self.file)
         return self.file
+
+    def delete_sequence(self, sq_name: str):
+        #-------------------------------------------------------#
+        # Delete an entire sequence in json file                #
+        #                                                       #
+        # sq_name = name of the sequence (e.g.: sq032)          #
+        #                                                       #
+        # return the new file content                           #
+        #-------------------------------------------------------#
+
+        self.file.pop(sq_name)
+        self.write(self.file)
+        return self.file
+
+    def delete_shot(self, sq_name: str, sh_name: str):
+        #-------------------------------------------------------#
+        # Delete a specific shot in json file                   #
+        #                                                       #
+        # sq_name = name of the sequence (e.g.: sq032)          #
+        # sh_name = name of the shot (e.g.: sh028)              #
+        #                                                       #
+        # return the new file content                           #
+        #-------------------------------------------------------#
+
+        for sequence in self.file:
+            if sequence != sq_name:
+                continue
+            self.file[sequence].pop(sh_name)
+        self.write(self.file)
+        return self.file

@@ -29,6 +29,8 @@ import hou # type: ignore
 import json
 from typing import Any
 from Scripts.DaisyTools.core.core import get_core
+from Scripts.DaisyTools.core.get_entity_info import get_entity_info
+from Scripts.DaisyTools.core.framerange_convert import FramerangeFile
 
 print("execute layout_manager.py\n\n")
 
@@ -50,10 +52,15 @@ class Error(Exception):
 ##########################################################################################################################################
 
 core = get_core()
+info = get_entity_info()
 assert core is not None
+assert info is not None
 
 project_path = core.sequencePath.replace("\\", "/")
 project_path = project_path.removesuffix("/03_Production/Shots")
+shot_entity = info["entity"]
+
+sequence_name = shot_entity["sequence"]
 
 #get variables from config.json
 config_file_path = f"{project_path}/00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/lib/config.json"
@@ -109,30 +116,36 @@ def command_check(kwargs: dict[str,str]):
         # if there is no shot in the HDA
         # CLEAR button
         print("clear shots")
+
+        # delete sequence in framerange.json
+        framerange_file = FramerangeFile()
+        print(f"{sequence_name = }")
+        framerange_file.delete_sequence(sequence_name)
+
         for camera in cameras_in_scene:
             # destroy camera node
             camera.destroy()
 
-        # set Anim number to 0
-        kwargs["node"].parm("shots_anim").set(0)
         return
 
     # check the difference btw the cam number and the HDA shot number
     # to detect which function needs to be called
     count_difference = int(kwargs["script_value"]) - cam_count_scene
+    print(f"count_difference : {count_difference}")
 
     current_framerange = list(core.getFrameRange())
     for i in range (len(current_framerange)):
         current_framerange[i] = int(current_framerange[i])
 
-    if count_difference == 1:
+    if count_difference == 1 or count_difference == 0:
         # new shot
+        print("new shot")
         create_shot(kwargs, digit_number, current_framerange)
     elif count_difference == -1:
         # delete shot
         delete_shot(kwargs, cameras_in_scene)
     else:
-        # issuecdetected
+        # issue detected
         issue_correction(kwargs)
 
 
@@ -142,20 +155,15 @@ def command_check(kwargs: dict[str,str]):
 def create_shot(kwargs: dict[str,str], digit_number: int, framerange: list[int]):
     #-----------------------------------------------------------------------------------------------#
     # Create new shot by creating a camera and naming the HDA multiParmBlock instance               #
-    # modifies the Anim multiParmBlock instances too                                                #
     #                                                                                               #
     # kwargs = dict taken from the HDA multiParmBlock "shot_number"                                 #
     # digit_number = number of digits after the sequence and shot (e.g.: sq0020_sh0120 => 4 digits) #
     #-----------------------------------------------------------------------------------------------#
-
+    print("create shot")
     from Scripts.DaisyTools.hda_scripts.create_cam import create_cam
 
     node = kwargs["node"]
     shot_number = node.parm("shot_number").eval()
-
-    # mofifie script value to get the correct parameters if we create the shot automatically from get from Prism buton
-    # if kwargs["parm_name"] == "get_from_prism":
-    #     shot_number = str(kwargs["node"].parm("shot_number").eval())
 
     # get the input node for create_cam()
     nulls_in_scene = hou.lopNodeTypeCategory().nodeTypes()["null"].instances()
@@ -172,22 +180,19 @@ def create_shot(kwargs: dict[str,str], digit_number: int, framerange: list[int])
     new_shot_name = new_cam.name().replace("cam_", "").replace("_", " ")
 
     # modifie the HDA
-    # RLO part
     node.parm(f"sh_name{shot_number}").set(new_shot_name)
     node.parm(f"cam_selection_{shot_number}").set(new_cam.parm("primpath"))
     node.parm(f"sh_framerange_{shot_number}x").set(framerange[0])
     node.parm(f"sh_framerange_{shot_number}y").set(framerange[1])
 
-    # copy shot number and name from RLO to Anim
-    node.parm("shots_anim").set(shot_number)
-    node.parm(f"sh_name_anim_{shot_number}").set(new_shot_name)
+    framerange_file = FramerangeFile()
+    framerange_file.set_shot(new_shot_name.split(" ")[0], new_shot_name.split(" ")[1], framerange)
 
     print("add "+new_cam.name().replace("cam_", ""))
 
 def delete_shot(kwargs: dict[str,str], cameras_in_scene: Any):
     #-------------------------------------------------------------------#
     # Delete a camera by getting the shot deleted in the multiParmBlock #
-    # modifies the Anim multiParmBlock instances too                    #
     #                                                                   #
     # kwargs = dict taken from the HDA multiParmBlock "shot_number"     #
     # cameras_in_scene = list of all well named cameras in the scene    #
@@ -207,9 +212,8 @@ def delete_shot(kwargs: dict[str,str], cameras_in_scene: Any):
             # delete the corresponding camera node
             cameras_in_scene[i].destroy()
 
-            # delete shot for RLO and Anim
+            # delete shot for RLO
             block.parm("shot_number").removeMultiParmInstance(i)
-            block.parm("shots_Anim").removeMultiParmInstance(i)
             break
 
         # when it comes from delete button
@@ -218,29 +222,26 @@ def delete_shot(kwargs: dict[str,str], cameras_in_scene: Any):
                 # it's ok
                 pass
             else:
+                sq_and_sh_name = cameras_in_scene[i].name().replace("cam_", "").replace("_", " ")
                 # the shot has been deleted
-                print("del "+cameras_in_scene[i].name().replace("cam_", ""))
+                print(f"del {sq_and_sh_name}")
                 # delete the corresponding camera node
                 cameras_in_scene[i].destroy()
-
-                # delete shot for Anim
-                block.parm("shots_anim").removeMultiParmInstance(i)
+                # delete shot in framerange.json
+                framerange_file = FramerangeFile()
+                framerange_file.delete_shot(sq_and_sh_name.split(" ")[0], sq_and_sh_name.split(" ")[1])
                 break
 
         except AttributeError as e:
             # if the user deletes the last shot
             print("del "+cameras_in_scene[i].name().replace("cam_", ""))
             cameras_in_scene[i].destroy()
-
-            # delete shot for Anim
-            block.parm("shots_anim").removeMultiParmInstance(i)
             break
 
 def issue_correction(kwargs: dict[str,str]):
     #---------------------------------------------------------------------------#
     # In case of node deletion without deleting the shot in multiParmBlock :    #
     # delete multiParmBlock instances which have empty "cam_selection_#" field  #
-    # modifies the Anim multiParmBlock instances too                            #
     #                                                                           #
     # kwargs = dict taken from the HDA multiParmBlock "shot_number"             #
     #---------------------------------------------------------------------------#
@@ -260,8 +261,6 @@ def issue_correction(kwargs: dict[str,str]):
                 # remove the corresponding shot in the HDA
                 block.parm("shot_number").removeMultiParmInstance(i)
 
-                # delete shot for Anim
-                block.parm("shots_anim").removeMultiParmInstance(i)
                 removed = True
         except Exception as e:
             print(f"Error : {e}")
