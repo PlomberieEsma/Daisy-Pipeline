@@ -121,6 +121,10 @@ def _set_path(parm, value):
 
 def update_path(hda=None, strict=False, **kwargs):
     hda = hda or kwargs.get("node") or hou.pwd()
+    # Le default de "path" est une expression hscript vide : si le chemin n'est pas
+    # écrit, les nodes internes qui lisent ../path tombent en "Expression stack error"
+    for name in ("path", "masterpath", "proxypath", "proxymasterpath"):
+        hda.parm(name).deleteAllKeyframes()
     try:
         per_frame = is_file_per_frame(hda)
 
