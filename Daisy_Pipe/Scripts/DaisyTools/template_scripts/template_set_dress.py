@@ -232,8 +232,8 @@ def nodes_template_set_dress(imported_assets: list[dict[str,Any]]) -> dict[str,A
     daisy_export1 = lopnet.createNode("Daisy::daisy_export::1.0")
     daisy_export1.setName("daisy_export1")
     daisy_export1.setInput(0, node_list["graft_set_dress1"])
+    daisy_export1.parm("versions").set(1)
     daisy_export1.parm("defaultprim").set("/`chs(\"../create_assembly1/primpath\")`")
-    # daisy_export1.parm("setmetersperunit").set(0)
     daisy_export1.parm("metersperunit").set(1)
 
     node_list.update({"create_assembly1" : create_assembly1, 

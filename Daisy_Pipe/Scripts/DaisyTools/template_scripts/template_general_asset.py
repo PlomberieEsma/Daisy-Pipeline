@@ -146,9 +146,9 @@ def nodes_general():
     daisy_export1 = lopnet.createNode("Daisy::daisy_export::1.0")
     daisy_export1.setName("daisy_export1")
     daisy_export1.setInput(0, sop_create1)
+    daisy_export1.parm("versions").set(1)
     daisy_export1.parm("mayascale").set(0)
     daisy_export1.parm("defaultprim").set(f"/{asset_name}")
-    # daisy_export1.parm("setmetersperunit").set(0)
     if is_usd:
         daisy_export1.parm("metersperunit").set(meters_per_unit)
     else:

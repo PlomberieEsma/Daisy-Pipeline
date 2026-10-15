@@ -178,7 +178,7 @@ def nodes_template_layout() -> dict[str,Any]:
     ref_MASTER_layout1 = lopnet.createNode("sublayer")
     ref_MASTER_layout1.setName("ref_MASTER_layout1")
     ref_MASTER_layout1.parm("loadpayloads").set(0)
-    ref_MASTER_layout1.parm("filepath1").set(f"$PRISM_JOB/03_production/shots/{sequence_name}/MASTER/Export/layout/master/{sequence_name}_MASTER_layout_master.{usd_file_format}")
+    ref_MASTER_layout1.parm("filepath1").set(f"$PRISM_JOB/03_production/shots/{sequence_name}/MASTER/Export/layout/master/{sequence_name}-MASTER_layout_master.{usd_file_format}")
     ref_MASTER_layout1.parm("timeoffset1").set(define_time_offset())
 
     scale_down_layout1 = lopnet.createNode("xform")
