@@ -633,7 +633,60 @@ class Prism_DaVinciResolve_Functions(object):
             return
         for s in shots:
             print(s["shot_path"])
-        
+
+    def _nextRenderVersion(self, folder, task):
+        """Prochain numéro de version : cherche <task>_v#### dans le dossier de sortie."""
+        pattern = re.compile(r"^%s_v(\d+)" % re.escape(task))
+        names = os.listdir(folder) if os.path.isdir(folder) else []
+        numbers = [int(m.group(1)) for m in map(pattern.match, names) if m]
+        return max(numbers, default=0) + 1
+
+    def _shotsRange(self):
+        """(première frame, dernière frame incluse) couvertes par les shots du Shot Browser,
+        d'après leurs marqueurs. None s'il n'y en a aucun."""
+        timeline = self.resolve.GetProjectManager().GetCurrentProject().GetCurrentTimeline()
+        if not timeline:
+            return None
+    
+        shots = ShotBrowserUI(self.core).getTimelineShots(timeline)
+        refs = [ref for refList in shots.values() for ref in refList]
+        if not refs:
+            return None
+    
+        start = min(ref["start"] for ref in refs)
+        end = max(ref["start"] + ref["duration"] for ref in refs)    # fin exclusive
+        return int(start), int(end) - 1                              # MarkOut est inclusif
+
+
     @err_catcher(name=__name__)
     def Render(self):
-        print("Render in Function found")
+        task = self.getTask()
+        folder = self.getEditingRenderPath()
+        name = "%s_v%04d" % (task, self._nextRenderVersion(folder, task))
+    
+        os.makedirs(folder, exist_ok=True)
+    
+        settings = {
+            "TargetDir": folder,        # champ Location
+            "CustomName": name,         # champ File name (sans extension)
+        }
+    
+        shotsRange = self._shotsRange()
+        if shotsRange:
+            settings.update({
+                "SelectAllFrames": False,
+                "MarkIn": shotsRange[0],
+                "MarkOut": shotsRange[1],
+            })
+        else:
+            settings["SelectAllFrames"] = True
+            print("[Render] aucun shot du Shot Browser trouvé : timeline entière")
+    
+        project = self.resolve.GetProjectManager().GetCurrentProject()
+        ok = project.SetRenderSettings(settings)
+        print("[Render] %s -> %s" % (settings, ok))
+        if not ok:
+            self.core.popup("Resolve a refusé les réglages de rendu (dossier, nom ou plage invalide).")
+            return
+    
+        self.resolve.OpenPage("deliver")

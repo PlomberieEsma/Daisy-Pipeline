@@ -16,27 +16,23 @@ _AUTO_TRISTATE = getattr(Qt, "ItemIsAutoTristate", None) or getattr(Qt, "ItemIsT
 
 THUMB_SIZE = QSize(100, 56)
 
-SEQ_TOOL, SEQ_INPUT = "SeqCounter", "Number"      # à adapter
-SHOT_TOOL, SHOT_INPUT = "ShotCounter", "Number"   # à adapter
+SEQ_TOOL, SEQ_INPUT = "SeqCounter", "Number"
+SHOT_TOOL, SHOT_INPUT = "ShotCounter", "Number"
 
 
 # Ordre croissant d'avancement : du premier niveau au dernier.
 # Chaque niveau = (label, [motifs glob relatifs au dossier du shot])
-# À ADAPTER à ton arborescence réelle.
 TASK_LEVELS = [
     ("Layout",      ["Playblasts/02_layout/Layout/*/*"]),
     ("Anim",        ["Playblasts/03_anim/Animation/*/*"]),
     ("Lighting",    ["Renders/3dRender/07_lighting/Lighting/*/*_beauty.*"]),
     ("Compositing", ["Renders/2dRender/08_compositing/Compositing/*/*"]),
 ]
-
 NO_LEVEL = "-"
-
-# Association personnalisée des lettres pour chaque TaskLevel
 TASK_LETTERS = {
     "Layout": "Ly",
     "Anim": "A",
-    "Lighting": "Lg",       # Par exemple 'G' pour Lighting ou 'L'
+    "Lighting": "Lg",
     "Compositing": "C",
 }
 
@@ -131,6 +127,27 @@ def luaStr(s):
 def constantExpression(text):
     return "(function() return %s end)()" % luaStr(text)
 
+# TaskLevel BackGround
+TASK_BG_NODE = "Bg_TaskLevel"
+TASK_COLORS = {
+    "Layout":       (0.65, 0.15, 0.00),
+    "Anim":         (0.65, 0.55, 0.00),
+    "Lighting":     (0.05, 0.65, 0.00),
+    "Compositing":  (0.00, 0.50, 0.65),
+}
+NO_LEVEL_COLOR = (0.40, 0.40, 0.40) 
+BG_CHANNELS = (("TopLeftRed", 0), ("TopLeftGreen", 1), ("TopLeftBlue", 2))
+
+def numberExpression(table, default):
+    """Expression Fusion renvoyant un nombre selon la frame.
+    table = [(début, fin, valeur)] en frames relatives au clip de la comp."""
+    rows = ",".join("{%d,%d,%.4f}" % (s, e, v) for s, e, v in table)
+    return ("(function() local t = math.floor(time + 0.5) "
+            "for _, r in ipairs({" + rows + "}) do "
+            "if t >= r[1] and t < r[2] then return r[3] end end "
+            "return %.4f end)()" % default)
+
+# TaskLevel Date
 def fileDateText(path):
     """Date de modification du fichier au format AA/MM/JJ (ex : 26/10/13)."""
     try:
@@ -138,6 +155,7 @@ def fileDateText(path):
     except Exception:
         return ""
 
+# Film Name
 def getFilmName(core):
     """Nom du projet Prism sans préfixe du type '12_'."""
     name = getattr(core, "projectName", None) or os.path.basename(os.path.normpath(core.projectPath))
@@ -182,6 +200,16 @@ class ShotBrowserUI(object):
             self.core.parentWindow(self.dlg)
             self.dlg.setWindowTitle("Shot Browser - %s" % titles[self.action])
             self.dlg.resize(750, 650)
+
+            iconPath = os.path.join(
+                self.core.projectPath,
+                "00_Pipeline", "Plugins", "DaVinciResolve", "Resources", "daisy_logo.png"
+            )
+            iconPath = os.path.normpath(iconPath)
+            if os.path.isfile(iconPath):
+                self.dlg.setWindowIcon(QIcon(iconPath))
+            else:
+                print("Prism: icône introuvable : %s" % iconPath)
 
             layout = QVBoxLayout(self.dlg)
 
@@ -245,6 +273,7 @@ class ShotBrowserUI(object):
             self.btn_validate = QPushButton(labels[self.action])
             self.btn_validate.clicked.connect(self.onValidate)
             layout.addWidget(self.btn_validate)
+            
 
             result = self.dlg.exec_()
             return self.toImportShot if result == QDialog.Accepted else []
@@ -299,6 +328,26 @@ class ShotBrowserUI(object):
         pm = pm.scaled(THUMB_SIZE, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
         return {"taskLevel": str(taskLevel), "pixmap": pm}
+
+    def updateTaskLevelColors(self, comp, perShot):
+        """Pilote la couleur de Bg_TaskLevel par expression, comme les compteurs de texte."""
+        tool = comp.FindTool(TASK_BG_NODE)
+        if not tool:
+            print("[ShotBrowser] node '%s' introuvable" % TASK_BG_NODE)
+            return
+    
+        for inputId, idx in BG_CHANNELS:
+            inp = getInput(tool, inputId)
+            if not inp:
+                print("[ShotBrowser] %s : input '%s' introuvable (voir printToolInputs)"
+                    % (TASK_BG_NODE, inputId))
+                continue
+            table = [(r["start"], r["end"], TASK_COLORS.get(r["taskLevel"], NO_LEVEL_COLOR)[idx])
+                    for r in perShot]
+            inp.SetExpression(numberExpression(table, NO_LEVEL_COLOR[idx]))
+    
+        print("[ShotBrowser] %s -> couleurs mises à jour" % TASK_BG_NODE)
+
 
     def listSequenceFiles(self, path):
         """[(numéro, chemin)] triés ; [(None, path)] si le fichier n'est pas numéroté."""
@@ -516,6 +565,39 @@ class ShotBrowserUI(object):
     
         return self.getTrackItemAt(timeline, trackIndex, recordFrame), warning
 
+    def findCounterTrack(self, timeline):
+        """Index de la piste vidéo qui porte le clip Fusion des compteurs (None si absent)."""
+        for t in range(1, timeline.GetTrackCount("video") + 1):
+            for item in timeline.GetItemListInTrack("video", t) or []:
+                for idx in range(1, (item.GetFusionCompCount() or 0) + 1):
+                    comp = item.GetFusionCompByIndex(idx)
+                    if comp and comp.FindTool(COUNTERS[0][0]):
+                        return t
+        return None
+    
+    def addShotsTrack(self, timeline):
+        """Crée la piste des shots juste SOUS la piste des compteurs Fusion.
+        Renvoie l'index de la nouvelle piste, ou None si la création échoue."""
+        overlayTrack = self.findCounterTrack(timeline)
+        before = timeline.GetTrackCount("video")
+    
+        if overlayTrack:
+            try:
+                timeline.AddTrack("video", {"index": overlayTrack})
+            except Exception as e:
+                print("[ShotBrowser] AddTrack avec index refusé : %s" % e)
+    
+            if timeline.GetTrackCount("video") == before + 1:
+                # La piste Fusion est-elle montée d'un cran ? Alors notre piste est juste dessous.
+                if self.findCounterTrack(timeline) == overlayTrack + 1:
+                    return overlayTrack
+                print("[ShotBrowser] l'index d'insertion a été ignoré : piste ajoutée tout en haut")
+                return before + 1
+    
+        # Pas de comp Fusion trouvée, ou AddTrack n'a rien créé : méthode d'origine
+        if not timeline.AddTrack("video"):
+            return None
+        return timeline.GetTrackCount("video")
 
 
 
@@ -752,10 +834,11 @@ class ShotBrowserUI(object):
         cursor = tcToFrames(timeline.GetCurrentTimecode(), fps)    # curseur rouge
 
         # Nouvelle piste vidéo pour cet import
-        if not timeline.AddTrack("video"):
+        newTrack = self.addShotsTrack(timeline)
+        if not newTrack:
             self.core.popup("Impossible de créer une nouvelle piste vidéo.")
             return []
-        newTrack = timeline.GetTrackCount("video")
+
         try:
             timeline.SetTrackName("video", newTrack, "ShotBrowser")
         except Exception:
@@ -812,6 +895,12 @@ class ShotBrowserUI(object):
                                     % (shot["shot_path"], ref["duration"], newLen))
 
                 baked.append(newItem)
+
+        if baked:
+            try:
+                self.updateFrameCounters()
+            except Exception as e:
+                print("[ShotBrowser] mise à jour des compteurs impossible : %s" % e)
 
         msg = "%d clip(s) mis à jour." % len(baked)
         if warnings:
@@ -1024,6 +1113,7 @@ class ShotBrowserUI(object):
                 rows.append((r["start"], r["end"], ref, label))
 
             inp.SetExpression(counterExpression(rows, mode))
+        self.updateTaskLevelColors(comp, perShot)
 
     def printToolInputs(self, toolName):
         overlay, comp = self.findCounterComp(self.getTimelineContext()[1])
@@ -1101,4 +1191,32 @@ class ShotBrowserUI(object):
             self.bakeShotsOnTimeline(result)
         else:
             self.addShotsToTimeline(result)
+
+    def onRenderTriggered(self):
+        project = self.getResolve().GetProjectManager().GetCurrentProject()
+
+        timelineName = project.GetCurrentTimeline().GetName()
+        folder = os.path.join(self.core.projectPath, "04_Editing", "Renders", timelineName)
+        name = "%s_%s_v0001" % (getFilmName(self.core), timelineName)
+        self.prepareDeliver(folder, name)
+
+    def prepareDeliver(self, folder, name, openDeliverPage=True):
+        """Remplit 'Location' (TargetDir) et 'File name' (CustomName) du Deliver.
+        Renvoie True si Resolve a accepté les réglages."""
+        resolve = self.getResolve()
+        project = resolve.GetProjectManager().GetCurrentProject() if resolve else None
+        if not project:
+            self.core.popup("Impossible de joindre le projet DaVinci Resolve.")
+            return False
+    
+        ok = project.SetRenderSettings({
+            "TargetDir": folder,      # champ Location
+            "CustomName": name,       # champ File name (sans extension)
+        })
+        print("[ShotBrowser] Deliver : TargetDir=%s CustomName=%s -> %s" % (folder, name, ok))
+    
+        if ok and openDeliverPage:
+            resolve.OpenPage("deliver")     # rafraîchit l'affichage des champs
+        return bool(ok)
+
     
