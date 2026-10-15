@@ -110,16 +110,6 @@ def getInput(tool, inputId):
 SHOTINFO_REL = os.path.join("00_Pipeline", "Shotinfo", "shotInfo.json")
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".exr", ".tif", ".tiff", ".dpx", ".tga", ".bmp", ".webp"}
 
-def loadShotRanges(core):
-    """{"sq010": {"sh010": [1001, 1100], ...}, ...}"""
-    path = os.path.join(core.projectPath, SHOTINFO_REL)
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f).get("shotRanges", {})
-    except Exception as e:
-        print("[ShotBrowser] shotInfo.json illisible (%s) : %s" % (path, e))
-        return {}
-
 def luaStr(s):
     # Chaîne Lua sûre (guillemets et antislashs échappés)
     return '"%s"' % str(s).replace("\\", "\\\\").replace('"', '\\"')
@@ -161,6 +151,22 @@ def getFilmName(core):
     name = getattr(core, "projectName", None) or os.path.basename(os.path.normpath(core.projectPath))
     return re.sub(r"^\d+_", "", str(name))
 
+def fillMissingShotRanges(self, defaultRange=(1001, 1100), apply=False):
+    """Affiche les shots sans plage. Avec apply=True, écrit defaultRange pour ceux-là
+    (Prism met à jour shotInfo.json lui-même). Ne touche jamais aux plages existantes."""
+    entities = self.core.entities
+    missing = [s for s in (entities.getShots() or []) if not entities.getShotRange(s)]
+ 
+    for shot in missing:
+        print("[ShotBrowser] pas de plage : %s" % entities.getShotName(shot))
+        if apply:
+            entities.setShotRange(shot, defaultRange[0], defaultRange[1])
+ 
+    print("[ShotBrowser] %d shot(s) sans plage%s"
+          % (len(missing), " -> plage par défaut écrite" if apply else " (rien écrit)"))
+    return missing
+
+
 class ShotBrowserUI(object):
     def __init__(self, core, plugin=None):
         self.core = core
@@ -180,7 +186,6 @@ class ShotBrowserUI(object):
         self.action = action if action in ("add", "bake", "modify") else "add"
         self.timelineMode = self.action in ("bake", "modify")   # modes qui lisent la timeline
         self.onTimeline = {}
-        self.shotRanges = loadShotRanges(self.core)
 
         try:
             if self.timelineMode:
@@ -1124,27 +1129,17 @@ class ShotBrowserUI(object):
             print(attrs.get("INPS_ID"), "|", attrs.get("INPS_Name"), "|", attrs.get("INPS_DataType"))
 
     def getShotLength(self, sequence, shotName):
-        """Renvoie la durée en frames d'après shotInfo.json avec tolérance sur la casse."""
+        """Durée en frames d'après la plage du shot dans Prism ([début, fin] inclus)."""
         if not sequence or not shotName:
             return None
-        
-        seq_data = self.shotRanges.get(sequence, {})
-        if not seq_data:
-            # Essai sans tenir compte de la casse de la séquence
-            for sq_key, sq_val in self.shotRanges.items():
-                if sq_key.lower() == sequence.lower():
-                    seq_data = sq_val
-                    break
-                    
-        shot_range = None
-        for k, v in seq_data.items():
-            if k.lower() == shotName.lower() or naturalKey(k) == naturalKey(shotName):
-                shot_range = v
-                break
-        
-        if shot_range and isinstance(shot_range, list) and len(shot_range) >= 2:
-            return shot_range[1] - shot_range[0] + 1
+        entities = self.core.entities
+        entity = entities.getShot(sequence, shotName) or {
+            "type": "shot", "sequence": sequence, "shot": shotName}
+        shotRange = entities.getShotRange(entity)          # None si aucune plage définie
+        if shotRange and len(shotRange) >= 2:
+            return shotRange[1] - shotRange[0] + 1
         return None
+
 
     # ------------------------------------------------------------------ #
     def onValidate(self):
