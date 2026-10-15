@@ -158,7 +158,7 @@ def define_time_offset() -> int:
 
 def nodes_template_layout() -> dict[str,Any]:
     #-------------------------------------------------------------------------------#
-    # This function creates the houdini node template for the Layout department        #
+    # This function creates the houdini node template for the Layout department     #
     # works only for the shot                                                       #
     #                                                                               #
     # return the list of all nodes in a dictionary                                  #

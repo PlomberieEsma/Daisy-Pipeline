@@ -119,7 +119,6 @@ def command_check(kwargs: dict[str,str]):
 
         # delete sequence in framerange.json
         framerange_file = FramerangeFile()
-        print(f"{sequence_name = }")
         framerange_file.delete_sequence(sequence_name)
 
         for camera in cameras_in_scene:
@@ -131,7 +130,6 @@ def command_check(kwargs: dict[str,str]):
     # check the difference btw the cam number and the HDA shot number
     # to detect which function needs to be called
     count_difference = int(kwargs["script_value"]) - cam_count_scene
-    print(f"count_difference : {count_difference}")
 
     current_framerange = list(core.getFrameRange())
     for i in range (len(current_framerange)):
