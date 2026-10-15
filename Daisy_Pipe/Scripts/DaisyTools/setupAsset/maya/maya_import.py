@@ -16,7 +16,8 @@ MASTER_SHOT = "MASTER"
 RIG_PRODUCT = "ModL"
 
 DAISY_CAM_PATH = ("Integration", "otls", "DaisyCam.mb")
-CAM_SEQUENCE_TOKEN = re.compile("sqX", re.IGNORECASE)
+CAM_GROUP_NAME = "cam"
+CAM_SEQUENCE_TOKEN =re.compile("sqX", re.IGNORECASE)
 CAM_SHOT_TOKEN = re.compile("shX", re.IGNORECASE)
 CAM_GLOBAL_CTRL_SUFFIX = "_{sequence}_{shot}_global_ctrl"
 CAM_PAN_CTRL_SUFFIX = "_{sequence}_{shot}_pan_ctrl"
@@ -24,6 +25,7 @@ CAM_TILT_CTRL_SUFFIX = "_{sequence}_{shot}_tilt_ctrl"
 CAM_CTRL_SUFFIXES = (CAM_GLOBAL_CTRL_SUFFIX, CAM_PAN_CTRL_SUFFIX, CAM_TILT_CTRL_SUFFIX)
 USD_CAM_NAME = "cam_{sequence}_{shot}"
 USD_CAM_KEYFRAMES = "daisy:cameraKeyframes"
+LOADED_PRIM_COLLECTION = "loaded_prim"
 USD_LENS_SCALE = 100.0
 MM_PER_INCH = 25.4
 FILM_FIT_HORIZONTAL = 1
@@ -141,10 +143,63 @@ def load_usd_stage(path, name, scale=100.0):
     cmds.loadPlugin("mayaUsdPlugin", quiet=True)
     xform = cmds.createNode("transform", name=name)
     shape = cmds.createNode("mayaUsdProxyShape", name=name + "Shape", parent=xform)
+    # Open the stage without payloads, they are loaded afterwards by load_stage_payloads()
+    cmds.setAttr(shape + ".loadPayloads", False)
     cmds.setAttr(shape + ".filePath", path, type="string")
     cmds.connectAttr("time1.outTime", shape + ".time")
     cmds.setAttr(xform + ".scale", scale, scale, scale, type="double3")
+    load_stage_payloads(shape)
     return shape
+
+
+def get_loaded_prim_collection(stage):
+    #-------------------------------------------------------------------#
+    # Find the collection listing the prims to load in the USD stage    #
+    #                                                                   #
+    # stage = USD stage                                                 #
+    #                                                                   #
+    # return the Usd.CollectionAPI, or None if there is no collection   #
+    #-------------------------------------------------------------------#
+
+    from pxr import Usd
+
+    for prim in stage.Traverse():
+        for collection in Usd.CollectionAPI.GetAllCollections(prim):
+            if collection.GetName() == LOADED_PRIM_COLLECTION:
+                return collection
+    return None
+
+
+def load_stage_payloads(stage_shape):
+    #------------------------------------------------------------------------#
+    # Load the payloads of the prims listed in the loaded_prim collection    #
+    # If the stage has no loaded_prim collection, everything is loaded       #
+    #                                                                        #
+    # stage_shape = mayaUsdProxyShape of the stage                           #
+    #                                                                        #
+    # return the list of loaded prim paths                                   #
+    #------------------------------------------------------------------------#
+
+    import mayaUsd.ufe
+    from pxr import Sdf
+
+    stage = mayaUsd.ufe.getStage(cmds.ls(stage_shape, long=True)[0])
+    collection = get_loaded_prim_collection(stage)
+    if collection is None or collection.GetIncludeRootAttr().Get():
+        stage.Load(Sdf.Path.absoluteRootPath)
+        print("Pas de collection %s : tout le stage est chargé" % LOADED_PRIM_COLLECTION)
+        return [Sdf.Path.absoluteRootPath]
+
+    # The targets are used as they are: the prims under an unloaded payload
+    # do not exist yet, so the collection membership can not be computed
+    paths = collection.GetIncludesRel().GetTargets()
+    for path in paths:
+        stage.Load(path)
+    for path in collection.GetExcludesRel().GetTargets():
+        stage.Unload(path)
+
+    print("%d prim(s) chargée(s) depuis la collection %s" % (len(paths), collection.GetPath()))
+    return paths
 
 
 def import_maya_scene(path, namespace=":"):
@@ -274,6 +329,25 @@ def import_daisy_cam(core, sequence, shot, reference=False):
     return cam_transforms[0] if cam_transforms else None
 
 
+def group_daisy_cam(cam_transform, group_name):
+    #-------------------------------------------------------------------------#
+    # Put the DaisyCam root group (DaisyCam_sqX_shX) under new groups:        #
+    # group_name|cam|DaisyCam_sqX_shX                                         #
+    #                                                                         #
+    # cam_transform = DaisyCam transform                                      #
+    # group_name = name of the top group (name of the layout defaultPrim)     #
+    #                                                                         #
+    # return the DaisyCam transform long name after the parenting             #
+    #-------------------------------------------------------------------------#
+
+    uuid = cmds.ls(cam_transform, uuid=True)[0]
+    root = "|" + cmds.ls(cam_transform, long=True)[0].split("|")[1]
+    group = cmds.group(empty=True, world=True, name=group_name)
+    cam_group = cmds.group(empty=True, parent=group, name=CAM_GROUP_NAME)
+    cmds.parent(root, cam_group, relative=True)
+    return cmds.ls(uuid, long=True)[0]
+
+
 def get_shot_ranges(sequence, shot):
     #-------------------------------------------------------------------------#
     # Get the shot frame range in the shot time and in the MASTER time        #
@@ -312,6 +386,25 @@ def offset_stage_time(stage_shape, shot_range, master_range):
     cmds.setInfinity(curve, preInfinite="linear", postInfinite="linear")
     cmds.connectAttr(curve + ".output", stage_shape + ".time", force=True)
     return curve
+
+
+def get_default_prim_name(stage_shape):
+    #------------------------------------------------------------------#
+    # Get the name of the defaultPrim of the USD stage                 #
+    #                                                                  #
+    # stage_shape = mayaUsdProxyShape of the stage                     #
+    #                                                                  #
+    # return the defaultPrim name, or None if the stage has none       #
+    #------------------------------------------------------------------#
+
+    import mayaUsd.ufe
+
+    stage = mayaUsd.ufe.getStage(cmds.ls(stage_shape, long=True)[0])
+    default_prim = stage.GetDefaultPrim()
+    if not default_prim:
+        cmds.warning("Pas de defaultPrim dans le stage %s" % stage_shape)
+        return None
+    return default_prim.GetName()
 
 
 def get_usd_camera(stage_shape, camera_name):
@@ -674,6 +767,19 @@ def key_daisy_cam(cam_transform, ctrls):
         cmds.setKeyframe(cam_transform, attribute="focalLength")
 
 
+def delete_static_keys(cam_transform, ctrls):
+    #----------------------------------------------------------------------#
+    # Remove the keys of the DaisyCam attributes that never change value,  #
+    # the attribute keeps its constant value without animation curve       #
+    #                                                                      #
+    # cam_transform = DaisyCam transform                                   #
+    # ctrls = tuple (global_ctrl, pan_ctrl, tilt_ctrl) of the DaisyCam rig #
+    #----------------------------------------------------------------------#
+
+    shape = cmds.listRelatives(cam_transform, shapes=True, type="camera", fullPath=True)[0]
+    cmds.delete(list(ctrls) + [shape, cam_transform], staticChannels=True, hierarchy="none")
+
+
 def match_daisy_cam_to_usd(cam_transform, stage_shape, sequence, shot, shot_range, master_range):
     #-------------------------------------------------------------------------------------#
     # Match the DaisyCam to the layout USD camera for the whole shot                      #
@@ -727,6 +833,7 @@ def match_daisy_cam_to_usd(cam_transform, stage_shape, sequence, shot, shot_rang
             cmds.currentTime(frame)
             match_frame(cam_transform, ctrls, stage_shape, camera, frame + time_offset)
             key_daisy_cam(cam_transform, ctrls)
+        delete_static_keys(cam_transform, ctrls)
     finally:
         cmds.currentTime(shot_range[0])
         cmds.refresh(suspend=False)
@@ -791,6 +898,10 @@ def setup_anim(core, info):
             offset_stage_time(layout, shot_range, master_range)
 
     camera = import_daisy_cam(core, sequence, shot)
+    default_prim = get_default_prim_name(layout) if layout else None
+    if camera and default_prim:
+        # Group named as the layout defaultPrim, above the DaisyCam_sqX_shX group
+        camera = group_daisy_cam(camera, default_prim)
     if layout and camera:
         match_daisy_cam_to_usd(camera, layout, sequence, shot, shot_range, master_range)
 
@@ -849,4 +960,6 @@ def import_asset():
     return setup(get_core(), info)
 
 
-import_asset()
+# Run from the script editor; the Prism shelf button calls import_asset() itself
+if __name__ == "__main__":
+    import_asset()
