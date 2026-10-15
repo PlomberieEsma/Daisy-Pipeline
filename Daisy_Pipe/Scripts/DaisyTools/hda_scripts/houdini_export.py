@@ -1,6 +1,7 @@
 import hou
 import os
-from pxr import Sdf
+import re
+from pxr import Sdf, Vt
 from Scripts.DaisyTools.core.core import get_core, houdini_relative_path, USD_FILE_FORMAT, create_master, create_master_clips
 from Scripts.DaisyTools.core.get_entity_info import get_entity_info
 from Scripts.DaisyTools.core.version_cleanup import check_version_limit_for_output
@@ -9,6 +10,9 @@ from Scripts.DaisyTools.core.dcc.launcher import get_main_window
 PROXY_WEDGE = "proxy"
 FILE_PER_FRAME = "fileperframe"
 FRAME_TOKEN = ".$F4"
+
+CAMERA_NODE_NAME = re.compile(r"^cam_sq\d+_sh\d+$")
+CAMERA_KEYFRAMES = "daisy:cameraKeyframes"
 
 NEXT_VERSION_PARM = "versions"
 VERSION_NUM_PARM = "selectedversion"
@@ -117,6 +121,10 @@ def _set_path(parm, value):
 
 def update_path(hda=None, strict=False, **kwargs):
     hda = hda or kwargs.get("node") or hou.pwd()
+    # Le default de "path" est une expression hscript vide : si le chemin n'est pas
+    # écrit, les nodes internes qui lisent ../path tombent en "Expression stack error"
+    for name in ("path", "masterpath", "proxypath", "proxymasterpath"):
+        hda.parm(name).deleteAllKeyframes()
     try:
         per_frame = is_file_per_frame(hda)
 
@@ -194,6 +202,82 @@ def save_master(hda=None, file_parm="path", master_parm="masterpath"):
     return result
 
 
+# ---------- Clés caméra ----------
+
+def _parm_keyframes(parm):
+    # Un parm sans clé peut référencer un autre parm animé via ch()
+    keyframes = parm.keyframes()
+    if not keyframes:
+        referenced = parm.getReferencedParm()
+        if referenced != parm:
+            keyframes = referenced.keyframes()
+    return {int(round(key.frame())) for key in keyframes}
+
+
+def _values_differ(a, b, tolerance=1e-6):
+    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+        return abs(a - b) > tolerance
+    return a != b
+
+
+def _camera_moves_at(parms, frame):
+    # Une clé ne sert que si la caméra bouge avant ou après elle
+    for parm in parms:
+        value = parm.evalAtFrame(frame)
+        if any(_values_differ(value, parm.evalAtFrame(other)) for other in (frame - 1, frame + 1)):
+            return True
+    return False
+
+
+def get_camera_keyframes():
+    # Frames des clés posées sur chaque caméra de shot, par nom de prim
+    # (le nom du node peut différer du prim, ex. node dupliqué d'une autre séquence)
+    cameras = hou.lopNodeTypeCategory().nodeTypes()["camera"].instances()
+    keyframes = {}
+    for camera in cameras:
+        primpath = camera.parm("primpath")
+        prim_name = primpath.evalAsString().rstrip("/").split("/")[-1] if primpath else camera.name()
+        if not CAMERA_NODE_NAME.match(prim_name):
+            continue
+        frames = set()
+        animated_parms = []
+        for parm in camera.parms():
+            parm_frames = _parm_keyframes(parm)
+            if parm_frames:
+                frames |= parm_frames
+                animated_parms.append(parm)
+        frames = {frame for frame in frames if _camera_moves_at(animated_parms, frame)}
+        if frames:
+            keyframes.setdefault(prim_name, set()).update(frames)
+    return {name: sorted(frames) for name, frames in keyframes.items()}
+
+
+def write_camera_keyframes(file_path, keyframes):
+    # USD ne garde que des valeurs par frame : on note les frames des clés Houdini
+    # en customData sur la prim caméra pour que Maya puisse les retrouver
+    if not keyframes:
+        return
+
+    _reload_layers([file_path])
+    layer = Sdf.Layer.FindOrOpen(file_path)
+    if not layer:
+        print(f"write_camera_keyframes: layer introuvable {file_path}")
+        return
+
+    def visit(path):
+        if not path.IsPrimPath() or path.name not in keyframes:
+            return
+        spec = layer.GetPrimAtPath(path)
+        if spec.typeName != "Camera":
+            return
+        custom_data = dict(spec.customData)
+        custom_data[CAMERA_KEYFRAMES] = Vt.IntArray(keyframes[path.name])
+        spec.SetInfo("customData", custom_data)
+
+    layer.Traverse(Sdf.Path.absoluteRootPath, visit)
+    layer.Save()
+
+
 # ---------- Thumbnail ----------
 
 def update_thumbnail(hda, core, path):
@@ -240,6 +324,9 @@ def _finalize_export(hda, file_parm, master_parm, thumbnail=True, master_info=Tr
     update_master = hda.parm("updatemaster").evalAsInt()
 
     _check_written(hda, file_parm)
+
+    if not is_file_per_frame(hda):
+        write_camera_keyframes(path, get_camera_keyframes())
 
     master_path = None
     if update_master:

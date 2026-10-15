@@ -1,5 +1,5 @@
 from Scripts.DaisyTools.core.asset_browser_import import AssetBrowserUI
-from Scripts.DaisyTools.core.core import get_core
+from Scripts.DaisyTools.core.core import get_core, houdini_relative_path
 from Scripts.DaisyTools.core.get_entity_info import get_entity_info
 import hou
 
@@ -69,7 +69,7 @@ def set_import_path(hda, asset, **kwargs):
         return
 
     try:
-        hda.parm("path").set(str(path).replace("\\", "/"))
+        hda.parm("path").set(houdini_relative_path(str(path)))
     except Exception as e:
         print(f"[{hda.path()}] set_import_path: {e}")
 

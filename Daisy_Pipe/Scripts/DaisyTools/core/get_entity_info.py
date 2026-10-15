@@ -48,7 +48,7 @@ def get_entity_info():
         name = data.get("asset", "")
     else:
         entity = {"type": "shot", "sequence": data.get("sequence", ""),"shot": data.get("shot", "")}
-        name = f"{data.get('sequence', '')}_{data.get('shot', '')}"
+        name = f"{data.get('sequence', '')}-{data.get('shot', '')}"
 
     path = core.paths.getEntityPath(entity=entity)
 
