@@ -112,6 +112,7 @@ def getInput(tool, inputId):
     return None
 
 SHOTINFO_REL = os.path.join("00_Pipeline", "Shotinfo", "shotInfo.json")
+IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".exr", ".tif", ".tiff", ".dpx", ".tga", ".bmp", ".webp"}
 
 def loadShotRanges(core):
     """{"sq010": {"sh010": [1001, 1100], ...}, ...}"""
@@ -299,6 +300,226 @@ class ShotBrowserUI(object):
 
         return {"taskLevel": str(taskLevel), "pixmap": pm}
 
+    def listSequenceFiles(self, path):
+        """[(numéro, chemin)] triés ; [(None, path)] si le fichier n'est pas numéroté."""
+        folder, name = os.path.split(path)
+        m = re.match(r"^(?P<pre>.+\.)(?P<frame>\d+)(?P<ext>\.[A-Za-z0-9]+)$", name)
+        if not m:
+            return [(None, path)]
+        pre, width, ext = m.group("pre"), len(m.group("frame")), m.group("ext")
+        rx = re.compile(r"^%s(\d{%d})%s$" % (re.escape(pre), width, re.escape(ext)))
+        out = []
+        for f in os.listdir(folder):
+            mm = rx.match(f)
+            if mm:
+                out.append((int(mm.group(1)), os.path.join(folder, f)))
+        return sorted(out)
+    
+    def isHeldMedia(self, files):
+        """True si le shot doit être 'tenu' : image fixe, ou séquence dont le step est > 1."""
+        if len(files) == 1:
+            # fichier unique : tenu seulement si c'est une image (pas un mov/mp4)
+            return os.path.splitext(files[0][1])[1].lower() in IMAGE_EXTS
+        nums = [n for n, _ in files]
+        return any(b - a > 1 for a, b in zip(nums, nums[1:]))
+    
+    def clearRange(self, timeline, track, start, end):
+        """Supprime (sans ripple) les clips de la piste qui touchent [start, end)."""
+        olds = [it for it in (timeline.GetItemListInTrack("video", track) or [])
+                if it.GetStart() < end and it.GetEnd() > start]
+        if olds:
+            timeline.DeleteClips(olds, False)
+    
+    def getTrackItemAt(self, timeline, track, startFrame):
+        """Relit la piste et renvoie le clip qui démarre exactement à startFrame."""
+        for it in (timeline.GetItemListInTrack("video", track) or []):
+            try:
+                if it.GetStart() == startFrame:
+                    return it
+            except Exception:
+                pass
+        return None
+    
+    def buildSingleFrameImportItem(self, path, number):
+        """Motif Start=End pour UNE image (plan B si Resolve regroupe en séquence)."""
+        if number is None:
+            return None
+        folder, name = os.path.split(path)
+        m = re.match(r"^(?P<pre>.+\.)(?P<frame>\d+)(?P<ext>\.[A-Za-z0-9]+)$", name)
+        if not m:
+            return None
+        pattern = os.path.join(folder, "%s%%0%dd%s" % (m.group("pre"), len(m.group("frame")), m.group("ext")))
+        return {"FilePath": pattern, "StartIndex": number, "EndIndex": number}
+
+    def importSingleImage(self, pool, path, number):
+        """Importe UNE image. Chemin simple d'abord (comme une image fixe) ;
+        si Resolve en a fait une séquence, retente avec un motif Start=End."""
+        imported = pool.ImportMedia([path])
+        mp = imported[0] if imported else None
+        if mp:
+            try:
+                ctype = mp.GetClipProperty("Type")
+                frames = mp.GetClipProperty("Frames")
+            except Exception:
+                ctype, frames = None, None
+            print("[ShotBrowser] import %s -> Type=%s Frames=%s" % (os.path.basename(path), ctype, frames))
+            if ctype in ("Still", "Image"):
+                return mp
+            try:
+                if int(float(frames)) <= 1:
+                    return mp
+            except (TypeError, ValueError):
+                return mp
+    
+        alt = self.buildSingleFrameImportItem(path, number)
+        if alt:
+            imported = pool.ImportMedia([alt])
+            if imported:
+                print("[ShotBrowser] plan B (Start=End) utilisé pour %s" % os.path.basename(path))
+                return imported[0]
+        return mp
+
+
+    
+    def addShotMarker(self, tlItem, shot, length=None):
+        """Métadonnées + marqueur JSON lu par getTimelineShots."""
+        mp = tlItem.GetMediaPoolItem()
+        if mp:
+            mp.SetMetadata("Scene", shot["sequence"])
+            mp.SetMetadata("Shot", shot["name"])
+    
+        data = {
+            "sequence": shot["sequence"],
+            "shot": shot["name"],
+            "taskLevel": shot["taskLevel"],
+            "mediaPath": shot["mediaPath"],
+        }
+        if length:
+            data["length"] = int(length)     # durée réelle du shot (multi-blocs)
+    
+        tlItem.AddMarker(
+            0, "Blue", shot["shot_path"],
+            "taskLevel: %s" % shot["taskLevel"], 1,
+            json.dumps(data),
+        )
+
+    def setHeldMarks(self, mp, n):
+        """Règle la plage In/Out du média sur n frames (0 -> n-1).
+        Renvoie le nombre de frames réellement acceptées (0 si Resolve refuse tout)."""
+        while n >= 1:
+            try:
+                mp.ClearMarkInOut("all")
+            except Exception:
+                pass
+            try:
+                ok = mp.SetMarkInOut(0, n - 1, "all")
+            except Exception as e:
+                print("[ShotBrowser] SetMarkInOut a levé : %s" % e)
+                ok = False
+            try:
+                mo = mp.GetMarkInOut() or {}
+            except Exception:
+                mo = {}
+            outs = [v.get("out") for v in mo.values() if isinstance(v, dict)]
+            print("[ShotBrowser] marques demandées 0-%d -> ok=%s relu=%s" % (n - 1, ok, mo))
+            if ok and (not outs or any(o == n - 1 for o in outs)):
+                return n
+            n //= 2
+        return 0
+    
+    def clearHeldMarks(self, mp):
+        try:
+            mp.ClearMarkInOut("all")
+        except Exception:
+            pass
+    
+    def placeHeldShot(self, shot, files, pool, timeline, trackIndex, recordFrame, target):
+        """Image fixe / séquence à step -> blocs bout à bout totalisant exactement `target` frames.
+        Renvoie (1er clip ou None, avertissement ou None)."""
+        recordFrame, target = int(recordFrame), int(target)
+        shotEnd = recordFrame + target
+        name = shot["shot_path"]
+    
+        self.clearRange(timeline, trackIndex, recordFrame, shotEnd)
+    
+        def snapshot():
+            return {(it.GetStart(), it.GetEnd())
+                    for it in (timeline.GetItemListInTrack("video", trackIndex) or [])}
+    
+        before = snapshot()
+    
+        def abort(msg):
+            # Supprime uniquement ce que ce shot a ajouté (y compris un clip posé ailleurs par erreur)
+            extra = [it for it in (timeline.GetItemListInTrack("video", trackIndex) or [])
+                    if (it.GetStart(), it.GetEnd()) not in before]
+            if extra:
+                timeline.DeleteClips(extra, False)
+            return None, msg
+    
+        base = files[0][0]
+        offsets = [0 if n is None else n - base for n, _ in files]
+        offsets = [o for o in offsets if o < target]
+    
+        for i, off in enumerate(offsets):
+            end = offsets[i + 1] if i + 1 < len(offsets) else target
+            number, filePath = files[i]
+            label = "%s bloc %d" % (name, i)
+    
+            mp = self.importSingleImage(pool, filePath, number)
+            if not mp:
+                return abort("%s : import échoué (%s)" % (label, filePath))
+    
+            pos, remaining = recordFrame + off, end - off
+            while remaining > 0:
+                n = self.setHeldMarks(mp, remaining)
+                if n < 1:
+                    self.clearHeldMarks(mp)
+                    return abort("%s : Resolve refuse la plage In/Out sur cette image fixe" % label)
+    
+                pool.AppendToTimeline([{
+                    "mediaPoolItem": mp,
+                    "mediaType": 1,
+                    "trackIndex": trackIndex,
+                    "recordFrame": pos,
+                }])
+                item = self.getTrackItemAt(timeline, trackIndex, pos)
+                d = item.GetDuration() if item else None
+                print("[ShotBrowser] %s : pose à %d, marques %d f -> clip obtenu %s f" % (label, pos, n, d))
+    
+                if not item or not d:
+                    self.clearHeldMarks(mp)
+                    return abort("%s : aucun clip posé à la frame %d" % (label, pos))
+                if d > n:
+                    # Les marques ont été ignorées : on retire le clip trop long
+                    timeline.DeleteClips([item], False)
+                    self.clearHeldMarks(mp)
+                    return abort("%s : Resolve a ignoré la plage In/Out (clip de %d f au lieu de %d)"
+                                % (label, d, n))
+                pos += d
+                remaining -= d
+    
+            self.clearHeldMarks(mp)
+    
+        # Vérification : la piste doit être continue de recordFrame à shotEnd
+        items = sorted((it for it in (timeline.GetItemListInTrack("video", trackIndex) or [])
+                        if it.GetStart() < shotEnd and it.GetEnd() > recordFrame),
+                    key=lambda it: it.GetStart())
+        warning, cur = None, recordFrame
+        for it in items:
+            s, e = it.GetStart(), it.GetEnd()
+            print("[ShotBrowser]   V%d : start=%d end=%d dur=%d" % (trackIndex, s, e, e - s))
+            if s != cur and not warning:
+                warning = "%s : trou ou chevauchement à la frame %d" % (name, s)
+            cur = e
+        if cur != shotEnd:
+            warning = "%s : durée obtenue %d f au lieu de %d" % (name, cur - recordFrame, target)
+    
+        return self.getTrackItemAt(timeline, trackIndex, recordFrame), warning
+
+
+
+
+
     def populateTree(self):
         """Remplit l'arbre, renvoie le nombre de shots affichés."""
         self.tw_shots.clear()
@@ -409,7 +630,7 @@ class ShotBrowserUI(object):
                         "item": item,
                         "track": t,
                         "start": item.GetStart(),
-                        "duration": item.GetDuration(),
+                        "duration": info.get("length") or item.GetDuration(),
                         "taskLevel": info.get("taskLevel", NO_LEVEL),
                         "mediaPath": info.get("mediaPath"),
                     })
@@ -418,16 +639,33 @@ class ShotBrowserUI(object):
 
     # ------------------------------------------------------------------ #
     def placeShot(self, shot, pool, timeline, trackIndex, recordFrame):
-        """Importe et pose un shot. Renvoie (tlItem ou None, avertissement ou None)."""
+        """Importe et pose un shot. Renvoie (tlItem ou None, avertissement ou None).
+        self.lastPlacedLength = durée totale occupée sur la timeline par le shot."""
+        self.lastPlacedLength = 0
+    
         path = shot.get("mediaPath")
         if not path:
             return None, "%s : aucun média trouvé" % shot["shot_path"]
-
+    
+        # Durée de référence côté Prism
+        target = self.getShotLength(shot["sequence"], shot["name"])
+    
+        # ---- Chemin 1 : image fixe / step > 1 -> durée Prism garantie ----
+        files = self.listSequenceFiles(path)
+        if target and self.isHeldMedia(files):
+            tlItem, warning = self.placeHeldShot(
+                shot, files, pool, timeline, trackIndex, recordFrame, target)
+            if tlItem:
+                self.lastPlacedLength = target
+                self.addShotMarker(tlItem, shot, length=target)
+            return tlItem, warning
+    
+        # ---- Chemin 2 : séquence complète / vidéo (fonctionnement d'origine) ----
         importItem, expectedFrames = self.buildImportItem(path)
         imported = pool.ImportMedia([importItem])
         if not imported:
             return None, "%s : ImportMedia a échoué (%s)" % (shot["shot_path"], importItem)
-
+    
         mpItem = imported[0]
         try:
             nFrames = int(float(mpItem.GetClipProperty("Frames")))
@@ -437,16 +675,14 @@ class ShotBrowserUI(object):
             nFrames = expectedFrames
         if nFrames < 1:
             return None, "%s : durée illisible" % shot["shot_path"]
-
-        # Durée de référence côté Prism
-        target = self.getShotLength(shot["sequence"], shot["name"])
+    
         isStill = isinstance(importItem, str)       # fichier unique, pas une séquence
         try:
             isStill = isStill and mpItem.GetClipProperty("Type") in ("Still", "Image")
         except Exception:
             pass
         exact = bool(isStill and target)
-
+    
         if exact:
             expectedFrames = target
             variants = [(0, target - 1), None]
@@ -455,7 +691,7 @@ class ShotBrowserUI(object):
             if isinstance(importItem, dict):
                 variants.append((importItem["StartIndex"], importItem["EndIndex"]))
             variants.append((0, nFrames - 1))
-
+    
         def append(frameRange):
             info = {
                 "mediaPoolItem": mpItem,
@@ -467,7 +703,7 @@ class ShotBrowserUI(object):
                 info["startFrame"], info["endFrame"] = frameRange
             res = pool.AppendToTimeline([info])
             return res[0] if res and res[0] else None
-
+    
         tlItem, warning = None, None
         for frameRange in variants:
             item = append(frameRange)
@@ -481,28 +717,17 @@ class ShotBrowserUI(object):
                 continue
             tlItem = item
             break
-
+    
         if not tlItem:
             tlItem = append(None)
             if not tlItem:
                 return None, "%s : AppendToTimeline refusé" % shot["shot_path"]
             warning = "%s : durée %s au lieu de %s" % (shot["shot_path"], tlItem.GetDuration(), expectedFrames)
-
-        # Transmission des infos
-        mp = tlItem.GetMediaPoolItem()
-        mp.SetMetadata("Scene", shot["sequence"])
-        mp.SetMetadata("Shot", shot["name"])
-        tlItem.AddMarker(
-            0, "Blue", shot["shot_path"],
-            "taskLevel: %s" % shot["taskLevel"], 1,
-            json.dumps({
-                "sequence": shot["sequence"],
-                "shot": shot["name"],
-                "taskLevel": shot["taskLevel"],
-                "mediaPath": shot["mediaPath"],
-            }),
-        )
+    
+        self.lastPlacedLength = tlItem.GetDuration()
+        self.addShotMarker(tlItem, shot)            # pas de "length" : la durée du clip fait foi
         return tlItem, warning
+
 
     # ------------------------------------------------------------------ #
     def getTimelineContext(self):
@@ -544,7 +769,7 @@ class ShotBrowserUI(object):
                 warnings.append(warn)
             if tlItem:
                 tlItems.append(tlItem)
-                cursor += tlItem.GetDuration()       # le shot suivant démarre à la fin du précédent
+                cursor += self.lastPlacedLength or tlItem.GetDuration()
 
         if warnings:
             self.core.popup("Shots non ajoutés ou incomplets :\n" + "\n".join(warnings))
@@ -567,7 +792,7 @@ class ShotBrowserUI(object):
                 oldItem = ref["item"]
                 oldMp = oldItem.GetMediaPoolItem()
 
-                timeline.DeleteClips([oldItem], False)      # sans ripple : pas de décalage
+                self.clearRange(timeline, ref["track"], ref["start"], ref["start"] + ref["duration"])
                 newItem, warn = self.placeShot(shot, pool, timeline, ref["track"], ref["start"])
                 if warn:
                     warnings.append(warn)
@@ -581,9 +806,11 @@ class ShotBrowserUI(object):
                     warnings.append("%s : mise à jour impossible, ancien média remis" % shot["shot_path"])
                     continue
 
-                if newItem.GetDuration() != ref["duration"]:
+                newLen = self.lastPlacedLength or newItem.GetDuration()
+                if newLen != ref["duration"]:
                     warnings.append("%s : durée changée (%s → %s frames)"
-                                    % (shot["shot_path"], ref["duration"], newItem.GetDuration()))
+                                    % (shot["shot_path"], ref["duration"], newLen))
+
                 baked.append(newItem)
 
         msg = "%d clip(s) mis à jour." % len(baked)
