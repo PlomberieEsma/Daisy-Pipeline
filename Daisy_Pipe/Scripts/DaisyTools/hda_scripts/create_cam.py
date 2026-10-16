@@ -78,11 +78,11 @@ def create_cam(input_node: Any, input_network_box: Any, digit_number: int) -> An
     if cameras_in_scene != ():
         for camera in cameras_in_scene:
             cam_name = camera.name()
-            cam_name_first_part = cam_name[:6]
-            cam_name_second_part = cam_name[6+digit_number:-digit_number]
+            cam_name_first_part = cam_name[:11]
+            cam_name_second_part = cam_name[11+digit_number:-digit_number]
 
-            if cam_name_first_part == "cam_sq" and cam_name_second_part == "_sh":
-                shot_number = int(cam_name[-3:])
+            if cam_name_first_part == "DaisyCam_sq" and cam_name_second_part == "_sh":
+                shot_number = int(cam_name[-digit_number:])
                 if shot_number > last_cam_shot_number:
                     last_cam_shot_number = shot_number
                     last_cam_object = camera
@@ -96,7 +96,8 @@ def create_cam(input_node: Any, input_network_box: Any, digit_number: int) -> An
     lopnet = hou.node("/stage")
 
     cam1 = lopnet.createNode("camera")
-    cam1.setName(f"cam_{sequence_name}_{new_shot_name}")
+    # cam1.setName(f"cam_{sequence_name}_{new_shot_name}")
+    cam1.setName(f"DaisyCam_{sequence_name}_{new_shot_name}")
     # cam1.parm("primpath").set(f"/{seq_and_sht_name}/cam/cam_{sequence_name}_{new_shot_name}")
     cam1.parm("primpath").set(f"/{seq_and_sht_name}/cam/DaisyCam_{sequence_name}_{new_shot_name}/DaisyCam_{sequence_name}_{new_shot_name}_geo/DaisyCam_{sequence_name}_{new_shot_name}_Offset/DaisyCam_{sequence_name}_{new_shot_name}_Hook/DaisyCam_{sequence_name}_{new_shot_name}_Move/DaisyCam_{sequence_name}_{new_shot_name}_group/DaisyCam_{sequence_name}_{new_shot_name}_cam/DaisyCam_{sequence_name}_{new_shot_name}_camShape")
     cam1.parm("xn__houdiniguidescale_s3a").set(1)

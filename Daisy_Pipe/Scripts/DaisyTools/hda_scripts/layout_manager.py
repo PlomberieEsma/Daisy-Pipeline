@@ -62,6 +62,8 @@ shot_entity = info["entity"]
 
 sequence_name = shot_entity["sequence"]
 
+cam_layout_name = "cam_layout"
+
 #get variables from config.json
 config_file_path = f"{project_path}/00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/lib/config.json"
 with open(config_file_path, mode="r", encoding="utf-8") as read_file:
@@ -122,7 +124,10 @@ def command_check(kwargs: dict[str,str]):
         framerange_file.delete_sequence(sequence_name)
 
         for camera in cameras_in_scene:
+            if camera.name() == cam_layout_name:
+                continue
             # destroy camera node
+            print(f"delete {camera.name()}")
             camera.destroy()
 
         return
@@ -175,7 +180,7 @@ def create_shot(kwargs: dict[str,str], digit_number: int, framerange: list[int])
     box_input = hou.node("/stage").findNetworkBox("/stage/camera_box")
 
     new_cam = create_cam(null_input, box_input, digit_number)
-    new_shot_name = new_cam.name().replace("cam_", "").replace("_", " ")
+    new_shot_name = new_cam.name().replace("DaisyCam_", "").replace("_", " ")
 
     # modifie the HDA
     node.parm(f"sh_name{shot_number}").set(new_shot_name)
@@ -186,7 +191,7 @@ def create_shot(kwargs: dict[str,str], digit_number: int, framerange: list[int])
     framerange_file = FramerangeFile()
     framerange_file.set_shot(new_shot_name.split(" ")[0], new_shot_name.split(" ")[1], framerange)
 
-    print("add "+new_cam.name().replace("cam_", ""))
+    print("add "+new_cam.name().replace("DaisyCam_", ""))
 
 def delete_shot(kwargs: dict[str,str], cameras_in_scene: Any):
     #-------------------------------------------------------------------#
@@ -206,7 +211,7 @@ def delete_shot(kwargs: dict[str,str], cameras_in_scene: Any):
         # when it comes from get from prism button
         if kwargs["parm_name"] == "get_from_prism" and kwargs["shot_to_delete"] == block.parm(f"sh_name{i+1}").eval():
             # the shot has been deleted
-            print("del "+cameras_in_scene[i].name().replace("cam_", ""))
+            print("del "+cameras_in_scene[i].name().replace("DaisyCam_", ""))
             # delete the corresponding camera node
             cameras_in_scene[i].destroy()
 
@@ -220,7 +225,7 @@ def delete_shot(kwargs: dict[str,str], cameras_in_scene: Any):
                 # it's ok
                 pass
             else:
-                sq_and_sh_name = cameras_in_scene[i].name().replace("cam_", "").replace("_", " ")
+                sq_and_sh_name = cameras_in_scene[i].name().replace("DaisyCam_", "").replace("_", " ")
                 # the shot has been deleted
                 print(f"del {sq_and_sh_name}")
                 # delete the corresponding camera node
@@ -232,7 +237,7 @@ def delete_shot(kwargs: dict[str,str], cameras_in_scene: Any):
 
         except AttributeError as e:
             # if the user deletes the last shot
-            print("del "+cameras_in_scene[i].name().replace("cam_", ""))
+            print("del "+cameras_in_scene[i].name().replace("DaisyCam_", ""))
             cameras_in_scene[i].destroy()
             break
 

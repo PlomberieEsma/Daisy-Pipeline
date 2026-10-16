@@ -134,12 +134,12 @@ def get_from_prism(kwargs: dict[str,str]):
         shot_counter += 1
 
 def update_from_prism(kwargs: dict[str,str]):
-    #---------------------------------------------------------------------------#
-    # Syncronize a single houdini shot with Prism when Update shot is clicked   #
-    # update the framerange                                                     #
-    #                                                                           #
-    # kwargs = dict taken from the HDA multiParmBlock "shot_number"             #
-    #---------------------------------------------------------------------------#
+    #-----------------------------------------------------------------------------------#
+    # Syncronize a single houdini shot with Prism when Update from Prism is clicked     #
+    # update the framerange                                                             #
+    #                                                                                   #
+    # kwargs = dict taken from the HDA multiParmBlock "shot_number"                     #
+    #-----------------------------------------------------------------------------------#
 
     parm_number = kwargs["parm_name"][12:]
     hou_node = kwargs["node"]
@@ -156,6 +156,9 @@ def update_from_prism(kwargs: dict[str,str]):
     # get prism shot
     # selected_shot = core.entities.getShot(sequence_name, shot_name)
     # print(f"{selected_shot=}")
+
+def update_framerange(kwargs: dict[str,str]):
+    print("update framerange")
 
 #============================================================= push to prism ============================================================#
 
