@@ -24,7 +24,7 @@ Ce qui est plutôt pratique c'est que dans Houdini, vous pouvez passer très fac
 ><img src="../../src/information.png" width=50em><br>
 >Pour plus d'informations sur Solaris, retrouvez la ***[documentation officielle ici](https://www.sidefx.com/docs/houdini21.0/solaris/index.html)***.
 
-Donc comment aller dans Solaris ? Assurez-vous que vous avez bien le petit logo orangé en haut du node editor.
+Donc comment aller dans Solaris ? Assurez-vous que vous avez bien le petit logo orangé en haut du node editor.<br>
 <img src="src/solaris/houdini_stage_icon.png" width=200em><br>
 Vous pouvez également changer la disposition des fenêtres en allant dans le menu déroulant tout en haut d'Houdini et en clickant sur "Solaris".<br>
 <img src="src/solaris/houdini_change_layout.png" width=500em><br>
