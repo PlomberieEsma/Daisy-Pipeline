@@ -39,6 +39,12 @@ from DaisyTools.ui.maya_state_manager import DaisyUsdExportClass
 
 from PrismUtils.Decorators import err_catcher_plugin as err_catcher
 
+PRISM_SHELF = "Prism"
+PRISM_BUTTON_PREFIX = "prism_"
+DAISY_IMPORT_LABEL = "Daisy Import"
+DAISY_IMPORT_OVERLAY = "Import"
+DAISY_IMPORT_ICON = "pythonFamily.png"
+
 
 class Prism_Daisy_Pipe_Functions(object):
     def __init__(self, core, plugin):
@@ -61,6 +67,7 @@ class Prism_Daisy_Pipe_Functions(object):
 
         if self.isMaya():
             self.core.registerCallback("onStateManagerOpen", self.onStateManagerOpen, plugin=self)
+            self.core.registerCallback("postInitialize", self.onMayaPostInitialize, plugin=self)
 
         if self.isMaya() or self.isHoudini():
             self.core.registerCallback("sceneSaved", self.onSceneSaved, plugin=self)
@@ -317,12 +324,6 @@ class Prism_Daisy_Pipe_Functions(object):
         self.Command_launcher.view_usd_view(path)
         origin.core.refreshUI()
 
-
-
-
-
-
-
     # if returns true, the plugin will be loaded by Prism
     @err_catcher(name=__name__)
     def isActive(self):
@@ -331,13 +332,6 @@ class Prism_Daisy_Pipe_Functions(object):
     def daisyIcon(self,iconName):
         iconPath = os.path.join(self.pluginDirectory, "Integration", "ui", iconName)
         return iconPath
-
-
-
-
-
-
-
 
     def importUsdPackages(self):
 
@@ -376,6 +370,80 @@ class Prism_Daisy_Pipe_Functions(object):
     def isHoudini(self):
 
         return self.core.appPlugin.pluginName == "Houdini"
+
+    def onMayaPostInitialize(self, *args, **kwargs):
+
+        #-----------------------------------------------------------------------------------#
+        # Prism is initialized in Maya: add the Daisy buttons to the Prism shelf once the  #
+        # Maya UI is idle (the shelves are built at that point)                             #
+        #-----------------------------------------------------------------------------------#
+
+        import maya.cmds as cmds
+
+        cmds.evalDeferred(self.addDaisyShelfButtons, lowestPriority=True)
+
+    @err_catcher(name=__name__)
+    def addDaisyShelfButtons(self):
+
+        #-----------------------------------------------------------------------------------#
+        # Add a "Daisy Import" button (Python script icon) to the Prism shelf              #
+        #-----------------------------------------------------------------------------------#
+
+        import maya.cmds as cmds
+        import maya.mel as mel
+
+        if not cmds.shelfLayout(PRISM_SHELF, exists=True):
+            return
+
+        # Maya only fills a shelf when its tab is opened, and only if the shelf is empty:
+        # load the Prism buttons first, otherwise our button would prevent their loading
+        mel.eval('loadNamedShelf "%s"' % PRISM_SHELF)
+
+        def get_buttons():
+            buttons = cmds.shelfLayout(PRISM_SHELF, query=True, childArray=True) or []
+            return [(b, cmds.shelfButton(b, query=True, label=True)) for b in buttons if cmds.shelfButton(b, exists=True)]
+
+        # Maya saves the shelf in the Prism shelf file on exit: never add our button to a shelf
+        # without the Prism buttons, otherwise the file would only keep our button
+        if not any(label.startswith(PRISM_BUTTON_PREFIX) for _, label in get_buttons()):
+            cmds.warning("Shelf %s sans les boutons Prism : bouton %s non ajouté" % (PRISM_SHELF, DAISY_IMPORT_LABEL))
+            return
+
+        # Maya saves the shelf on exit (with our button): recreate it to keep it up to date
+        for button, label in get_buttons():
+            if label == DAISY_IMPORT_LABEL:
+                cmds.deleteUI(button)
+
+        cmds.shelfButton(
+            parent=PRISM_SHELF,
+            label=DAISY_IMPORT_LABEL,
+            imageOverlayLabel=DAISY_IMPORT_OVERLAY,
+            annotation="Daisy import : prépare la scène selon le département (layout, DaisyCam, rig...)",
+            # Maya default icon of the Python script buttons
+            image=DAISY_IMPORT_ICON,
+            image1=DAISY_IMPORT_ICON,
+            style="iconOnly",
+            sourceType="python",
+            command='pcore.getPlugin("Daisy_Pipe").onShelfClickedDaisyImport()',
+        )
+
+    @err_catcher(name=__name__)
+    def onShelfClickedDaisyImport(self, *args):
+
+        #-----------------------------------------------------------------------------------#
+        # Run the Maya import scripts for the current scene (maya_import.import_asset)     #
+        # The module is reloaded so that script changes are used without restarting Maya  #
+        #-----------------------------------------------------------------------------------#
+
+        import importlib
+
+        # maya_import imports its modules through the "Scripts" package of the plugin
+        if self.pluginDirectory not in sys.path:
+            sys.path.append(self.pluginDirectory)
+
+        from Scripts.DaisyTools.setupAsset.maya import maya_import
+        importlib.reload(maya_import)
+        return maya_import.import_asset()
 
     @err_catcher(name=__name__)
     def onShelfClickedExport(self, doubleclick=False):
