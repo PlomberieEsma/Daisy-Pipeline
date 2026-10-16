@@ -16,9 +16,13 @@ _AUTO_TRISTATE = getattr(Qt, "ItemIsAutoTristate", None) or getattr(Qt, "ItemIsT
 
 THUMB_SIZE = QSize(100, 56)
 
+
+##############################################################################################################
+###########################     Sequence and Shots     #######################################################
+##############################################################################################################
+
 SEQ_TOOL, SEQ_INPUT = "SeqCounter", "Number"
 SHOT_TOOL, SHOT_INPUT = "ShotCounter", "Number"
-
 
 # Ordre croissant d'avancement : du premier niveau au dernier.
 # Chaque niveau = (label, [motifs glob relatifs au dossier du shot])
@@ -61,6 +65,10 @@ def rank(label, path):
 
 def rankText(label, path):
     return "%s v%04d" % (label, versionNumber(path))
+
+##############################################################################################################
+###########################     DaVinci Fusion Composition Visual Template     ###############################
+##############################################################################################################
 
 COUNTER_BASE = 1    # 1 : la 1re frame s'affiche " - 0001" ; 0 : " - 0000"
 COUNTERS = [
@@ -166,6 +174,8 @@ def fillMissingShotRanges(self, defaultRange=(1001, 1100), apply=False):
           % (len(missing), " -> plage par défaut écrite" if apply else " (rien écrit)"))
     return missing
 
+MASTER_TRACK_NAME = "Sequence Master"
+
 
 class ShotBrowserUI(object):
     def __init__(self, core, plugin=None):
@@ -174,6 +184,16 @@ class ShotBrowserUI(object):
         self.toImportShot = []
 
     def onShotBrowserTriggered(self, task="", action="add"):
+
+        #-----------------------------------------------------------------------------------#
+        # Trigger all functions relating to the shotBrowser
+        #
+        # task - The editing task (carried by the editing file name)
+        # action - "add", "bake" or "modify" which preset view for the short browser
+        #           to show only what's necessary
+        # Return Launch toImportShot with the list of which shots were selected
+        #-----------------------------------------------------------------------------------#
+
         import inspect
         for name in ("addShotsToTimeline", "placeShot", "updateFrameCounters", "bakeShotsOnTimeline"):
             try:
@@ -432,6 +452,117 @@ class ShotBrowserUI(object):
                 print("[ShotBrowser] plan B (Start=End) utilisé pour %s" % os.path.basename(path))
                 return imported[0]
         return mp
+    
+    ##########################
+    # MASTER
+    ##########################
+
+    def getMasterEntity(self, seq):
+        """Entité Prism du shot MASTER d'une séquence (None si absent)."""
+        if not seq:
+            return None
+        for entity in self.core.entities.getShots(sequence=seq) or []:
+            if str(entity.get("shot", "")).upper() == "MASTER":
+                return entity
+        return None
+    
+    def getMasterItems(self, timeline, track):
+        """{séquence: [(clip, infos du marqueur)]} des masters déjà posés sur la piste."""
+        found = {}
+        for item in timeline.GetItemListInTrack("video", track) or []:
+            for marker in (item.GetMarkers() or {}).values():
+                try:
+                    info = json.loads(marker.get("customData") or "")
+                except ValueError:
+                    continue
+                if "masterOf" in info:
+                    found.setdefault(info["masterOf"], []).append((item, info))
+                    break
+        return found
+    
+    def ensureMasterTrack(self, timeline, lowestShotTrack):
+        """Renvoie l'index de la piste Master ; la crée juste sous la piste de shots la plus basse."""
+        for t in range(1, timeline.GetTrackCount("video") + 1):
+            if timeline.GetTrackName("video", t) == MASTER_TRACK_NAME:
+                return t
+    
+        before = timeline.GetTrackCount("video")
+        try:
+            timeline.AddTrack("video", {"index": lowestShotTrack})
+        except Exception as e:
+            print("[ShotBrowser] AddTrack (Master) refusé : %s" % e)
+        if timeline.GetTrackCount("video") != before + 1:
+            return None
+    
+        # Les pistes de shots doivent avoir monté d'un cran, sinon l'index a été ignoré
+        shotTracks = [r["track"] for refs in self.getTimelineShots(timeline).values() for r in refs]
+        if shotTracks and min(shotTracks) != lowestShotTrack + 1:
+            print("[ShotBrowser] l'index d'insertion a été ignoré : piste Master non placée sous les shots")
+            return None
+    
+        timeline.SetTrackName("video", lowestShotTrack, MASTER_TRACK_NAME)
+        return lowestShotTrack
+    
+    def syncMasterTrack(self, timeline, pool):
+        """Pour chaque séquence présente sur la timeline, pose (ou met à jour) son MASTER
+        au début de la séquence, sur la piste Master. Renvoie la liste des avertissements."""
+        warnings = []
+        shots = self.getTimelineShots(timeline)
+        refs = [r for refList in shots.values() for r in refList]
+        if not refs:
+            return warnings
+    
+        # Étendue de chaque séquence sur la timeline (début du 1er shot -> fin du dernier)
+        spans = {}
+        for shotPath, refList in shots.items():
+            seq = shotPath.split("/")[0] if "/" in shotPath else ""
+            for r in refList:
+                s, e = r["start"], r["start"] + r["duration"]
+                lo, hi = spans.get(seq, (s, e))
+                spans[seq] = (min(lo, s), max(hi, e))
+    
+        track = self.ensureMasterTrack(timeline, min(r["track"] for r in refs))
+        if not track:
+            return ["Master : impossible de créer la piste sous les shots"]
+    
+        existing = self.getMasterItems(timeline, track)
+    
+        for seq in sorted(spans, key=naturalKey):
+            if not seq:
+                continue
+            start, end = spans[seq]
+    
+            entity = self.getMasterEntity(seq)
+            if not entity:
+                print("[ShotBrowser] Master %s : aucun shot MASTER dans Prism" % seq)
+                continue
+            level, mediaPath = self.getShotMedia(entity)
+            if not mediaPath:
+                print("[ShotBrowser] Master %s : aucun média trouvé" % seq)
+                continue
+    
+            cur = existing.get(seq)
+            if cur and cur[0][1].get("mediaPath") == mediaPath and cur[0][0].GetStart() == start:
+                print("[ShotBrowser] Master %s : déjà à jour (%s)" % (seq, rankText(level, mediaPath)))
+                continue
+            for item, _info in cur or []:
+                self.clearRange(timeline, track, item.GetStart(), item.GetEnd())
+    
+            master = {
+                "name": entity["shot"],
+                "sequence": seq,
+                "shot_path": "%s/%s" % (seq, entity["shot"]),
+                "taskLevel": level,
+                "mediaPath": mediaPath,
+                "isMaster": True,
+            }
+            item, warn = self.placeShot(master, pool, timeline, track, start)
+            if warn:
+                warnings.append(warn)
+            if item:
+                print("[ShotBrowser] Master %s : %s posé à %d (%d f ; séquence sur la timeline : %d f)"
+                    % (seq, rankText(level, mediaPath), start, self.lastPlacedLength, end - start))
+        return warnings
 
 
     
@@ -442,20 +573,30 @@ class ShotBrowserUI(object):
             mp.SetMetadata("Scene", shot["sequence"])
             mp.SetMetadata("Shot", shot["name"])
     
-        data = {
-            "sequence": shot["sequence"],
-            "shot": shot["name"],
-            "taskLevel": shot["taskLevel"],
-            "mediaPath": shot["mediaPath"],
-        }
-        if length:
-            data["length"] = int(length)     # durée réelle du shot (multi-blocs)
+        if shot.get("isMaster"):
+            data = {
+                "masterOf": shot["sequence"],
+                "taskLevel": shot["taskLevel"],
+                "mediaPath": shot["mediaPath"],
+            }
+            color = "Purple"
+        else:
+            data = {
+                "sequence": shot["sequence"],
+                "shot": shot["name"],
+                "taskLevel": shot["taskLevel"],
+                "mediaPath": shot["mediaPath"],
+            }
+            if length:
+                data["length"] = int(length)     # durée réelle du shot (multi-blocs)
+            color = "Blue"
     
         tlItem.AddMarker(
-            0, "Blue", shot["shot_path"],
+            0, color, shot["shot_path"],
             "taskLevel: %s" % shot["taskLevel"], 1,
             json.dumps(data),
         )
+
 
     def setHeldMarks(self, mp, n):
         """Règle la plage In/Out du média sur n frames (0 -> n-1).
@@ -736,9 +877,30 @@ class ShotBrowserUI(object):
     
         # Durée de référence côté Prism
         target = self.getShotLength(shot["sequence"], shot["name"])
-    
-        # ---- Chemin 1 : image fixe / step > 1 -> durée Prism garantie ----
         files = self.listSequenceFiles(path)
+    
+        # Diagnostic (une seule fois par import) : pourquoi Prism ne donne aucune durée ?
+        if not target and not getattr(self, "_diagDone", False):
+            self._diagDone = True
+            try:
+                ents = self.core.entities
+                ent = ents.getShot(shot["sequence"], shot["name"])
+                ranges = self.core.getConfig("shotRanges", config="shotinfo") or {}
+                print("[ShotBrowser] diag %s : entité=%s | getShotRange=%s | épisodes=%s | clés shotRanges=%s"
+                    % (shot["shot_path"], ent, ents.getShotRange(ent) if ent else None,
+                        self.core.projects.getUseEpisodes(), list(ranges.keys())))
+            except Exception as e:
+                print("[ShotBrowser] diag impossible : %s" % e)
+    
+        # Plan B : pas de durée Prism, mais une séquence à step -> durée déduite des numéros d'images
+        # (ex. 1001, 1011, ..., 1041 : 1041 - 1001 + dernier step de 10 = 50 frames)
+        if not target and len(files) > 1 and self.isHeldMedia(files):
+            nums = [n for n, _ in files]
+            target = nums[-1] - nums[0] + (nums[-1] - nums[-2])
+            print("[ShotBrowser] %s : pas de durée Prism, durée déduite du step : %d f"
+                % (shot["shot_path"], target))
+    
+        # ---- Chemin 1 : image fixe / step > 1 -> durée garantie ----
         if target and self.isHeldMedia(files):
             tlItem, warning = self.placeHeldShot(
                 shot, files, pool, timeline, trackIndex, recordFrame, target)
@@ -859,6 +1021,8 @@ class ShotBrowserUI(object):
                 tlItems.append(tlItem)
                 cursor += self.lastPlacedLength or tlItem.GetDuration()
 
+        warnings += self.syncMasterTrack(timeline, pool)
+
         if warnings:
             self.core.popup("Shots non ajoutés ou incomplets :\n" + "\n".join(warnings))
 
@@ -900,6 +1064,10 @@ class ShotBrowserUI(object):
                                     % (shot["shot_path"], ref["duration"], newLen))
 
                 baked.append(newItem)
+
+        if baked:
+            warnings += self.syncMasterTrack(timeline, pool)
+
 
         if baked:
             try:
@@ -1132,13 +1300,25 @@ class ShotBrowserUI(object):
         """Durée en frames d'après la plage du shot dans Prism ([début, fin] inclus)."""
         if not sequence or not shotName:
             return None
-        entities = self.core.entities
-        entity = entities.getShot(sequence, shotName) or {
+    
+        ents = self.core.entities
+        entity = ents.getShot(sequence, shotName) or {
             "type": "shot", "sequence": sequence, "shot": shotName}
-        shotRange = entities.getShotRange(entity)          # None si aucune plage définie
+    
+        shotRange = ents.getShotRange(entity)
+        source = "getShotRange"
+        if not shotRange:
+            ranges = self.core.getConfig("shotRanges", config="shotinfo", allowCache=False) or {}
+            shotRange = (ranges.get(sequence) or {}).get(shotName)
+            source = "relecture sans cache"
+    
+        print("[ShotBrowser] plage Prism %s/%s = %s (%s) | projet : %s"
+            % (sequence, shotName, shotRange, source, self.core.projectPath))
+    
         if shotRange and len(shotRange) >= 2:
             return shotRange[1] - shotRange[0] + 1
         return None
+
 
 
     # ------------------------------------------------------------------ #
