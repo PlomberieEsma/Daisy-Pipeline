@@ -118,8 +118,9 @@ def import_daisy_cam(core, sequence, shot, reference=False):
 
 def group_daisy_cam(cam_transform, group_name):
     #-------------------------------------------------------------------------#
-    # Put the DaisyCam root group (DaisyCam_sqX_shX) under new groups:        #
+    # Put the DaisyCam root group (DaisyCam_sqX_shX) under the groups:        #
     # group_name|cam|DaisyCam_sqX_shX                                         #
+    # The groups are reused if they exist (several DaisyCams in the MASTER)   #
     #                                                                         #
     # cam_transform = DaisyCam transform                                      #
     # group_name = name of the top group (name of the layout defaultPrim)     #
@@ -129,10 +130,137 @@ def group_daisy_cam(cam_transform, group_name):
 
     uuid = cmds.ls(cam_transform, uuid=True)[0]
     root = "|" + cmds.ls(cam_transform, long=True)[0].split("|")[1]
-    group = cmds.group(empty=True, world=True, name=group_name)
-    cam_group = cmds.group(empty=True, parent=group, name=CAM_GROUP_NAME)
+
+    group = "|" + group_name
+    if not cmds.objExists(group):
+        group = cmds.ls(cmds.group(empty=True, world=True, name=group_name), long=True)[0]
+    cam_group = group + "|" + CAM_GROUP_NAME
+    if not cmds.objExists(cam_group):
+        cam_group = cmds.group(empty=True, parent=group, name=CAM_GROUP_NAME)
+
     cmds.parent(root, cam_group, relative=True)
     return cmds.ls(uuid, long=True)[0]
+
+
+def create_camera_sequence(cam_shots, sequence):
+    #-----------------------------------------------------------------------------#
+    # Create one Camera Sequencer shot per DaisyCam, to play the whole sequence   #
+    # and switch from one camera to the next                                      #
+    # The playback range is set to the whole sequence                             #
+    #                                                                             #
+    # cam_shots = list of tuples (shot name, DaisyCam transform, MASTER range)    #
+    # sequence = sequence name (e.g.: sq0010)                                     #
+    #                                                                             #
+    # return the list of created shot nodes                                       #
+    #-----------------------------------------------------------------------------#
+
+    shots = []
+    for shot, cam_transform, cam_range in sorted(cam_shots, key=lambda s: s[2][0] if s[2] else 0):
+        if not cam_range:
+            cmds.warning("Pas de frame range pour %s_%s : pas de shot dans le Camera Sequencer" % (sequence, shot))
+            continue
+        start, end = float(cam_range[0]), float(cam_range[1])
+        node = cmds.shot("%s_%s" % (sequence, shot), shotName=shot, currentCamera=cam_transform)
+        # The ranges given at the creation are replaced by the playback range: set them afterwards
+        cmds.shot(node, edit=True, startTime=start, endTime=end)
+        cmds.shot(node, edit=True, sequenceStartTime=start, sequenceEndTime=end)
+        print("Shot %s : %s -> %s (%s)" % (node, start, end, cam_transform))
+        shots.append(node)
+
+    if shots:
+        start = min(cmds.shot(s, query=True, startTime=True) for s in shots)
+        end = max(cmds.shot(s, query=True, endTime=True) for s in shots)
+        cmds.playbackOptions(minTime=start, maxTime=end, animationStartTime=start, animationEndTime=end)
+        print("Camera Sequencer : %d shot(s) de %s à %s" % (len(shots), start, end))
+        start_camera_switch(shots)
+    return shots
+
+
+def get_shot_cameras():
+    #-------------------------------------------------------------------#
+    # List the Camera Sequencer shots with their range and camera       #
+    #                                                                   #
+    # return a list of tuples (start, end, camera long name) by start   #
+    #-------------------------------------------------------------------#
+
+    shot_cameras = []
+    for shot in cmds.ls(type="shot") or []:
+        camera = cmds.shot(shot, query=True, currentCamera=True)
+        if not camera or not cmds.objExists(camera):
+            continue
+        start = cmds.shot(shot, query=True, startTime=True)
+        end = cmds.shot(shot, query=True, endTime=True)
+        shot_cameras.append((start, end, get_camera_transform(camera)))
+    return sorted(shot_cameras)
+
+
+def get_camera_transform(camera):
+    #-------------------------------------------------------#
+    # Get the transform long name of a camera (or its shape) #
+    #                                                       #
+    # camera = camera transform or shape                    #
+    #                                                       #
+    # return the camera transform long name                 #
+    #-------------------------------------------------------#
+
+    if cmds.nodeType(camera) == "camera":
+        camera = cmds.listRelatives(camera, parent=True, fullPath=True)[0]
+    return cmds.ls(camera, long=True)[0]
+
+
+def switch_to_shot_camera(*_):
+    #-------------------------------------------------------------------------#
+    # Look through the camera of the Camera Sequencer shot at the current     #
+    # frame, in the visible viewports already looking through a shot camera   #
+    # (a viewport in persp or another camera is left as it is)                #
+    #-------------------------------------------------------------------------#
+
+    shot_cameras = get_shot_cameras()
+    if not shot_cameras:
+        return
+
+    # Last shot starting before the frame: on a shared frame, the next shot wins
+    frame = cmds.currentTime(query=True)
+    camera = next((c for s, e, c in reversed(shot_cameras) if s <= frame <= e), None)
+    if camera is None:
+        return
+
+    shot_camera_set = {c for _, _, c in shot_cameras}
+    for panel in cmds.getPanel(visiblePanels=True) or []:
+        if cmds.getPanel(typeOf=panel) != "modelPanel":
+            continue
+        panel_camera = get_camera_transform(cmds.modelPanel(panel, query=True, camera=True))
+        if panel_camera in shot_camera_set and panel_camera != camera:
+            cmds.lookThru(panel, camera)
+
+
+def start_camera_switch(shots):
+    #-------------------------------------------------------------------------#
+    # Start the scriptJob switching the viewport camera on every time change  #
+    # The main viewport looks through the first shot camera to start with     #
+    # The job is replaced if it already exists and is killed with the scene   #
+    #                                                                         #
+    # shots = list of the Camera Sequencer shot nodes                         #
+    #                                                                         #
+    # return the scriptJob id                                                 #
+    #-------------------------------------------------------------------------#
+
+    # The job of a previous import (or of an old version of this module) is replaced
+    for job in cmds.scriptJob(listJobs=True) or []:
+        if "switch_to_shot_camera" in job:
+            cmds.scriptJob(kill=int(job.split(":")[0]), force=True)
+
+    # Main viewport (biggest visible modelPanel) starts on the first shot camera
+    panels = [p for p in cmds.getPanel(visiblePanels=True) or [] if cmds.getPanel(typeOf=p) == "modelPanel"]
+    if panels:
+        main_panel = max(panels, key=lambda p: cmds.control(p, query=True, width=True) * cmds.control(p, query=True, height=True))
+        first = min(shots, key=lambda s: cmds.shot(s, query=True, startTime=True))
+        cmds.lookThru(main_panel, cmds.shot(first, query=True, currentCamera=True))
+
+    job = cmds.scriptJob(event=["timeChanged", switch_to_shot_camera], killWithScene=True)
+    switch_to_shot_camera()
+    print("Changement de caméra automatique actif (scriptJob %d)" % job)
+    return job
 
 
 # ------------------------------------------------------------------------------ #
@@ -157,6 +285,93 @@ def get_usd_camera(stage_shape, camera_name):
     if camera is None:
         cmds.warning("Caméra %s introuvable dans le stage %s" % (camera_name, stage_shape))
     return camera
+
+
+def get_usd_camera_shots(stage_shape, sequence):
+    #-----------------------------------------------------------------------#
+    # List the shots that have a camera (cam_sqX_shX) in the USD stage      #
+    # Used in the MASTER shot, which holds the cameras of every shot        #
+    #                                                                       #
+    # stage_shape = mayaUsdProxyShape of the layout                         #
+    # sequence = sequence name (e.g.: sq0010)                               #
+    #                                                                       #
+    # return the sorted list of shot names (e.g.: ["sh0010", "sh0020"])     #
+    #-----------------------------------------------------------------------#
+
+    import mayaUsd.ufe
+    from pxr import UsdGeom
+
+    stage = mayaUsd.ufe.getStage(cmds.ls(stage_shape, long=True)[0])
+    prefix = USD_CAM_NAME.format(sequence=sequence, shot="")
+    shots, ignored = set(), []
+    for prim in stage.Traverse():
+        if not prim.IsA(UsdGeom.Camera):
+            continue
+        name = prim.GetName()
+        if name.startswith(prefix) and len(name) > len(prefix):
+            shots.add(name[len(prefix):])
+        else:
+            ignored.append(name)
+
+    if ignored:
+        cmds.warning("Caméra(s) USD ignorée(s), nom différent de %sshX : %s" % (prefix, ", ".join(ignored)))
+    print("%d caméra(s) de shot trouvée(s) dans %s" % (len(shots), stage_shape))
+    return sorted(shots)
+
+
+def get_camera_first_frame(camera):
+    #-----------------------------------------------------------------------#
+    # Get the first keyed frame of a USD camera (in the stage time)         #
+    # Use the Houdini keys of the customData, otherwise the time samples    #
+    # of the transform and of the lens                                      #
+    #                                                                       #
+    # camera = USD camera prim                                              #
+    #                                                                       #
+    # return the first frame, or None if the camera has no key              #
+    #-----------------------------------------------------------------------#
+
+    from pxr import UsdGeom
+
+    frames = camera.GetCustomData().get(USD_CAM_KEYFRAMES)
+    if not frames:
+        lens = UsdGeom.Camera(camera)
+        frames = list(UsdGeom.Xformable(camera).GetTimeSamples())
+        for attr in (lens.GetFocalLengthAttr(), lens.GetHorizontalApertureAttr(), lens.GetVerticalApertureAttr()):
+            frames += attr.GetTimeSamples()
+    return int(min(frames)) if frames else None
+
+
+def get_usd_camera_ranges(stage_shape, sequence, shots):
+    #-------------------------------------------------------------------------------#
+    # Compute the range of each shot camera of the MASTER from the camera keys      #
+    # A shot starts on the first key of its camera and ends one frame before the    #
+    # next shot, the last shot ends at the end of the stage                         #
+    #                                                                               #
+    # stage_shape = mayaUsdProxyShape of the layout                                 #
+    # sequence = sequence name (e.g.: sq0010)                                       #
+    # shots = list of shot names with a camera (see get_usd_camera_shots)           #
+    #                                                                               #
+    # return a dict {shot: [start, end]}, without the shots whose camera has no key #
+    #-------------------------------------------------------------------------------#
+
+    starts = {}
+    for shot in shots:
+        camera = get_usd_camera(stage_shape, USD_CAM_NAME.format(sequence=sequence, shot=shot))
+        start = get_camera_first_frame(camera) if camera else None
+        if start is None:
+            cmds.warning("Pas de clé sur la caméra de %s_%s : range introuvable" % (sequence, shot))
+            continue
+        starts[shot] = start
+
+    import mayaUsd.ufe
+
+    stage_end = int(mayaUsd.ufe.getStage(cmds.ls(stage_shape, long=True)[0]).GetEndTimeCode())
+    ordered = sorted(starts.items(), key=lambda s: s[1])
+    ranges = {}
+    for i, (shot, start) in enumerate(ordered):
+        end = ordered[i + 1][1] - 1 if i + 1 < len(ordered) else stage_end
+        ranges[shot] = [start, max(start, end)]
+    return ranges
 
 
 def get_usd_camera_matrix(stage_shape, camera, frame):
