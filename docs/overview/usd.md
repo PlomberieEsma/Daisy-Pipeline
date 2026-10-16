@@ -5,7 +5,40 @@ Cette page n'est pas une présentation exhaustive des concepts de l'USD qui sont
 
 <a href="https://developer.apple.com/videos/play/wwdc2022/10129/" target="blank">Lien vers une vidéo de présentation de l'USD</a>
 
+Voici un petit sommaire pour naviguer plus facilement sur cette page :
 
+- [Présentation générale](#présentation-générale)
+- [Layer](#layer)
+- [Asset](#asset)
+- [Primitive](#primitive)
+    - [Name et path](#name-et-path)
+    - [Type](#type)
+    - [Kind](#kind)
+- [Proxy](#proxy)
+- [Payload](#payload)
+- [Variant](#variant)
+
+## Présentation générale
+Maintenant que tout cela est dit, passon aux présentations.<br>
+***À suivre***
+
+## Layer
+
+## Asset
+
+## Primitive
+
+### Name et path
+
+### Type
+
+### Kind
+
+## Proxy
+
+## Payload
+
+## Variant
 
 [< page précédente](../overview.md) - 
 [page suivante >](optimisation.md)<br>
