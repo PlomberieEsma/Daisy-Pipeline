@@ -5,7 +5,7 @@
 #   shot/layout.py          layout USD stage and frame range                   #
 #   shot/camera.py          DaisyCam import and matching on the USD camera     #
 #   shot/rig_references.py  rigs of the assets chosen in the Asset Browser     #
-#   shot/anim.py            03_anim setup                                      #
+#   shot/anim.py            02_layout and 03_anim setup                        #
 #   asset/rig.py            04_rig setup                                       #
 #------------------------------------------------------------------------------#
 
@@ -24,6 +24,8 @@ for module in (scene_loaders, layout, camera, rig_references, anim, rig):
 
 
 SHOT_DEPARTMENTS = {
+    # Same setup as the anim, only the referenced rig differs (see rig_references.py)
+    "02_layout": anim.setup_anim,
     "03_anim": anim.setup_anim,
 }
 

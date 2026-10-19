@@ -42,8 +42,7 @@ from PrismUtils.Decorators import err_catcher_plugin as err_catcher
 PRISM_SHELF = "Prism"
 PRISM_BUTTON_PREFIX = "prism_"
 DAISY_IMPORT_LABEL = "Daisy Import"
-DAISY_IMPORT_OVERLAY = "Import"
-DAISY_IMPORT_ICON = "pythonFamily.png"
+DAISY_IMPORT_ICON = "ImportUSD.png"
 
 
 class Prism_Daisy_Pipe_Functions(object):
@@ -414,14 +413,14 @@ class Prism_Daisy_Pipe_Functions(object):
             if label == DAISY_IMPORT_LABEL:
                 cmds.deleteUI(button)
 
+        iconPath = self.daisyIcon(DAISY_IMPORT_ICON).replace("\\", "/")
+
         cmds.shelfButton(
             parent=PRISM_SHELF,
             label=DAISY_IMPORT_LABEL,
-            imageOverlayLabel=DAISY_IMPORT_OVERLAY,
             annotation="Daisy import : prépare la scène selon le département (layout, DaisyCam, rig...)",
-            # Maya default icon of the Python script buttons
-            image=DAISY_IMPORT_ICON,
-            image1=DAISY_IMPORT_ICON,
+            image=iconPath,
+            image1=iconPath,
             style="iconOnly",
             sourceType="python",
             command='pcore.getPlugin("Daisy_Pipe").onShelfClickedDaisyImport()',

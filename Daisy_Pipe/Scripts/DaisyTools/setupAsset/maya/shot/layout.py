@@ -142,3 +142,35 @@ def offset_stage_time(stage_shape, shot_range, master_range):
     cmds.setInfinity(curve, preInfinite="linear", postInfinite="linear")
     cmds.connectAttr(curve + ".output", stage_shape + ".time", force=True)
     return curve
+
+
+
+def load_shot_layout(core, entity):
+    #-----------------------------------------------------------------------------#
+    # Load the shot layout master, or the MASTER shot layout master if none       #
+    # The MASTER layout is offset in time to read the shot part of the MASTER     #
+    #                                                                             #
+    # core = Prism core                                                           #
+    # entity = Prism entity dict of the shot                                      #
+    #                                                                             #
+    # return a tuple (layout stage shape or None, shot_range, master_range)       #
+    #-----------------------------------------------------------------------------#
+
+    sequence, shot = entity["sequence"], entity["shot"]
+    shot_range, master_range = get_shot_ranges(sequence, shot)
+
+    if get_master_path(core, entity, LAYOUT_PRODUCT):
+        # The shot layout is already in the shot time: no time offset
+        layout = import_master_usd(core, entity, LAYOUT_PRODUCT)
+        return layout, shot_range, shot_range
+
+    core.popup(
+        "No layout published on %s_%s.\nThe %s shot layout is imported instead." % (sequence, shot, MASTER_SHOT),
+        title="Daisy import",
+        severity="warning",
+    )
+    layout = import_master_usd(core, get_master_shot_entity(entity), LAYOUT_PRODUCT)
+    if layout and shot_range:
+        offset_stage_time(layout, shot_range, master_range)
+    return layout, shot_range, master_range
+
