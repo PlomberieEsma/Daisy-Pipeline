@@ -4,6 +4,7 @@ Ceci est la documentation des plugins Prism de Daisy Pipeline. Ces plugins ont �
 Ci-dessous, les liens vers chaque documentation :
 - [Général](overview.md)
 - [Daisy Pipeline](daisy_pipe.md)
+- [DaVinci Resolve](davinciresolve.md)
 - [Substance Painter](substancepainter.md)
 - [Zbrush](zbrush.md)
 
