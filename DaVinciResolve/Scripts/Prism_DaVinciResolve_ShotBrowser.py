@@ -32,6 +32,7 @@ TASK_LEVELS = [
     ("Lighting",    ["Renders/3dRender/07_lighting/Lighting/*/*_beauty.*"]),
     ("Compositing", ["Renders/2dRender/08_compositing/Compositing/*/*"]),
 ]
+MASTER_ONLY_LEVEL = "Layout" 
 NO_LEVEL = "-"
 TASK_LETTERS = {
     "Layout": "Ly",
@@ -65,6 +66,8 @@ def rank(label, path):
 
 def rankText(label, path):
     return "%s v%04d" % (label, versionNumber(path))
+
+
 
 ##############################################################################################################
 ###########################     DaVinci Fusion Composition Visual Template     ###############################
@@ -354,12 +357,16 @@ class ShotBrowserUI(object):
 
         return {"taskLevel": str(taskLevel), "pixmap": pm}
 
-    def updateTaskLevelColors(self, comp, perShot):
-        """Pilote la couleur de Bg_TaskLevel par expression, comme les compteurs de texte."""
+    def updateTaskLevelColors(self, comp, perShot, masterRanges=()):
+        """Pilote la couleur de Bg_TaskLevel par expression, comme les compteurs de texte.
+        Les lignes des shots passent en premier (la 1re ligne qui correspond gagne),
+        celles du master ne servent donc que là où aucun shot n'est présent."""
         tool = comp.FindTool(TASK_BG_NODE)
         if not tool:
             print("[ShotBrowser] node '%s' introuvable" % TASK_BG_NODE)
             return
+    
+        masterColor = TASK_COLORS.get(MASTER_ONLY_LEVEL, NO_LEVEL_COLOR)
     
         for inputId, idx in BG_CHANNELS:
             inp = getInput(tool, inputId)
@@ -369,10 +376,20 @@ class ShotBrowserUI(object):
                 continue
             table = [(r["start"], r["end"], TASK_COLORS.get(r["taskLevel"], NO_LEVEL_COLOR)[idx])
                     for r in perShot]
+            table += [(s, e, masterColor[idx]) for s, e in masterRanges]
             inp.SetExpression(numberExpression(table, NO_LEVEL_COLOR[idx]))
     
         print("[ShotBrowser] %s -> couleurs mises à jour" % TASK_BG_NODE)
 
+    def getMasterRanges(self, timeline, origin):
+        """[(début, fin)] des clips de la piste Master, en frames relatives au clip de la comp."""
+        ranges = []
+        for t in range(1, timeline.GetTrackCount("video") + 1):
+            if timeline.GetTrackName("video", t) != MASTER_TRACK_NAME:
+                continue
+            for item in timeline.GetItemListInTrack("video", t) or []:
+                ranges.append((item.GetStart() - origin, item.GetEnd() - origin))
+        return sorted(ranges)
 
     def listSequenceFiles(self, path):
         """[(numéro, chemin)] triés ; [(None, path)] si le fichier n'est pas numéroté."""
@@ -1255,6 +1272,7 @@ class ShotBrowserUI(object):
             return
 
         perShot, perSeq = self.getCounterRanges(timeline, overlay.GetStart())
+        masterRanges = self.getMasterRanges(timeline, overlay.GetStart())
         filmName = getFilmName(self.core)
 
         for nodeName, mode, scope in COUNTERS:
@@ -1285,8 +1303,11 @@ class ShotBrowserUI(object):
                         label = shLabel(r["shot"])
                 rows.append((r["start"], r["end"], ref, label))
 
+            if mode == "task":
+                rows += [(s, e, s, MASTER_ONLY_LEVEL) for s, e in masterRanges]
+
             inp.SetExpression(counterExpression(rows, mode))
-        self.updateTaskLevelColors(comp, perShot)
+        self.updateTaskLevelColors(comp, perShot, masterRanges)
 
     def printToolInputs(self, toolName):
         overlay, comp = self.findCounterComp(self.getTimelineContext()[1])

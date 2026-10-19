@@ -526,7 +526,10 @@ class Prism_DaVinciResolve_Functions(object):
 
     @err_catcher(name=__name__)
     def SaveBackUpVersion(self):
-        name = self._projectName()
+        raw_name = self._projectName()
+        # Supprime "_master" de la fin du nom du projet si présent
+        name = re.sub(r"_master$", "", raw_name)
+        
         backupsDir = os.path.join(self.getEditingScenefilePath(), "Backups")
 
         pattern = re.compile(r"^%s_v(\d+)\.drp$" % re.escape(name))
