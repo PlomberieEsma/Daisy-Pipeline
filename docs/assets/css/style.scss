@@ -1,0 +1,29 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+body{
+    background-color: #242829;
+    color: white;
+}
+
+.page-header{
+    background-image: linear-gradient(120deg, #245c8c, #237928);
+}
+a{
+    color: rgb(85, 153, 255);
+}
+blockquote{
+    background-image:linear-gradient(to right, #3f4446FF, #3f444600);
+}
+.main-content blockquote{
+    color: #b6c8cf
+}
+.main-content h1{
+    font-weight: 900;
+}
+.github-icon{
+    width: 1em !important;
+    margin-bottom: -0.1em;
+}

@@ -30,6 +30,6 @@ Cette fenêtre peut également se retrouver utile si vous souhaitez texturer une
 
   ![Substance Painter Geometry Path](src/GeometryPath.png)
 
-[< Page précédente](installation.md)
+[< Page précédente](installation.md) - 
 [Page suivante >](exports.md)<br>
 *<sub>Daisy Pipeline 2025 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

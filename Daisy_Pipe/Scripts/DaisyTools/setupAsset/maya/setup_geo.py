@@ -17,10 +17,16 @@ def setup_geo(default_prim=""):
     master_name = default_prim
     geo_name = f"{default_prim}_geo"
 
-    if etype == "asset" and dept == "02_mod": 
+    if etype == "asset" and dept == "02_mod":
         #Find or create master group
         if cmds.objExists(master_name):
-            master_grp = cmds.ls(master_name, long=True)[0]
+            existing = cmds.ls(master_name, long=True)[0]
+            is_master_grp = (cmds.nodeType(existing) == "transform" and not cmds.listRelatives(existing, shapes=True, fullPath=True) and not cmds.listRelatives(existing, parent=True))
+            if is_master_grp:
+                master_grp = existing
+            else:
+                cmds.rename(existing, master_name + "_orig")
+                master_grp = "|" + cmds.group(empty=True, name=master_name)
         else:
             master_grp = "|" + cmds.group(empty=True, name=master_name)
         #Find or create geo group

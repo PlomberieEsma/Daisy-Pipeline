@@ -70,6 +70,10 @@ class Prism_SubstancePainter_Functions(object):
             origin.messageParent.setWindowFlags(
                 origin.messageParent.windowFlags() ^ Qt.WindowStaysOnTopHint
             )
+        self.pendingTimer = QTimer()
+        self.pendingTimer.setInterval(2000)
+        self.pendingTimer.timeout.connect(self.core.appPlugin.checkPendingFile)
+        self.pendingTimer.start()
 
         origin.startAutosaveTimer()
 

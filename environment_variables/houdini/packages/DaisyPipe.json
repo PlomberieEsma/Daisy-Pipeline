@@ -1,0 +1,14 @@
+{
+    "path": "//minerva/3D5_2627/100_DEV_PIPE/DEEP_DIVE/00_Pipeline/Plugins/Daisy_Pipe/Integration;&",
+    "env": [
+        {
+            "PYTHONPATH": "//minerva/3D5_2627/100_DEV_PIPE/DEEP_DIVE/00_Pipeline/Plugins/Daisy_Pipe;&"
+        },
+        {
+            "HOUDINI_OTLSCAN_PATH": "//minerva/3D5_2627/100_DEV_PIPE/DEEP_DIVE/00_Pipeline/Plugins/Daisy_Pipe;&"
+        },
+        {
+            "HOUDINI_DISABLE_CONSOLE": 1
+        }
+    ]
+}

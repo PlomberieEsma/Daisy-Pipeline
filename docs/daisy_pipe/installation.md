@@ -1,6 +1,12 @@
 # Installation
 [< page précédente](../daisy_pipe.md)<br>
-Cette page a pour but de documenter l'installation de l'entièreté du pipeline USD, de la hiérarchie des dossiers aux variables d'environnement de chaque logiciel. Dans cette documentation nous partirons du principe que vous travaillez en équipe sur un réseau local dédié au projet. L'installation de Daisy Pipeline se fait à 2 endroits distincts : le réseau sur lequel vous travaillez et en local sur votre PC. Nous allons vous montrer comment procéder aux 2 endroits. Voici un petit sommaire pour vous aider :
+Cette page a pour but de documenter l'installation de l'entièreté du pipeline USD, de la hiérarchie des dossiers aux variables d'environnement de chaque logiciel. Mais tout d'abord vous devez [télécherger Daisy Pipeline sur github via ce lien](https://github.com/PlomberieEsma/Daisy-Pipeline). Dans cette documentation nous partirons du principe que vous travaillez en équipe sur un réseau local dédié au projet. L'installation de Daisy Pipeline se fait à 2 endroits distincts : le réseau sur lequel vous travaillez et en local sur votre PC. Nous allons vous montrer comment procéder aux 2 endroits.
+
+><img src="../src/information.png" width=50em><br>
+>Si vous faites partie de la promo 2026-2027 de l'ESMA Montpellier, **vous n'avez pas à vous occuper de la partie "Sur le server"** car elle a déjà été mise en place par les développeurs de Daisy Pipeline.<br>
+>**Nous vous invitons à passer directement à la partie "En local"**.
+
+Voici un petit sommaire pour vous aider :
 
 - [Sur le server](#sur-le-server)
     - [Les fondations du pipe](#les-fondations-du-pipe)
@@ -11,11 +17,14 @@ Cette page a pour but de documenter l'installation de l'entièreté du pipeline 
     - [usd-core](#usd-core)
     - [Le lecteur réseau](#le-lecteur-réseau)
 
+> <img src="../src/github_logo.png" width="20" class="github-icon">
+> Retrouvez le code source <a href="https://github.com/PlomberieEsma/Daisy-Pipeline"><i><strong>ici</strong></i></a>.
+
 ***
 
 ## Sur le server
 ### Les fondations du pipe
-L'installation sur le server est la plus importante, elle comprend certes le pipeline USD mais aussi l'ensemble des dossiers dans lesquels ranger vos travaux. Vous trouverez la documentation de cette hiérarchie de dossiers [ici](../overview/hierarchy.md). Nous partirons donc du principe que vous avez la même hiérarchie que celle donnée précédement.
+L'installation sur le server est la plus importante, elle comprend certes le pipeline USD mais aussi l'ensemble des dossiers dans lesquels ranger vos travaux. Vous trouverez la documentation de cette hiérarchie de dossiers ***[ici](../overview/hierarchy.md)***. Nous partirons donc du principe que vous avez la même hiérarchie que celle donnée précédement.
 
 Maintenant que cela est dit, il est temps d'installer Daisy Pipe. Copiez simplement le dossier **"Daisy_Pipe"** dans **PROJET/00_Pipeline/Plugins**.<br>
 Puis entrez à l'intérieur. Vous devriez rerouver 3 dossiers : 
@@ -81,7 +90,10 @@ Suivez les consignes d'installation en prenant soin de cocher les bonnes version
 
 ### Les variables d'environnement
 Maintenant que Prism est installé, il est temps de lier Daisy Pipeline à Houdini et Maya. Mais comment faire ? Voici un petit tuto.<br>
-Nous allons créer des variables d'environnement pour chaque logiciel. **À noter que si vous faites partie de la promo 2026-2027 de l'ESMA Montpellier, vous avez déjà vos variables d'environnement de faites, vous n'avez plus qu'à les copier depuis le réseau 100_DEV_PIPE/00_INSTALLATION vers les dossiers ci dessous**. Néanmoins, vous avez toujours un preset de ces fichiers de disponible.
+Nous allons créer des variables d'environnement pour chaque logiciel.
+
+><img src="../src/warning_yellow.png" width=50em><br>
+>À noter que si vous faites partie de la promo 2026-2027 de l'ESMA Montpellier, **vous avez déjà vos variables d'environnement de faites, vous n'avez plus qu'à les copier depuis le réseau 100_DEV_PIPE/00_INSTALLATION vers les dossiers mentionnés ci dessous**. Néanmoins, si vous ne faites pas partie de la promo, vous avez toujours un preset de ces fichiers de disponible.
 
 Maintenant voici où placer les fichiers :<br>
 Pour Maya, allez dans **Documents/maya/2026** et remplacez (ou éditez) le fichier **Maya.env**. Voici son contenu :
@@ -93,7 +105,8 @@ Pour Houdini, allez dans **Documents/houdini21.0/packages** (remplacez avec la b
 ![daisyPipe.json content](src/installation/houdini_env.png)
 
 ### usd-core
-**Cette section n'est pas nécessaire pour la promo 2026-2027 de l'ESMA Montpellier. La manipulation a déjà été réalisée par les développeurs du pipe.**
+><img src="../src/warning_yellow.png" width=50em><br>
+>**Cette section n'est pas nécessaire pour la promo 2026-2027 de l'ESMA Montpellier. La manipulation a déjà été réalisée par les développeurs du pipe.**
 
 À présent, il va falloir installer l'USD sur votre machine. Pour cela il va falloir passer par une ligne de commande. MAIS PAS DE PANIQUE ! Je vais tout vous expliquer.<br>
 Ouvrez un terminal comma Powershell par exemple. Et tapez la commande suivante :
@@ -108,7 +121,8 @@ Voilà, c'est terminé, vous avez installé l'USD. Toutes mes félicitations !
 >> Et "usd-core" est le nom du paquet, il sert à gérer les fonctions USD les plus essentielles.
 
 ### Le lecteur réseau
-**Cette section n'est pas nécessaire pour la promo 2026-2027 de l'ESMA Montpellier. La manipulation a déjà été réalisée par les développeurs du pipe.**
+><img src="../src/warning_yellow.png" width=50em><br>
+>**Cette section n'est pas nécessaire pour la promo 2026-2027 de l'ESMA Montpellier. La manipulation a déjà été réalisée par les développeurs du pipe.**
 
 Maintenant que vous avez tout installé, il nous reste une toute dernière manipulation à réaliser. Cette manipulation va nous permettre de créer un lecteur (comme le disque C:/) qui va pointer vers votre réseau. Certains scripts de Daisy Pipeline en ont besoin pour bien fonctionner. Mais comment procéder ?
 
@@ -124,6 +138,6 @@ Une fenêtre apparait. Choisissez la lettre que vous voulez voir connectée au r
 >> Un chemin UNC (Universal Name Convention) est une façon d'écrire un chemin vers une ressource sur un réseau sous Windows. Il s'écrit \\\\nom_du_réseau\\nom_du_dossier_de_partage\\...
 >> Un chemin mapped drive quand à lui est un lecteur réseau qui est associé à une lettre de lecteur. Il sert à accéder au réseau comme s'il était un disque local. C'est un chemin à éviter au maximum dans votre pipeline car si l'un des PC du réseau n'a pas la même lettre (ou pas de mapped drive du tout), il ne comprendra pas le lien.
 
-[< page précédente](../daisy_pipe.md)
+[< page précédente](../daisy_pipe.md) - 
 [page suivante >](maya/maya.md)<br>
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

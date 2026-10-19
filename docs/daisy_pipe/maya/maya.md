@@ -5,7 +5,7 @@ Cette page a pour but de documenter l'utilisation de l'entièreté du pipeline a
 
 ## Presentation
 
-[< page précédente](../installation.md)
+[< page précédente](../installation.md) - 
 [page suivante >](../houdini.md)  
 
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

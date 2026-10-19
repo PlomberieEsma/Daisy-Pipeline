@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Substance Painter Plugin
 [< Page précédente](README.md)
 ## Général
@@ -14,8 +13,10 @@ Cette documentation est destinée à des utilisateurs maîtrisant déjà l'utili
 - [Exports](SubstancePainter/exports.md)
 - [Developpement](SubstancePainter/development.md)
 
+> <img src="src/github_logo.png" width=20em class="github-icon">
+> Retrouvez le code source <a href="https://github.com/PlomberieEsma/Daisy-Pipeline"><i><strong>ici</strong></i></a>.<br>
 *<sub>Ce plugin a été développé pour fonctionner uniquement avec la version 2.1.2.1 de Prism.<sub>*
 
-[< Page précédente](README.md)
+[< Page précédente](README.md) - 
 [Page suivante >](SubstancePainter/installation.md)<br>
 *<sub>Daisy Pipeline 2025 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

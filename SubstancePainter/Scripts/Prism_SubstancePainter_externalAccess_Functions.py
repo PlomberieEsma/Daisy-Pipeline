@@ -2,6 +2,7 @@ import os
 import json
 import platform
 import re
+import subprocess
 
 from qtpy.QtCore import *
 from qtpy.QtGui import *
@@ -40,6 +41,46 @@ class Prism_SubstancePainter_externalAccess_Functions(object):
     @err_catcher(name=__name__)
     def copySceneFile(self, origin, origFile, targetPath, mode="copy"):
         pass
+
+    @err_catcher(name=__name__)
+    def getExecutable(self):
+        exeName = "Adobe Substance 3D Painter.exe"
+        candidates = []
+
+        if platform.system() == "Windows":
+            for envVar, default in (("PROGRAMFILES", r"C:\Program Files"),
+                                    ("PROGRAMFILES(X86)", r"C:\Program Files (x86)")):
+                base = os.environ.get(envVar, default)
+                candidates.append(os.path.join(base, "Adobe", "Adobe Substance 3D Painter", exeName))
+                candidates.append(os.path.join(base, "Steam", "steamapps", "common",
+                                               "Substance 3D Painter", exeName))
+
+        for path in candidates:
+            if os.path.exists(path):
+                return path
+
+        return ""
+
+    @err_catcher(name=__name__)
+    def isStandalone(self):
+        # True si on est dans Prism "seul" (Project Browser standalone)
+        return getattr(self.core.appPlugin, "pluginName", "") != "SubstancePainter"
+
+    @err_catcher(name=__name__)
+    def launchSubstancePainter(self):
+        if not self.isStandalone():
+            return  # déjà dans Substance, rien à lancer
+
+        exe = self.getExecutable()
+        if not exe or not os.path.exists(exe):
+            self.core.popup("Substance Painter executable not found.")
+            return
+
+        flags = 0
+        if platform.system() == "Windows":
+            flags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+
+        subprocess.Popen([exe], creationflags=flags, close_fds=True)
 
     ##############################################################################################################
     ###########################     EmptyScene - Creation depuis Project Browser     ###########################
@@ -150,6 +191,10 @@ class Prism_SubstancePainter_externalAccess_Functions(object):
         with open(pendingFile, "w") as f:
             json.dump(pendingData, f, indent=4)
 
+        if self.isStandalone():
+            self.launchSubstancePainter()
+            return
+
         meshData = self.findMeshCandidates(entity)
 
         self.core.meshDlg = MeshPathsDialog(
@@ -158,6 +203,54 @@ class Prism_SubstancePainter_externalAccess_Functions(object):
         self.core.meshDlg.destroyed.connect(lambda: setattr(self.core, "meshDlg", None))
         self.core.meshDlg.setAttribute(Qt.WA_DeleteOnClose)
         self.core.meshDlg.show()
+        
+    @err_catcher(name=__name__)
+    def showMeshDialog(self, entity, parent=None):
+        meshData = self.findMeshCandidates(entity)
+        parent = parent or self.core.messageParent
+
+        self.core.meshDlg = MeshPathsDialog(
+            meshData, assetName=entity.get("asset", ""), parent=parent, source="new"
+        )
+        self.core.meshDlg.destroyed.connect(lambda: setattr(self.core, "meshDlg", None))
+        self.core.meshDlg.setAttribute(Qt.WA_DeleteOnClose)
+        self.core.meshDlg.show()
+
+    @err_catcher(name=__name__)
+    def checkPendingFile(self):
+        # appelée par un timer, uniquement depuis Substance
+        if self.isStandalone():
+            return
+
+        if getattr(self.core, "meshDlg", None):
+            return  # dialogue déjà ouvert
+
+        pendingFile = self.getPendingFilePath()
+        if not os.path.exists(pendingFile):
+            return
+
+        try:
+            with open(pendingFile, "r") as f:
+                data = json.load(f)
+        except Exception:
+            return  # fichier en cours d'écriture, on réessaiera au prochain tick
+
+        if data.get("dialogShown"):
+            return
+
+        # on marque le fichier pour ne pas rouvrir le dialogue à chaque tick
+        data["dialogShown"] = True
+        with open(pendingFile, "w") as f:
+            json.dump(data, f, indent=4)
+
+        entity = {
+            "type": data.get("type", "asset"),
+            "asset": data.get("asset", ""),
+            "asset_path": data.get("asset_path", ""),
+        }
+
+        import substance_painter.ui
+        self.showMeshDialog(entity, parent=substance_painter.ui.get_main_window())
 
     @err_catcher(name=__name__)
     def findMeshCandidates(self, entity):

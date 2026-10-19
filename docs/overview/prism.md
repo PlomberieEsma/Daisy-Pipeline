@@ -9,6 +9,6 @@ Vous trouverez donc ici la [documentation officielle](https://prism-pipeline.com
 - [Utilisation générale](prism/general_use.md)
 - [Départements](prism/department.md)
 
-[< page précédente](../overview.md)
+[< page précédente](../overview.md) - 
 [page suivante >](prism/general_use.md)<br>
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
