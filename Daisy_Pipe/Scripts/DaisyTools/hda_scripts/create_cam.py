@@ -72,7 +72,7 @@ def create_cam(input_node: Any, input_network_box: Any, digit_number: int) -> An
     # detect all cameras and get the last one well named
     cameras_in_scene = hou.lopNodeTypeCategory().nodeTypes()["camera"].instances()
     last_cam_shot_number = 0
-    new_shot_name = "sh010"
+    new_shot_name = None
     last_cam_object = None
 
     if cameras_in_scene != ():
@@ -91,16 +91,16 @@ def create_cam(input_node: Any, input_network_box: Any, digit_number: int) -> An
             new_shot_name = f"sh0{last_cam_shot_number+10}"
         else:
             new_shot_name = f"sh{last_cam_shot_number+10}"
+
+    print(f"{last_cam_shot_number = }")
+    print(f"{new_shot_name = }")
     
     # create the cam with the new shot name
     lopnet = hou.node("/stage")
 
     cam1 = lopnet.createNode("camera")
-    # cam1.setName(f"cam_{sequence_name}_{new_shot_name}")
     cam1.setName(f"DaisyCam_{sequence_name}_{new_shot_name}")
-    # cam1.parm("primpath").set(f"/{seq_and_sht_name}/cam/cam_{sequence_name}_{new_shot_name}")
     cam1.parm("primpath").set(f"/{seq_and_sht_name}/cam/DaisyCam_{sequence_name}_{new_shot_name}/DaisyCam_{sequence_name}_{new_shot_name}_geo/DaisyCam_{sequence_name}_{new_shot_name}_Offset/DaisyCam_{sequence_name}_{new_shot_name}_Hook/DaisyCam_{sequence_name}_{new_shot_name}_Move/DaisyCam_{sequence_name}_{new_shot_name}_group/DaisyCam_{sequence_name}_{new_shot_name}_cam/DaisyCam_{sequence_name}_{new_shot_name}_camShape")
-    cam1.parm("xn__houdiniguidescale_s3a").set(1)
 
     #-------------------------------- rearange nodes ---------------------------------#
     if last_cam_object != None:

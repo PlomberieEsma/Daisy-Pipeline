@@ -91,10 +91,8 @@ def get_cameras_in_scene() -> dict[str,Any]:
         loop_count = 0
         for camera in cameras_in_scene:
             cam_name = camera.name()
-            cam_name_first_part = cam_name[:6]
-            cam_name_second_part = cam_name[6+digit_number:-digit_number]
 
-            if cam_name_first_part != "cam_sq" or cam_name_second_part != "_sh":
+            if cam_name.startswith("DaisyCam") == False:
                 del cameras_in_scene[loop_count]
 
             loop_count += 1
@@ -135,6 +133,7 @@ def command_check(kwargs: dict[str,str]):
     # check the difference btw the cam number and the HDA shot number
     # to detect which function needs to be called
     count_difference = int(kwargs["script_value"]) - cam_count_scene
+    print(f"{count_difference = }")
 
     current_framerange = list(core.getFrameRange())
     for i in range (len(current_framerange)):
@@ -162,7 +161,6 @@ def create_shot(kwargs: dict[str,str], digit_number: int, framerange: list[int])
     # kwargs = dict taken from the HDA multiParmBlock "shot_number"                                 #
     # digit_number = number of digits after the sequence and shot (e.g.: sq0020_sh0120 => 4 digits) #
     #-----------------------------------------------------------------------------------------------#
-    print("create shot")
     from Scripts.DaisyTools.hda_scripts.create_cam import create_cam
 
     node = kwargs["node"]
