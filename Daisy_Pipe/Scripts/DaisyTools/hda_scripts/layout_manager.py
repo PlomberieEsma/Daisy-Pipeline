@@ -89,17 +89,20 @@ def get_cameras_in_scene() -> dict[str,Any]:
     if cameras_in_scene != ():
         cameras_in_scene = list(cameras_in_scene)
         loop_count = 0
+        sorted_cameras_in_scene = list(cameras_in_scene)
+
         for camera in cameras_in_scene:
             cam_name = camera.name()
 
             if cam_name.startswith("DaisyCam") == False:
-                del cameras_in_scene[loop_count]
+                del sorted_cameras_in_scene[loop_count]
+                loop_count -= 1
 
             loop_count += 1
 
-        cam_count_scene = len(cameras_in_scene)
+        cam_count_scene = len(sorted_cameras_in_scene)
 
-    return {"cameras_in_scene" : cameras_in_scene,
+    return {"cameras_in_scene" : sorted_cameras_in_scene,
             "cam_count_scene" : cam_count_scene}
 
 def command_check(kwargs: dict[str,str]):
@@ -133,17 +136,15 @@ def command_check(kwargs: dict[str,str]):
     # check the difference btw the cam number and the HDA shot number
     # to detect which function needs to be called
     count_difference = int(kwargs["script_value"]) - cam_count_scene
-    print(f"{count_difference = }")
 
     current_framerange = list(core.getFrameRange())
     for i in range (len(current_framerange)):
         current_framerange[i] = int(current_framerange[i])
 
-    if count_difference == 1 or count_difference == 0:
+    if count_difference == 0 or count_difference == 1 or cameras_in_scene == []:
         # new shot
-        print("new shot")
         create_shot(kwargs, digit_number, current_framerange)
-    elif count_difference == -1:
+    elif count_difference < 0 and cameras_in_scene != []:
         # delete shot
         delete_shot(kwargs, cameras_in_scene)
     else:
@@ -205,7 +206,6 @@ def delete_shot(kwargs: dict[str,str], cameras_in_scene: Any):
 
     for i in range(block_number+add_to_block_number):
         # loop into all shots in the HDA
-
         # when it comes from get from prism button
         if kwargs["parm_name"] == "get_from_prism" and kwargs["shot_to_delete"] == block.parm(f"sh_name{i+1}").eval():
             # the shot has been deleted

@@ -92,8 +92,6 @@ def create_cam(input_node: Any, input_network_box: Any, digit_number: int) -> An
         else:
             new_shot_name = f"sh{last_cam_shot_number+10}"
 
-    print(f"{last_cam_shot_number = }")
-    print(f"{new_shot_name = }")
     
     # create the cam with the new shot name
     lopnet = hou.node("/stage")
