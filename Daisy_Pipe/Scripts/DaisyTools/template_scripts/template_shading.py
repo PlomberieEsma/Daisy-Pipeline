@@ -170,7 +170,7 @@ def template_shading() -> dict[str, Any]:
     daisy_export1.setInput(0, assign_shader1)
     node_position[1] -= 5
     daisy_export1.move(node_position)
-    daisy_export1.parm("defaultprim").set("/`chs(\"../create_component1/primpath\")`")
+    daisy_export1.parm("defaultprim").set("`chs(\"../create_component1/primpath\")`")
     # daisy_export1.parm("setmetersperunit").set(0)
     daisy_export1.parm("metersperunit").set(meters_per_unit)
 
