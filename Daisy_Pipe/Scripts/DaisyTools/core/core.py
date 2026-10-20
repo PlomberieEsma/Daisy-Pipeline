@@ -197,11 +197,38 @@ def write_usd(preset_name, file_path, default_prim="", selection_only=True, over
 
         cmds.mayaUSDExport(**config)
 
+def resolve_root_prim(layer_path, wanted=""):
+
+    #Return the name of the root prim actually present in a usd file:
+    #the wanted name if it exists, else the file's defaultPrim, else its only root prim
+
+    from pxr import Sdf
+
+    layer = Sdf.Layer.FindOrOpen(layer_path)
+    if layer is None:
+        raise RuntimeError(f"Impossible d'ouvrir {layer_path}")
+
+    roots = [p.name for p in layer.rootPrims]
+
+    if wanted in roots:
+        return wanted
+    if layer.defaultPrim and layer.defaultPrim in roots:
+        return layer.defaultPrim
+    if len(roots) == 1:
+        return roots[0]
+
+    raise RuntimeError(
+        f"{os.path.basename(layer_path)} contient plusieurs prims racines {roots} et aucun ne s'appelle "
+        f"'{wanted}' : regroupe l'export sous un seul groupe racine."
+    )
+
 def create_master(file_path, master_path, default_prim="", frame_range=None):
 
     #Create a master usd file with sublayer pointing to the lastest version of the entity usd file
 
     from pxr import Usd, Sdf #import Usd and Sdf library from Pxr
+
+    default_prim = resolve_root_prim(file_path, default_prim)
 
     start_frame, end_frame = frame_range if frame_range else (1, 1)
 
@@ -248,55 +275,33 @@ def create_master(file_path, master_path, default_prim="", frame_range=None):
 
 def create_master_clips(frame_paths, frame_range, clips_path, default_prim=""):
 
-    #Build a usd file that stitches multiple per-frame usd files together using
-    #USD Value Clips, so a "File per Frame" export still plays back as continuous
-    #animation instead of a single static frame.
-    #This file is NOT the master itself: it's meant to be handed to create_master()
-    #as its file_path, so the master stays a plain sublayer wrapper either way.
-
-    from pxr import Usd, Sdf
-
-    if os.path.exists(clips_path):
-        os.remove(clips_path)
-        #clips are always rebuilt from the current export rather than merged with
-        #a previous one, since the clip list has to match the frames on disk
+    from pxr import Sdf, UsdUtils
 
     start_frame, end_frame = frame_range
-    prim_path = "/" + default_prim
     frames = list(range(int(start_frame), int(end_frame) + 1))
 
-    clips_stage = Usd.Stage.CreateNew(clips_path)
-    root_layer = clips_stage.GetRootLayer()
+    for frame, frame_path in zip(frames, frame_paths):
+        promote_defaults_to_time_samples(frame_path, frame)
 
-    root_layer.defaultPrim = default_prim
-    root_layer.startTimeCode = start_frame
-    root_layer.endTimeCode = end_frame
-    clips_stage.SetMetadata("metersPerUnit", 0.01)
+    base = os.path.splitext(clips_path)[0]
+    for p in (clips_path, base + ".topology.usda", base + ".manifest.usda"):
+        if os.path.exists(p):
+            os.remove(p)
 
-    prim = clips_stage.DefinePrim(prim_path)
+    #the entity name isn't always the real root prim (Maya selection exports
+    #keep the Maya node names), so use the root prim actually in the frames
+    prim_name = resolve_root_prim(frame_paths[0], default_prim)
 
-    #Value Clips only override time-varying attribute VALUES - they never bring in
-    #the prim hierarchy/mesh topology itself. Without this reference the clip prim
-    #stays empty/untyped and no geometry shows up, so we reference frame 0 to get
-    #the actual mesh/hierarchy/material structure, then let the clips drive the
-    #time-sampled attributes (points, xforms, ...) on top of it.
-    prim.GetReferences().AddReference(frame_paths[0])
+    result = Sdf.Layer.CreateNew(clips_path)
+    UsdUtils.StitchClips(result, frame_paths, Sdf.Path("/" + prim_name), float(start_frame), float(end_frame))
 
-    clipsAPI = Usd.ClipsAPI(prim)
-    clipsAPI.SetClipAssetPaths([Sdf.AssetPath(p) for p in frame_paths])
-    clipsAPI.SetClipPrimPath(prim_path)
-    clipsAPI.SetClipManifestAssetPath(Sdf.AssetPath(frame_paths[0]))
-    clipsAPI.SetClipActive([(float(frame), float(i)) for i, frame in enumerate(frames)])
-    clipsAPI.SetClipTimes([(float(frame), float(frame)) for frame in frames])
-
-    root_layer.Save()
+    result.defaultPrim = prim_name
+    result.pseudoRoot.SetInfo("metersPerUnit", 0.01)
+    result.Save()
 
     print(f"Fichier de clips créé : {clips_path}")
 
     return clips_path
-
-import os
-
 
 def houdini_relative_path(file_path, env_var="$PRISM_JOB"):
     if not file_path:
@@ -314,3 +319,37 @@ def houdini_relative_path(file_path, env_var="$PRISM_JOB"):
         return env_var + norm_file[len(norm_project):]
 
     return norm_file
+
+def promote_defaults_to_time_samples(frame_path, frame):
+
+    #Value Clips only read time samples: any value Houdini wrote as a default
+    #in a per-frame file is ignored. Convert those defaults into a time sample
+    #at the file's frame so the clip actually animates.
+
+    from pxr import Sdf
+
+    layer = Sdf.Layer.FindOrOpen(frame_path)
+    if layer is None:
+        return
+
+    to_promote = []
+
+    def visit(path):
+        if not path.IsPropertyPath():
+            return
+        spec = layer.GetAttributeAtPath(path)
+        if spec is None or not spec.HasDefaultValue():
+            return
+        if spec.variability == Sdf.VariabilityUniform:
+            return
+        if layer.GetNumTimeSamplesForPath(path):
+            return
+        to_promote.append((path, spec.default))
+
+    layer.Traverse(Sdf.Path.absoluteRootPath, visit)
+
+    for path, value in to_promote:
+        layer.SetTimeSample(path, float(frame), value)
+
+    if to_promote:
+        layer.Save()

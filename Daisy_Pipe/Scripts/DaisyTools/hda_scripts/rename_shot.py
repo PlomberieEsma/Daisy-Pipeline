@@ -174,6 +174,7 @@ def renaming_window(kwargs: dict[str,str], current_shot_name: str) -> Any:
     """)
     button.clicked.connect(lambda : button_action(
         kwargs,
+        current_shot_number,
         spin_box.value(),
         renaming_window = window
     ))
@@ -181,7 +182,7 @@ def renaming_window(kwargs: dict[str,str], current_shot_name: str) -> Any:
 
     return window
 
-def button_action(kwargs: dict[str,str], new_shot_name: str, renaming_window: Any = None):
+def button_action(kwargs: dict[str,str], old_shot_name: str, new_shot_name: str, renaming_window: Any = None):
     #-----------------------------------------------------------------------------------#
     # Set and applies the new values for the shot name                                  #
     # (the HDA shot name, the camera primpath, the HDA camera path and the camera name) #
@@ -190,8 +191,9 @@ def button_action(kwargs: dict[str,str], new_shot_name: str, renaming_window: An
     # new_shot_name = number set in the window                                          #
     #-----------------------------------------------------------------------------------#
 
-    if kwargs["parm_name"][:11] == "rename_shot":
+    if kwargs["parm_name"].startswith("rename_shot"):
         new_shot_name = f"{new_shot_name:0{digit_number}d}"
+        old_shot_name = f"{old_shot_name:0{digit_number}d}"
 
     if renaming_window != None:
         renaming_window.close()
@@ -206,26 +208,27 @@ def button_action(kwargs: dict[str,str], new_shot_name: str, renaming_window: An
     splited_camera_path = camera_path_content.split("/")
     camera_name = splited_camera_path[-1]
 
-    sq_and_sh_name = camera_name.replace("cam_", "").replace("_", " ")
+    sq_and_sh_name = camera_name.replace("DaisyCam_", "").replace("_", " ")
 
     splited_name = camera_name.split("_")
     sq_name = splited_name[1]
     sh_name = splited_name[2]
     new_sh_name = new_shot_name
 
-    if kwargs["parm_name"][:11] == "rename_shot":
-        new_sq_and_sh_name = sq_and_sh_name[:-digit_number] + new_sh_name
-        new_camera_name = "cam_" + new_sq_and_sh_name.replace(" ", "_")
-    else:
-        new_sq_and_sh_name = sq_and_sh_name[:-digit_number-2] + new_sh_name
-        new_camera_name = "cam_" + new_sq_and_sh_name.replace(" ", "_")
+    final_cam_path = ""
+    for cam_prim in splited_camera_path:
+        new_prim_name = cam_prim.replace(f"sh{old_shot_name}", f"sh{new_shot_name}")
+        final_cam_path = f"{final_cam_path}/{new_prim_name}"
+    final_cam_path = final_cam_path[1:]
 
-    new_camera_path = camera_path_content.replace(camera_name, new_camera_name)
+    new_sq_and_sh_name = sq_and_sh_name.replace(f"sh{old_shot_name}", f"sh{new_shot_name}")
+    
+    new_name = new_sq_and_sh_name.replace(" camShape", "")
+    new_camera_name = "DaisyCam_" + new_name.replace(" ", "_")
 
     #-------------------------------- apply new values ---------------------------------#
     # apply to shot name in the HDA
-    node.parm(f"sh_name{new_shot_HDA_number}").set(new_sq_and_sh_name)
-    node.parm(f"sh_name_anim_{new_shot_HDA_number}").set(new_sq_and_sh_name)
+    node.parm(f"sh_name{new_shot_HDA_number}").set(new_name)
 
     # get all well named cameras in the scene
     cameras_in_scene = hou.lopNodeTypeCategory().nodeTypes()["camera"].instances()
@@ -241,23 +244,13 @@ def button_action(kwargs: dict[str,str], new_shot_name: str, renaming_window: An
             loop_count += 1
 
     # apply to camera selection in the HDA and camera primpath
-    camera_path.set(new_camera_path)
+    # camera_path.set(new_camera_path)
+    camera_path.set(final_cam_path)
 
-    # change shot name in Prism
-    new_sh_name = new_sq_and_sh_name[-digit_number-2:]
-    try:
-        selected_shot = core.entities.getShot(sq_name, sh_name)
-        new_selected_shot = dict(selected_shot)
-        if selected_shot["shot"] != new_sh_name:
-            new_selected_shot.update({"shot": new_sh_name})
-            core.entities.renameShot(selected_shot, new_selected_shot)
-    except Exception as e:
-        # if the shot doesn't exist in Prism
-        print("Unable to rename this shot in the pipeline because it deosn't exist in Prism")
-    else:
-        # change shot name in json framerange file
-        framerange_file = FramerangeFile()
-        old_master_framerange = framerange_file.get_master_range(sq_name, sh_name)
-        framerange_file.set_shot(sq_name, new_sh_name, old_master_framerange)
-    finally:
-        print(f"rename shot : \n{sq_and_sh_name} to\n{new_sq_and_sh_name}")
+    # change shot name in json framerange file
+    framerange_file = FramerangeFile()
+    old_master_framerange = framerange_file.get_master_range(sq_name, sh_name)
+    framerange_file.set_shot(sq_name, f"sh{new_sh_name}", old_master_framerange)
+    framerange_file.delete_shot(sq_name, sh_name)
+    
+    print(f"rename shot : \n{sq_and_sh_name} to\n{new_sq_and_sh_name}")
