@@ -99,6 +99,7 @@ def create_cam(input_node: Any, input_network_box: Any, digit_number: int) -> An
     cam1 = lopnet.createNode("camera")
     cam1.setName(f"DaisyCam_{sequence_name}_{new_shot_name}")
     cam1.parm("primpath").set(f"/{seq_and_sht_name}/cam/DaisyCam_{sequence_name}_{new_shot_name}/DaisyCam_{sequence_name}_{new_shot_name}_geo/DaisyCam_{sequence_name}_{new_shot_name}_Offset/DaisyCam_{sequence_name}_{new_shot_name}_Hook/DaisyCam_{sequence_name}_{new_shot_name}_Move/DaisyCam_{sequence_name}_{new_shot_name}_group/DaisyCam_{sequence_name}_{new_shot_name}_cam/DaisyCam_{sequence_name}_{new_shot_name}_camShape")
+    cam1.parm("xn__houdiniguidescale_s3a").deleteAllKeyframes()# delete expression of Scale Guide Geometry parameter
 
     #-------------------------------- rearange nodes ---------------------------------#
     if last_cam_object != None:

@@ -219,7 +219,9 @@ def nodes_template_MASTER_layout(imported_assets: list[dict[str,str]]) -> dict[s
     ref_set_dress = lopnet.createNode("Daisy::daisy_import")
     ref_set_dress.setName("ref_set_dress")
     ref_set_dress.parm("path").set(f"{env_var_path}/Export/SetDress/master/{seq_and_sht_name}_setDress_master.{usd_file_format}")
-    ref_set_dress.parm("mayascale").set(0)
+    ref_set_dress.parm("importAs").set(1)# Reference
+    ref_set_dress.parm("layerbreak").set(0)
+    # ref_set_dress.parm("mayascale").set(0)
 
     create_cam1 = lopnet.createNode("primitive")
     create_cam1.setName("create_cam1")
@@ -241,7 +243,8 @@ def nodes_template_MASTER_layout(imported_assets: list[dict[str,str]]) -> dict[s
     daisy_export1.parm("versions").set(1)
     daisy_export1.parm("trange").set(1)# Render Specific Frame Range
     daisy_export1.parm("mayascale").set(0)
-    daisy_export1.parm("defaultprim").set(f"/{seq_and_sht_name.replace("-", "_")}")
+    def_prim = seq_and_sht_name.replace("-", "_")
+    daisy_export1.parm("defaultprim").set(f"/{def_prim}")
 
     node_list.update({"ref_set_dress": ref_set_dress,
                     "create_cam1" : create_cam1,
