@@ -24,7 +24,7 @@
 #   by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio
 #   art by Joan G. Stark (Spunk)
 
-from DaisyTools.core.core import get_core
+from Scripts.DaisyTools.core.core import get_core
 
 def get_entity_info():
     
@@ -48,7 +48,7 @@ def get_entity_info():
         name = data.get("asset", "")
     else:
         entity = {"type": "shot", "sequence": data.get("sequence", ""),"shot": data.get("shot", "")}
-        name = f"{data.get('sequence', '')}-{data.get('shot', '')}"
+        name = f"{data.get('sequence', '')}_{data.get('shot', '')}"
 
     path = core.paths.getEntityPath(entity=entity)
 
@@ -62,3 +62,4 @@ def get_entity_info():
         "projectPath": core.projectPath,
         "user": core.username,
     }
+

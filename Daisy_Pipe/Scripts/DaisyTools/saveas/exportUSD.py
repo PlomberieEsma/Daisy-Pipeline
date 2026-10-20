@@ -26,9 +26,12 @@
 
 import os
 
-from DaisyTools.core.get_entity_info import get_entity_info
-from DaisyTools.core.core import get_core, write_usd, create_master, create_master_clips, SUBDIVISION_METHOD_MAP, USD_FILE_FORMAT
-from DaisyTools.core.dcc.launcher import get_dcc
+from Scripts.DaisyTools.core.get_entity_info import get_entity_info
+from Scripts.DaisyTools.core.core import get_core, write_usd, create_master, create_master_clips, SUBDIVISION_METHOD_MAP, USD_FILE_FORMAT
+from Scripts.DaisyTools.core.dcc.launcher import get_dcc
+
+# Shot departments exported from Maya as an overlay of the layout assembly (see exportShotAnim.py)
+SHOT_ANIM_DEPARTMENTS = ("02_layout", "03_anim")
 
 
 def export_usd(params=None):
@@ -70,7 +73,9 @@ def export_usd(params=None):
     end_frame = params.get("end_frame")
     comment = params.get("comment", "")
 
-    if not whole_scene and nodes and get_dcc() == "maya":
+    is_shot_anim = is_shot and department in SHOT_ANIM_DEPARTMENTS and get_dcc() == "maya"
+
+    if not whole_scene and nodes and get_dcc() == "maya" and not is_shot_anim:
         # pyrefly: ignore [missing-import]
         import maya.cmds as cmds
         cmds.select(nodes, replace=True)
@@ -98,6 +103,18 @@ def export_usd(params=None):
 
     is_file_per_frame = animation_type == "File per Frame" and frame_range and frame_range[0] != frame_range[1]
 
+    if is_shot_anim:
+        #rigs of |<shot>|scene written at the path of their geo in the layout assembly
+        from Scripts.DaisyTools.saveas.exportShotAnim import write_shot_anim_usd
+
+        def write(file_path, frames):
+            return write_shot_anim_usd(core, entity, file_path, frame_range=frames, overrides=overrides,
+                                       nodes=None if whole_scene else nodes, shot_prim=params.get("default_prim_override"))
+    else:
+        def write(file_path, frames):
+            write_usd(preset_name, file_path, default_prim=default_prim, selection_only=not whole_scene, overrides=overrides, frame_range=frames, is_shot=is_shot, is_animation=is_animation)
+            return default_prim
+
     if is_file_per_frame:
         base, ext = os.path.splitext(path)
         dcc = get_dcc()
@@ -108,11 +125,11 @@ def export_usd(params=None):
                 import maya.cmds as cmds
                 cmds.currentTime(frame)
             frame_path = f"{base}.{frame:04d}{ext}"
-            write_usd(preset_name, frame_path, default_prim=default_prim, selection_only=not whole_scene, overrides=overrides, frame_range=(frame, frame), is_shot=is_shot, is_animation=is_animation)
+            default_prim = write(frame_path, (frame, frame))
             frame_paths.append(frame_path)
         print(f"USD exported (file per frame): {len(frame_paths)} files in {os.path.dirname(path)}")
     else:
-        write_usd(preset_name, path, default_prim=default_prim, selection_only=not whole_scene, overrides=overrides, frame_range=frame_range, is_shot=is_shot, is_animation=is_animation)
+        default_prim = write(path, frame_range)
         print(f"USD exported: {path}")
 
     if update_master:
@@ -151,8 +168,8 @@ def export_usd(params=None):
         master_info_path = core.products.getVersionInfoPathFromProductFilepath(master_path)
         core.saveVersionInfo(filepath=master_info_path, details=details)
 
-    from DaisyTools.core.version_cleanup import check_version_limit_for_output
-    from DaisyTools.core.dcc.launcher import get_main_window
+    from Scripts.DaisyTools.core.version_cleanup import check_version_limit_for_output
+    from Scripts.DaisyTools.core.dcc.launcher import get_main_window
 
     check_version_limit_for_output(core, entity, task, path, parent=get_main_window())
 

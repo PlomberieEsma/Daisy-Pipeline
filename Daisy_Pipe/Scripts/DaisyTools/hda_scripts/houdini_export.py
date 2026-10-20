@@ -11,7 +11,7 @@ PROXY_WEDGE = "proxy"
 FILE_PER_FRAME = "fileperframe"
 FRAME_TOKEN = ".$F4"
 
-CAMERA_NODE_NAME = re.compile(r"^cam_sq\d+_sh\d+$")
+CAMERA_NODE_NAME = re.compile(r"^DaisyCam_sq\d+_sh\d+_camShape$")
 CAMERA_KEYFRAMES = "daisy:cameraKeyframes"
 
 NEXT_VERSION_PARM = "versions"

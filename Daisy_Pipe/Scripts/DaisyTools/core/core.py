@@ -24,8 +24,8 @@
 #   by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio
 #   art by Joan G. Stark (Spunk)
 
-from DaisyTools.core.dcc.launcher import get_dcc
-from DaisyTools.setupAsset.maya.setup_geo import setup_geo, geo_is_complete
+from Scripts.DaisyTools.core.dcc.launcher import get_dcc
+from Scripts.DaisyTools.setupAsset.maya.setup_geo import setup_geo, geo_is_complete
 import json, os
 
 #path to the export usd parameters which are stocked in a json file
@@ -264,6 +264,9 @@ def create_master(file_path, master_path, default_prim="", frame_range=None):
 
         layer.subLayerPaths.clear() #clear sublayer paths
         layer.subLayerPaths.append(relative_file_path) #append relative file path to sublayer paths
+
+        if default_prim:
+            layer.defaultPrim = default_prim
 
         layer.startTimeCode = start_frame #keep the framerange in sync with the current export
         layer.endTimeCode = end_frame
