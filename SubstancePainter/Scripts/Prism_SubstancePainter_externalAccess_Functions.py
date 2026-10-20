@@ -11,7 +11,7 @@ from qtpy.QtWidgets import *
 from PrismUtils.Decorators import err_catcher_plugin as err_catcher
 
 MESH_EXTENSIONS = (".obj", ".fbx", ".abc", ".usd", ".usda", ".usdc")
-MOD_FOLDER_PATTERN = re.compile(r"^Mod[HL](_var\d+)?$", re.IGNORECASE)
+MOD_FOLDER_PATTERN = re.compile(r"^(Mod[HL]|geo)(_var\d+)?$", re.IGNORECASE)
 
 class Prism_SubstancePainter_externalAccess_Functions(object):
     def __init__(self, core, plugin):
@@ -259,7 +259,7 @@ class Prism_SubstancePainter_externalAccess_Functions(object):
         # Find the all meshes in all format from the same asset as where the user clicked.
         # Return - mashData dict with
         #   variant - name of the variant
-        #   definition - ModH or ModL
+        #   definition - ModH, ModL or Sculpt (geo)
         #   format - format of the files found
         #   path - path to the folder of the files found
         #-----------------------------------------------------------------------------------#
@@ -268,18 +268,19 @@ class Prism_SubstancePainter_externalAccess_Functions(object):
         assetName = entity.get("asset", "")
 
         current_file = os.path.dirname(__file__)
-        originalProjectPath=current_file.split("\\00_Pipeline")[0]
+        originalProjectPath = current_file.split("\\00_Pipeline")[0]
+        ProjectPath = originalProjectPath  # par défaut, on ne change rien
 
-        diskLetter=""
-        if "minerva" or "gandalf" in originalProjectPath:
-            if "minerva" in originalProjectPath:
-                diskLetter="Z:\\"
-            elif "gandalf" in originalProjectPath:
-                diskLetter="Y:\\"
-            ProjectPath = os.path.join(diskLetter, originalProjectPath)
-        else:
-            self.core.popup("Check the Disk path letter to have Minerva projects:Z and Gandalf projects:Y")
-            ProjectPath = originalProjectPath
+        # On ne teste Minerva/Gandalf que si c'est un chemin réseau (UNC)
+        if originalProjectPath.startswith("\\\\"):
+            pathLower = originalProjectPath.lower()
+
+            if "minerva" in pathLower:
+                ProjectPath = os.path.join("Z:\\", originalProjectPath)
+            elif "gandalf" in pathLower:
+                ProjectPath = os.path.join("Y:\\", originalProjectPath)
+            else:
+                self.core.popup("Check the Disk path letter to have Minerva projects:Z and Gandalf projects:Y")
 
         exportPath = os.path.join(
             ProjectPath, "03_Production", "Assets",
@@ -293,8 +294,10 @@ class Prism_SubstancePainter_externalAccess_Functions(object):
             if not match:
                 continue
 
-            definition = modFolder[:4]  # "ModH" ou "ModL" (les 4 premiers caracteres)
-            variantSuffix = match.group(1)
+            definition = match.group(1)   # "ModH", "ModL" ou "geo"
+            if definition.lower() == "geo":
+                definition = "Sculpt"     # libellé affiché dans la fenêtre Geometry Path
+            variantSuffix = match.group(2)
             variantLabel = variantSuffix[1:] if variantSuffix else "Base"
 
             masterPath = os.path.join(exportPath, modFolder, "master")
