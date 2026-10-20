@@ -241,7 +241,7 @@ def nodes_template_MASTER_layout(imported_assets: list[dict[str,str]]) -> dict[s
     daisy_export1.parm("versions").set(1)
     daisy_export1.parm("trange").set(1)# Render Specific Frame Range
     daisy_export1.parm("mayascale").set(0)
-    daisy_export1.parm("defaultprim").set(f"{seq_and_sht_name}")
+    daisy_export1.parm("defaultprim").set(f"/{seq_and_sht_name.replace("-", "_")}")
 
     node_list.update({"ref_set_dress": ref_set_dress,
                     "create_cam1" : create_cam1,
