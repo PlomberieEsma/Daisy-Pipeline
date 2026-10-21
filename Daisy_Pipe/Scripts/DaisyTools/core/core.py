@@ -222,6 +222,32 @@ def resolve_root_prim(layer_path, wanted=""):
         f"'{wanted}' : regroupe l'export sous un seul groupe racine."
     )
 
+def get_master_path(core, entity, product):
+
+    #Return the preferred file of the master version of a Prism product
+    #(e.g. the layout assembly of a shot), or None if the product has no master
+
+    versions = core.products.getVersionsFromProduct(entity, product)
+    master = next((v for v in versions if v.get("version") == "master"), None)
+    if not master:
+        return None
+    return core.products.getPreferredFileFromVersion(master)
+
+def get_source_scene(core, product_path):
+
+    #Return the scene a product was published from: the cache path data first,
+    #then the versioninfo of the version. None if neither knows it
+
+    data = core.paths.getCachePathData(product_path) or {}
+    src = data.get("sourceScene")
+    if src:
+        return src
+
+    info_path = core.products.getVersionInfoPathFromProductFilepath(product_path)
+    if info_path and os.path.exists(info_path):
+        return core.getConfig("sourceScene", configPath=info_path)
+    return None
+
 def create_master(file_path, master_path, default_prim="", frame_range=None):
 
     #Create a master usd file with sublayer pointing to the lastest version of the entity usd file

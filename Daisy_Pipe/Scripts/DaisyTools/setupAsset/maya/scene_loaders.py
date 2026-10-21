@@ -1,6 +1,9 @@
 import os
 import maya.cmds as cmds
 
+# Shared with the Houdini side, which cannot import this Maya-only module
+from Scripts.DaisyTools.core.core import get_master_path, get_source_scene
+
 USD_EXTENSIONS = (".usd", ".usda", ".usdc", ".usdz")
 MAYA_EXTENSIONS = (".ma", ".mb")
 LOADED_PRIM_COLLECTION = "loaded_prim"
@@ -9,46 +12,6 @@ LOADED_PRIM_COLLECTION = "loaded_prim"
 # ------------------------------------------------------------------------------ #
 #                                 Prism products                                 #
 # ------------------------------------------------------------------------------ #
-
-def get_master_path(core, entity, product):
-    #-----------------------------------------------------------------#
-    # Get the preferred file of the master version of a Prism product #
-    #                                                                 #
-    # core = Prism core                                               #
-    # entity = Prism entity dict (asset or shot)                      #
-    # product = product name (e.g.: layout)                           #
-    #                                                                 #
-    # return the file path, or None if the product has no master      #
-    #-----------------------------------------------------------------#
-
-    versions = core.products.getVersionsFromProduct(entity, product)
-    master = next((v for v in versions if v.get("version") == "master"), None)
-    if not master:
-        return None
-    return core.products.getPreferredFileFromVersion(master)
-
-
-def get_source_scene(core, product_path):
-    #------------------------------------------------------------#
-    # Get the source scene used to publish a product             #
-    # Look in the cache path data first, then in the versioninfo #
-    #                                                            #
-    # core = Prism core                                          #
-    # product_path = path of a published product file            #
-    #                                                            #
-    # return the source scene path, or None if not found         #
-    #------------------------------------------------------------#
-
-    data = core.paths.getCachePathData(product_path) or {}
-    src = data.get("sourceScene")
-    if src:
-        return src
-
-    info_path = core.products.getVersionInfoPathFromProductFilepath(product_path)
-    if info_path and os.path.exists(info_path):
-        return core.getConfig("sourceScene", configPath=info_path)
-    return None
-
 
 def get_latest_scene(core, entity, department, task):
     #-------------------------------------------------------------------#

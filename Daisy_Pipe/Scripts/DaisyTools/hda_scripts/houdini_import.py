@@ -1,10 +1,12 @@
 from Scripts.DaisyTools.core.asset_browser_import import AssetBrowserUI
-from Scripts.DaisyTools.core.core import get_core, houdini_relative_path
+from Scripts.DaisyTools.core.core import get_core, get_source_scene, houdini_relative_path
 from Scripts.DaisyTools.core.get_entity_info import get_entity_info
 import hou
 
 core = get_core()
 info = get_entity_info()
+
+MAYA_EXTENSIONS = (".ma", ".mb")
 
 
 def openui():
@@ -72,6 +74,59 @@ def set_import_path(hda, asset, **kwargs):
         hda.parm("path").set(houdini_relative_path(str(path)))
     except Exception as e:
         print(f"[{hda.path()}] set_import_path: {e}")
+        return
+
+    if entity.get("type") == "shot" and is_maya_product(path):
+        setup_maya_overlay(hda, entity)
+
+
+def is_maya_product(path):
+    # Vrai si le produit a été publié depuis Maya : son USD est un overlay du
+    # layout (voir saveas/exportShotAnim.py), pas un stage autonome
+    scene = get_source_scene(core, str(path)) or ""
+    return scene.lower().endswith(MAYA_EXTENSIONS)
+
+
+def import_layout_under(hda, entity):
+    # Charge sous le node le layout sur lequel l'anim Maya a été exportée, pour que
+    # l'overlay se pose dessus : géo et caméras en place, kinds hérités de l'assembly
+    from Scripts.DaisyTools.saveas.exportShotAnim import get_layout
+
+    path, time_offset, is_shot_layout = get_layout(core, entity)
+    if not path:
+        core.popup("Aucun layout publié pour ce plan : l'overlay Maya n'a rien sur quoi se poser.", severity="warning")
+        return None
+
+    parent = hda.parent()
+    if is_shot_layout:
+        layout = parent.createNode("Daisy::daisy_import", node_name="layout_import")
+        layout.parm("path").set(houdini_relative_path(str(path)))
+        layout.parm("mayascale").set(0)
+    else:
+        # Layout du MASTER : décalé dans le temps pour lire la partie du plan, comme
+        # template_layout.py - le daisy_import n'expose pas de time offset
+        layout = parent.createNode("sublayer", node_name="layout_MASTER_import")
+        layout.parm("filepath1").set(houdini_relative_path(str(path)))
+        layout.parm("timeoffset1").set(-time_offset)
+
+    hda.setInput(0, layout)
+    layout.moveToGoodPosition()
+    print(f"[{hda.path()}] layout chargé sous l'import Maya : {path}")
+    return layout
+
+
+def setup_maya_overlay(hda, entity):
+    # Un USD publié depuis Maya sur un plan est un overlay du layout, déjà à l'échelle
+    # de l'assembly : on le sous-layer sans le scale Maya et on met le layout dessous
+    for name, value in (("importAs", 0), ("mayascale", 0)):
+        parm = hda.parm(name)
+        if parm:
+            parm.set(value)
+
+    inputs = hda.inputs()
+    if inputs and inputs[0] is not None:
+        return None
+    return import_layout_under(hda, entity)
 
 
 def on_click(kwargs):

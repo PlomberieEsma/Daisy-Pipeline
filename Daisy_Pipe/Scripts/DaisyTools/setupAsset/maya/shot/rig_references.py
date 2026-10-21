@@ -2,6 +2,7 @@ import maya.cmds as cmds
 
 from Scripts.DaisyTools.core.asset_browser_import import AssetBrowserUI
 from Scripts.DaisyTools.setupAsset.maya.scene_loaders import get_latest_scene, reference_maya_scene
+from Scripts.DaisyTools.setupAsset.maya.shot.layout import MASTER_SHOT
 
 RIG_DEPARTMENT = "04_rig"
 # Rig task referenced in each shot department, RigH if the department is not listed
@@ -9,6 +10,8 @@ RIG_SCENE_TASKS = {
     "02_layout": "RigL",
 }
 DEFAULT_RIG_SCENE_TASK = "RigH"
+# Everything in the MASTER shot stays low: it is the whole sequence in one scene
+MASTER_RIG_SCENE_TASK = "RigL"
 SCENE_GROUP_NAME = "scene"
 
 # ------------------------------------------------------------------------------ #
@@ -51,7 +54,8 @@ def reference_rig_scenes(core, info, shot_group):
     #------------------------------------------------------------------------#
     # Open the Asset Browser and reference the latest rig scene of every     #
     # selected asset, then put it under shot_group|scene                     #
-    # The rig task depends on the department (RigL in layout, RigH else)     #
+    # The rig task depends on the department (RigL in layout, RigH else),    #
+    # and is always RigL in the MASTER shot                                  #
     #                                                                        #
     # core = Prism core                                                      #
     # info = dict returned by get_entity_info()                              #
@@ -63,7 +67,10 @@ def reference_rig_scenes(core, info, shot_group):
     asset_browser = AssetBrowserUI(core=core, plugin=None)
     items = asset_browser.onAssetBrowserTriggered(info["entity"], info["task"], multiSelect=True)
 
-    rig_task = RIG_SCENE_TASKS.get(info["department"], DEFAULT_RIG_SCENE_TASK)
+    if info["entity"].get("shot") == MASTER_SHOT:
+        rig_task = MASTER_RIG_SCENE_TASK
+    else:
+        rig_task = RIG_SCENE_TASKS.get(info["department"], DEFAULT_RIG_SCENE_TASK)
     referenced, missing = [], []
     scene_group = get_scene_group(shot_group) if items else None
     for item in items:

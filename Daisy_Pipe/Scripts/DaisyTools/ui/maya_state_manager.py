@@ -278,14 +278,14 @@ class DaisyUsdExportClass(QWidget):
         context = self.getCurrentContext()
         if context.get("type") == "shot":
             if self.detectShotAnimNodes:
-                # layout/anim: the export writes the rigs and the DaisyCams of the
-                # Daisy import, so the shot group holding them is what gets listed
+                # layout/anim: the export writes the rigs and the DaisyCams brought
+                # in by the Daisy import, listed by their geo group
                 from DaisyTools.saveas.exportUSD import SHOT_ANIM_DEPARTMENTS
 
                 if context.get("department") in SHOT_ANIM_DEPARTMENTS:
                     from DaisyTools.saveas.exportShotAnim import get_shot_anim_nodes
 
-                    nodes = get_shot_anim_nodes()
+                    nodes = get_shot_anim_nodes(self.core)
                     if nodes:
                         return nodes
             return self.getReferencedGeoSetNodes()

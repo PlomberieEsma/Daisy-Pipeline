@@ -25,6 +25,9 @@ SCENE_GROUP_NAME = "scene"
 CAM_GROUP_NAME = "cam"
 GEO_GROUP_SUFFIX = "_geo"
 CAM_SHAPE_SUFFIX = "_camShape"
+# defaultPrim of the asset USD, between <asset> and geo in the assembly:
+# only used when the assembly cannot be read, it is looked up in it otherwise
+ASSET_PRIM_SUFFIX = "_asset"
 # Maya scene in cm, assembly in m
 MAYA_TO_ASSEMBLY_SCALE = 0.01
 # Lens: USD values x100 -> mm, Maya film back in inches (see shot/camera.py)
@@ -93,19 +96,6 @@ def find_scene_group():
     #-------------------------------------------------------------------#
 
     return find_shot_group(SCENE_GROUP_NAME)
-
-
-def get_shot_anim_nodes():
-    #-------------------------------------------------------------------------#
-    # Nodes to fill the Maya Objects list of the export state with: the top   #
-    # group of the shot, which holds every rig and DaisyCam of the export     #
-    # (a group above a rig exports all the rigs below, see is_in_nodes)       #
-    #                                                                         #
-    # return a list of long names, empty if the Daisy import was not run      #
-    #-------------------------------------------------------------------------#
-
-    root = find_shot_root()
-    return [root] if root else []
 
 
 def get_rig_asset(core, rig):
@@ -265,6 +255,25 @@ def get_cameras_to_export(nodes=None):
     return cameras
 
 
+def get_shot_anim_nodes(core):
+    #-------------------------------------------------------------------------#
+    # Nodes to fill the Maya Objects list of the export state with: the geo   #
+    # group of every rig of |<shot>|scene and of every DaisyCam of |<shot>|cam#
+    # (a node inside a rig exports that whole rig, see is_in_nodes)           #
+    #                                                                         #
+    # core = Prism core                                                       #
+    #                                                                         #
+    # return a list of long names, empty if the Daisy import was not run      #
+    #-------------------------------------------------------------------------#
+
+    nodes = [rig["geo"] for rig in get_rigs_to_export(core)]
+    for camera in get_cameras_to_export():
+        rig = camera["rig"]
+        # The DaisyCam rig has its own geo group: DaisyCam_<seq>_<shot>_geo
+        nodes.append(find_geo_group(rig, rig.split("|")[-1].split(":")[-1]) or rig)
+    return nodes
+
+
 # ------------------------------------------------------------------------------ #
 #                                    Assembly                                    #
 # ------------------------------------------------------------------------------ #
@@ -281,7 +290,9 @@ def get_layout(core, entity):
     #                 True if it is the shot layout, False if the MASTER one)       #
     #-------------------------------------------------------------------------------#
 
-    from Scripts.DaisyTools.setupAsset.maya.scene_loaders import get_master_path
+    # From core.core and not from the Maya scene_loaders: the Houdini import
+    # reuses this function to load the layout the overlay was exported on
+    from Scripts.DaisyTools.core.core import get_master_path
 
     path = get_master_path(core, entity, LAYOUT_PRODUCT)
     if path:
@@ -320,6 +331,54 @@ def get_shot_prim_name(entity, layout_root, is_shot_layout):
     if is_shot_layout and layout_root:
         return layout_root
     return Tf.MakeValidIdentifier("%s-%s" % (entity["sequence"], entity["shot"]))
+
+
+def find_layout_geo_path(layout_stage, layout_root, asset, purpose):
+    #-------------------------------------------------------------------------------#
+    # Path of the static geo of an asset in the layout assembly, relative to the    #
+    # root prim of the assembly:                                                    #
+    #   scene/<asset>/<asset prim>/geo/<proxy|render>/<asset>_geo                   #
+    # <asset prim> is the defaultPrim of the asset USD referenced by the layout     #
+    # (e.g.: <asset>_asset): it is read in the assembly, never guessed              #
+    #                                                                               #
+    # layout_stage = stage of the layout assembly (or None)                         #
+    # layout_root = defaultPrim name of the layout (or None)                        #
+    # asset = asset name                                                            #
+    # purpose = geo purpose of the rig (proxy for RigL, render for RigH)            #
+    #                                                                               #
+    # return the path relative to the root prim, as a string                        #
+    #-------------------------------------------------------------------------------#
+
+    # pyrefly: ignore [missing-import]
+    import maya.cmds as cmds
+    from pxr import Sdf, Usd
+
+    geo_name = asset + GEO_GROUP_SUFFIX
+    default = "%s/%s/%s%s/geo/%s/%s" % (SCENE_GROUP_NAME, asset, asset, ASSET_PRIM_SUFFIX, purpose, geo_name)
+
+    root = Sdf.Path("/" + layout_root) if layout_root else None
+    asset_prim = layout_stage.GetPrimAtPath(root.AppendPath("%s/%s" % (SCENE_GROUP_NAME, asset))) if layout_stage and root else None
+    if not asset_prim:
+        cmds.warning("%s introuvable dans le layout : l'anim est écrite sous %s" % (asset, default))
+        return default
+
+    # <asset>_geo of every purpose published for this asset
+    geos = {}
+    for prim in Usd.PrimRange(asset_prim):
+        path = prim.GetPath()
+        if prim.GetName() == geo_name and path.GetParentPath().GetParentPath().name == "geo":
+            geos[path.GetParentPath().name] = path
+
+    path = geos.get(purpose)
+    if path is None:
+        # The rig deforms a geo that the layout does not have: the other purpose is better than nothing
+        path = next(iter(sorted(geos.values())), None)
+        if path is None:
+            cmds.warning("Pas de %s sous %s dans le layout : l'anim est écrite sous %s" % (geo_name, asset_prim.GetPath(), default))
+            return default
+        cmds.warning("Pas de geo %s pour %s dans le layout : l'anim est écrite sur %s" % (purpose, asset, path))
+
+    return str(path.MakeRelativePath(root))
 
 
 # ------------------------------------------------------------------------------ #
@@ -540,12 +599,18 @@ def write_shot_anim_usd(core, entity, file_path, frame_range=None, overrides=Non
             continue
 
         # Path of the static geo in the assembly
-        parent = "%s/%s/%s/geo/%s" % (SCENE_GROUP_NAME, asset, asset, purpose)
-        dst_path = Sdf.Path("/%s/%s/%s" % (shot_prim, parent, geo_name))
+        geo_path = find_layout_geo_path(layout_stage, layout_root, asset, purpose)
+        dst_path = Sdf.Path("/%s/%s" % (shot_prim, geo_path))
 
         # Ancestors as "over": they keep the assembly type and placement
         Sdf.CreatePrimInLayer(layer, dst_path.GetParentPath())
         Sdf.CopySpec(tmp_stage.GetRootLayer(), src_path, layer, dst_path)
+
+        # The kind of the assembly wins: the geo group of a Maya export is a component,
+        # the layout has none there (its components are the asset prims above)
+        geo_spec = layer.GetPrimAtPath(dst_path)
+        if geo_spec.HasInfo("kind"):
+            geo_spec.ClearInfo("kind")
 
         # world matrices of the Maya geo, before its xformOps are replaced
         src_xform = UsdGeom.Xformable(tmp_stage.GetPrimAtPath(src_path))
@@ -560,7 +625,7 @@ def write_shot_anim_usd(core, entity, file_path, frame_range=None, overrides=Non
 
         # Local matrix so that the geo ends up at its Maya position, whatever the
         # placement of its parents in the assembly: local * parent world = Maya world
-        layout_parent = Sdf.Path("/%s/%s" % (layout_root, parent)) if layout_root else None
+        layout_parent = Sdf.Path("/%s/%s" % (layout_root, geo_path)).GetParentPath() if layout_root else None
         op = xformable.AddTransformOp()
         for frame, maya_matrix in zip(frames, maya_matrices):
             parent_matrix = get_assembly_matrix(layout_stage, layout_parent, frame + time_offset)
