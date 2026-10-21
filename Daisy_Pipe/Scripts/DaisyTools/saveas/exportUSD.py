@@ -104,7 +104,8 @@ def export_usd(params=None):
     is_file_per_frame = animation_type == "File per Frame" and frame_range and frame_range[0] != frame_range[1]
 
     if is_shot_anim:
-        #rigs of |<shot>|scene written at the path of their geo in the layout assembly
+        #rigs of |<shot>|scene and DaisyCams of |<shot>|cam written at the path of
+        #their geo/camera in the layout assembly - the MASTER has one camera per shot
         from Scripts.DaisyTools.saveas.exportShotAnim import write_shot_anim_usd
 
         def write(file_path, frames):
