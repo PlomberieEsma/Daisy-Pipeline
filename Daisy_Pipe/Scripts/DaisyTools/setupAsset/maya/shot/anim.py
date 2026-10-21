@@ -5,7 +5,7 @@ from Scripts.DaisyTools.setupAsset.maya.shot.layout import MASTER_SHOT, deactiva
 from Scripts.DaisyTools.setupAsset.maya.shot.rig_references import reference_rig_scenes
 
 # Departments where the MASTER shot gets a Camera Sequencer with its DaisyCams
-CAMERA_SEQUENCE_DEPARTMENTS = ("02_layout",)
+CAMERA_SEQUENCE_DEPARTMENTS = ("02_layout", "03_anim")
 
 
 # ------------------------------------------------------------------------------ #
@@ -41,7 +41,7 @@ def setup_anim(core, info):
     # Set up an anim scene: load the layout and match the DaisyCam to it          #
     # Load the shot layout master, or the MASTER shot layout master if none       #
     # In the MASTER shot, one DaisyCam is imported per shot camera of the USD     #
-    # (and a Camera Sequencer is created with them in layout)                     #
+    # (and a Camera Sequencer is created with them in layout and anim)            #
     #                                                                             #
     # core = Prism core                                                           #
     # info = dict returned by get_entity_info()                                   #
@@ -68,7 +68,7 @@ def setup_anim(core, info):
                 cam_shots.append((cam_shot, camera, cam_range))
         cameras = [camera for _, camera, _ in cam_shots]
 
-        # MASTER layout: Camera Sequencer switching between the DaisyCams over the sequence
+        # MASTER layout/anim: Camera Sequencer switching between the DaisyCams over the sequence
         if info["department"] in CAMERA_SEQUENCE_DEPARTMENTS:
             create_camera_sequence(cam_shots, sequence)
     else:

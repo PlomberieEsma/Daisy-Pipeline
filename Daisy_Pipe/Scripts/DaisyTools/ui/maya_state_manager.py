@@ -34,6 +34,10 @@ class DaisyUsdExportClass(QWidget):
     className = "DaisyUsdExport"   # nom affiché dans le menu "Add state"
     listType = "Export"           # ou "Import" — la liste dans laquelle il se range
 
+    # In a shot layout/anim scene, the USD export writes the rigs and the DaisyCams
+    # of the Daisy import: that is what "Detect from scene" fills the list with
+    detectShotAnimNodes = True
+
     def setup(self, state, core, stateManager, stateData=None):
 
         #-----------------------------------------------------------------------------------#
@@ -271,7 +275,19 @@ class DaisyUsdExportClass(QWidget):
         # pyrefly: ignore [missing-import]
         import maya.cmds as cmds
 
-        if self.getCurrentContext().get("type") == "shot":
+        context = self.getCurrentContext()
+        if context.get("type") == "shot":
+            if self.detectShotAnimNodes:
+                # layout/anim: the export writes the rigs and the DaisyCams brought
+                # in by the Daisy import, listed by their geo group
+                from DaisyTools.saveas.exportUSD import SHOT_ANIM_DEPARTMENTS
+
+                if context.get("department") in SHOT_ANIM_DEPARTMENTS:
+                    from DaisyTools.saveas.exportShotAnim import get_shot_anim_nodes
+
+                    nodes = get_shot_anim_nodes(self.core)
+                    if nodes:
+                        return nodes
             return self.getReferencedGeoSetNodes()
 
         geo_set_name = default_prim + "_geoSet"
@@ -783,6 +799,9 @@ class DaisyUsdExportClass(QWidget):
 class DaisyGeoExportClass(DaisyUsdExportClass):
     className = "DaisyGeoExport"   # nom affiché dans le menu "Add state"
     listType = "Export"
+
+    # An FBX/OBJ export is geo only: the detection stays on the asset geo sets
+    detectShotAnimNodes = False
 
     # reuses the USD state's context, frame range and selection helpers -
     # only the UI, the export params and the execution differ

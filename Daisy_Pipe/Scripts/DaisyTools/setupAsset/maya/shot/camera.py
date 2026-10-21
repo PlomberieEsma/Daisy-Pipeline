@@ -12,7 +12,7 @@ CAM_GLOBAL_CTRL_SUFFIX = "_{sequence}_{shot}_global_ctrl"
 CAM_PAN_CTRL_SUFFIX = "_{sequence}_{shot}_pan_ctrl"
 CAM_TILT_CTRL_SUFFIX = "_{sequence}_{shot}_tilt_ctrl"
 CAM_CTRL_SUFFIXES = (CAM_GLOBAL_CTRL_SUFFIX, CAM_PAN_CTRL_SUFFIX, CAM_TILT_CTRL_SUFFIX)
-USD_CAM_NAME = "cam_{sequence}_{shot}"
+USD_CAM_NAME = "DaisyCam_{sequence}_{shot}_camShape"
 USD_CAM_KEYFRAMES = "daisy:cameraKeyframes"
 USD_LENS_SCALE = 100.0
 MM_PER_INCH = 25.4
@@ -272,7 +272,8 @@ def get_usd_camera(stage_shape, camera_name):
     # Find a USD camera by its name in the stage                      #
     #                                                                 #
     # stage_shape = mayaUsdProxyShape of the layout                   #
-    # camera_name = name of the camera prim (e.g.: cam_sq0010_sh0010) #
+    # camera_name = name of the camera prim                           #
+    #               (e.g.: DaisyCam_sq0010_sh0010_camShape)           #
     #                                                                 #
     # return the camera prim, or None if not found                    #
     #-----------------------------------------------------------------#
@@ -289,7 +290,7 @@ def get_usd_camera(stage_shape, camera_name):
 
 def get_usd_camera_shots(stage_shape, sequence):
     #-----------------------------------------------------------------------#
-    # List the shots that have a camera (cam_sqX_shX) in the USD stage      #
+    # List the shots that have a camera (DaisyCam_sqX_shX_camShape) in USD  #
     # Used in the MASTER shot, which holds the cameras of every shot        #
     #                                                                       #
     # stage_shape = mayaUsdProxyShape of the layout                         #
@@ -302,19 +303,20 @@ def get_usd_camera_shots(stage_shape, sequence):
     from pxr import UsdGeom
 
     stage = mayaUsd.ufe.getStage(cmds.ls(stage_shape, long=True)[0])
-    prefix = USD_CAM_NAME.format(sequence=sequence, shot="")
+    # Text before and after the shot name (e.g.: "DaisyCam_sq0010_" and "_camShape")
+    prefix, suffix = USD_CAM_NAME.format(sequence=sequence, shot="\0").split("\0")
     shots, ignored = set(), []
     for prim in stage.Traverse():
         if not prim.IsA(UsdGeom.Camera):
             continue
         name = prim.GetName()
-        if name.startswith(prefix) and len(name) > len(prefix):
-            shots.add(name[len(prefix):])
+        if name.startswith(prefix) and name.endswith(suffix) and len(name) > len(prefix) + len(suffix):
+            shots.add(name[len(prefix):len(name) - len(suffix)])
         else:
             ignored.append(name)
 
     if ignored:
-        cmds.warning("Caméra(s) USD ignorée(s), nom différent de %sshX : %s" % (prefix, ", ".join(ignored)))
+        cmds.warning("Caméra(s) USD ignorée(s), nom différent de %sshX%s : %s" % (prefix, suffix, ", ".join(ignored)))
     print("%d caméra(s) de shot trouvée(s) dans %s" % (len(shots), stage_shape))
     return sorted(shots)
 
