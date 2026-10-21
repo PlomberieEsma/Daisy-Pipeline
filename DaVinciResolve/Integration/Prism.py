@@ -28,6 +28,7 @@ ACTIONS = [
     ("Add Shot",                lambda: callPlugin("AddShot")),
     ("Bake Current Shot",       lambda: callPlugin("BakeCurrentShot")),
     ("Modify Current Shot",     lambda: callPlugin("ModifyCurrentShot")),
+    ("Reset Visual Counter",     lambda: callPlugin("ResetCounters")),
     ("Apply Render Settings",   lambda: callPlugin("Render")),
 ]
 

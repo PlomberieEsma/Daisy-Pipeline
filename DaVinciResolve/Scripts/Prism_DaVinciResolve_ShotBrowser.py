@@ -1,3 +1,14 @@
+"""Shot Browser Prism pour DaVinci Resolve.
+
+Permet de choisir des shots Prism, de les poser sur la timeline (modes "add",
+"bake" et "modify") et de piloter par expressions Fusion les compteurs
+affichés par-dessus (séquence, shot, task level, date, nom du film).
+
+Chaque clip posé reçoit un marqueur dont le customData JSON décrit le shot
+(sequence, shot, taskLevel, mediaPath, length) : getTimelineShots relit ces
+marqueurs pour retrouver les shots déjà présents sur la timeline.
+"""
+
 import os
 import glob
 import re
@@ -24,6 +35,7 @@ THUMB_SIZE = QSize(100, 56)
 SEQ_TOOL, SEQ_INPUT = "SeqCounter", "Number"
 SHOT_TOOL, SHOT_INPUT = "ShotCounter", "Number"
 
+
 # Ordre croissant d'avancement : du premier niveau au dernier.
 # Chaque niveau = (label, [motifs glob relatifs au dossier du shot])
 TASK_LEVELS = [
@@ -32,6 +44,10 @@ TASK_LEVELS = [
     ("Lighting",    ["Renders/3dRender/07_lighting/Lighting/*/*_beauty.*"]),
     ("Compositing", ["Renders/2dRender/08_compositing/Compositing/*/*"]),
 ]
+# Si le nom du projet Resolve contient ce mot, on ne cherche que ces niveaux
+LAYOUT_PROJECT_KEYWORD = "layout"
+LAYOUT_PROJECT_LEVELS = ("Layout", "Anim")
+
 MASTER_ONLY_LEVEL = "Layout" 
 NO_LEVEL = "-"
 TASK_LETTERS = {
@@ -43,28 +59,81 @@ TASK_LETTERS = {
 
 def naturalKey(s):
     # sh2 avant sh10
+    """Clé de tri naturel : "sh2" passe avant "sh10".
+
+    Args:
+        s: chaîne à trier.
+
+    Returns:
+        list: morceaux de texte (minuscules) et d'entiers, utilisable dans sorted(key=...).
+    """
     return [int(t) if t.isdigit() else t.lower() for t in re.split(r"(\d+)", s)]
 
 def tcToFrames(tc, fps):
     # Timecode "HH:MM:SS:FF" -> frame absolu (drop-frame non géré)
+    """Convertit un timecode en numéro d'image absolu (drop-frame non géré).
+
+    Args:
+        tc: timecode "HH:MM:SS:FF" (ou avec ";" comme séparateur).
+        fps: cadence de la timeline (arrondie à l'entier).
+
+    Returns:
+        int: numéro d'image.
+    """
     h, m, s, f = [int(x) for x in re.split(r"[:;]", tc)]
     return (h * 3600 + m * 60 + s) * int(round(fps)) + f
 
 def levelIndex(label):
+    """Position d'un niveau d'avancement dans TASK_LEVELS (0 = Layout, le moins avancé).
+
+    Args:
+        label: nom du niveau ("Layout", "Anim", "Lighting", "Compositing").
+
+    Returns:
+        int: index dans TASK_LEVELS, ou -1 si le niveau est inconnu.
+    """
     labels = [l for l, _ in TASK_LEVELS]
     return labels.index(label) if label in labels else -1
 
 def versionNumber(path):
     # .../Layout/v0003/fichier -> 3
+    """Numéro de version déduit du dossier parent du fichier.
+    Ex. ".../Layout/v0003/fichier.png" -> 3.
+
+    Args:
+        path: chemin d'un fichier de média.
+
+    Returns:
+        int: numéro de version, ou 0 si le chemin est vide ou le dossier parent
+        n'est pas de la forme vNNNN.
+    """
     if not path:
         return 0
     m = re.match(r"^v(\d+)$", os.path.basename(os.path.dirname(path)), re.I)
     return int(m.group(1)) if m else 0
 
 def rank(label, path):
+    """Rang d'une version, pour comparer deux versions (niveau d'abord, puis numéro).
+
+    Args:
+        label: niveau d'avancement ("Layout", "Anim"...).
+        path: chemin du média (sert à lire le numéro de version).
+
+    Returns:
+        tuple[int, int]: (levelIndex(label), versionNumber(path)).
+    """
     return (levelIndex(label), versionNumber(path))
 
 def rankText(label, path):
+    """Texte affiché pour une version, ex. "Anim v0003".
+
+    Args:
+        label: niveau d'avancement.
+        path: chemin du média (sert à lire le numéro de version).
+
+    Returns:
+        str: "<label> v<numéro sur 4 chiffres>".
+    """
     return "%s v%04d" % (label, versionNumber(path))
 
 
@@ -84,7 +153,34 @@ COUNTERS = [
     ("FilmName",   "project",  "project"),    # nom du projet, constant
 ]
 
+# Texte affiché par défaut sur chaque node après réinitialisation
+COUNTER_DEFAULTS = {
+    "SqName":    "Sq----",
+    "SqFrame":   " - 0000",
+    "ShName":    "Sh----",
+    "ShFrame":   " - 0000",
+    "TaskLevel": "-",
+    "TaskDate":  "--/--/--",
+    "FilmName":  "Film",
+}
+
 def counterExpression(rows, mode):
+    """Construit l'expression Lua (Fusion) d'un compteur texte : selon la frame
+    courante, renvoie le texte de la ligne dont la plage contient cette frame, ou
+    "" hors de toute plage.
+
+    Args:
+        rows: liste de tuples (début, fin, ref, label), en frames relatives au
+            clip Fusion ; fin exclue. ref sert au mode compteur, label aux modes
+            texte.
+        mode: "name" ou "date" -> affiche label tel quel ; "task" -> affiche la
+            lettre de TASK_LETTERS pour label ; "duration" -> durée "N f"
+            (non utilisé par COUNTERS) ; toute autre valeur (ex. "frame") ->
+            compteur " - 0001" depuis ref (voir COUNTER_BASE).
+
+    Returns:
+        str: expression Lua à passer à SetExpression.
+    """
     if mode in ("name", "date"):
         table = ",".join("{%d,%d,%s}" % (s, e, luaStr(label)) for s, e, ref, label in rows)
         result = "r[3]"
@@ -104,15 +200,43 @@ def counterExpression(rows, mode):
             "return '' end)()")
 
 def sqLabel(seq):
-    return seq        # "sq010" -> "sq010"
+    # "sq010" -> "Sq010"
+    """Texte affiché pour une séquence : première lettre en majuscule.
+    Ex. "sq010" -> "Sq010".
+
+    Args:
+        seq: nom de la séquence Prism.
+
+    Returns:
+        str: libellé de la séquence.
+    """
+    return seq[:1].upper() + seq[1:]
 
 def shLabel(shotPath):
     # "sq010/sh020" -> "Sh0020"  (format à confirmer)
+    """Texte affiché pour un shot : "Sh" + numéro sur 4 chiffres.
+    Ex. "sq010/sh020" -> "Sh0020".
+
+    Args:
+        shotPath: chemin "sequence/shot" ; seul le dernier élément est lu.
+
+    Returns:
+        str: libellé du shot, "Sh----" si le nom ne contient aucun chiffre.
+    """
     shot = shotPath.split("/")[-1]
     digits = re.sub(r"\D", "", shot)
     return "Sh%04d" % int(digits) if digits else "Sh----"
 
 def getInput(tool, inputId):
+    """Retrouve une entrée (input) d'un node Fusion par son identifiant.
+
+    Args:
+        tool: node Fusion.
+        inputId: identifiant de l'input (INPS_ID), ex. "StyledText", "TopLeftRed".
+
+    Returns:
+        L'input Fusion, ou None s'il n'existe pas.
+    """
     for _, inp in tool.GetInputList().items():
         if inp.GetAttrs().get("INPS_ID") == inputId:
             return inp
@@ -123,9 +247,25 @@ IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".exr", ".tif", ".tiff", ".dpx", ".tga", 
 
 def luaStr(s):
     # Chaîne Lua sûre (guillemets et antislashs échappés)
+    """Transforme un texte en chaîne Lua sûre (guillemets et antislashs échappés).
+
+    Args:
+        s: texte quelconque.
+
+    Returns:
+        str: littéral Lua entre guillemets.
+    """
     return '"%s"' % str(s).replace("\\", "\\\\").replace('"', '\\"')
 
 def constantExpression(text):
+    """Expression Lua Fusion qui renvoie toujours le même texte.
+
+    Args:
+        text: texte à afficher.
+
+    Returns:
+        str: expression à passer à SetExpression.
+    """
     return "(function() return %s end)()" % luaStr(text)
 
 # TaskLevel BackGround
@@ -140,8 +280,16 @@ NO_LEVEL_COLOR = (0.40, 0.40, 0.40)
 BG_CHANNELS = (("TopLeftRed", 0), ("TopLeftGreen", 1), ("TopLeftBlue", 2))
 
 def numberExpression(table, default):
-    """Expression Fusion renvoyant un nombre selon la frame.
-    table = [(début, fin, valeur)] en frames relatives au clip de la comp."""
+    """Comme counterExpression, mais pour un nombre (ex. un canal de couleur).
+
+    Args:
+        table: liste de tuples (début, fin, valeur), en frames relatives au clip
+            de la comp ; fin exclue ; la première plage qui correspond gagne.
+        default: valeur renvoyée hors de toute plage.
+
+    Returns:
+        str: expression Lua à passer à SetExpression.
+    """
     rows = ",".join("{%d,%d,%.4f}" % (s, e, v) for s, e, v in table)
     return ("(function() local t = math.floor(time + 0.5) "
             "for _, r in ipairs({" + rows + "}) do "
@@ -150,7 +298,14 @@ def numberExpression(table, default):
 
 # TaskLevel Date
 def fileDateText(path):
-    """Date de modification du fichier au format AA/MM/JJ (ex : 26/10/13)."""
+    """Date de modification d'un fichier, au format AA/MM/JJ (ex. "26/10/13").
+
+    Args:
+        path: chemin du fichier.
+
+    Returns:
+        str: la date, ou "" si le fichier est illisible.
+    """
     try:
         return time.strftime("%y/%m/%d", time.localtime(os.path.getmtime(path)))
     except Exception:
@@ -158,45 +313,59 @@ def fileDateText(path):
 
 # Film Name
 def getFilmName(core):
-    """Nom du projet Prism sans préfixe du type '12_'."""
+    """Nom du film : nom du projet Prism sans préfixe numérique du type "12_".
+
+    Args:
+        core: core Prism (projectName, sinon dernier dossier de projectPath).
+
+    Returns:
+        str: nom du film.
+    """
     name = getattr(core, "projectName", None) or os.path.basename(os.path.normpath(core.projectPath))
     return re.sub(r"^\d+_", "", str(name))
 
-def fillMissingShotRanges(self, defaultRange=(1001, 1100), apply=False):
-    """Affiche les shots sans plage. Avec apply=True, écrit defaultRange pour ceux-là
-    (Prism met à jour shotInfo.json lui-même). Ne touche jamais aux plages existantes."""
-    entities = self.core.entities
-    missing = [s for s in (entities.getShots() or []) if not entities.getShotRange(s)]
- 
-    for shot in missing:
-        print("[ShotBrowser] pas de plage : %s" % entities.getShotName(shot))
-        if apply:
-            entities.setShotRange(shot, defaultRange[0], defaultRange[1])
- 
-    print("[ShotBrowser] %d shot(s) sans plage%s"
-          % (len(missing), " -> plage par défaut écrite" if apply else " (rien écrit)"))
-    return missing
-
 MASTER_TRACK_NAME = "Sequence Master"
 
-
 class ShotBrowserUI(object):
+    """Fenêtre Shot Browser et logique de pose des shots sur la timeline Resolve.
+
+    Trois modes (self.action) :
+    - "add"    : ajoute les shots cochés sur une nouvelle piste, à la position du curseur ;
+    - "bake"   : remplace les shots de la timeline par une version plus avancée ;
+    - "modify" : remplace les shots de la timeline par la version choisie à la main.
+
+    Sections de la classe : interface (onShotBrowserTriggered, populateTree,
+    filterTree...), disque et versions (getShotMedia, getShotVersions...), pose des
+    clips (placeShot, placeHeldShot...), piste Master (syncMasterTrack...) et
+    compteurs Fusion (updateFrameCounters...).
+    """
     def __init__(self, core, plugin=None):
+        """Args:
+            core: core Prism (projectPath, entities, popup, parentWindow...).
+            plugin: plugin Prism, optionnel (conservé mais non utilisé).
+        """
         self.core = core
         self.plugin = plugin
         self.toImportShot = []
 
     def onShotBrowserTriggered(self, task="", action="add"):
+        """Point d'entrée : prépare et affiche la fenêtre Shot Browser (en mode modal).
 
-        #-----------------------------------------------------------------------------------#
-        # Trigger all functions relating to the shotBrowser
-        #
-        # task - The editing task (carried by the editing file name)
-        # action - "add", "bake" or "modify" which preset view for the short browser
-        #           to show only what's necessary
-        # Return Launch toImportShot with the list of which shots were selected
-        #-----------------------------------------------------------------------------------#
+        La pose ou la mise à jour des clips est exécutée dans onValidate, avant le
+        retour de cette méthode. Affiche aussi dans la console la ligne de définition
+        de quelques méthodes (diagnostic de version du fichier chargé).
 
+        Args:
+            task: task de montage affichée en en-tête ("Current Task"), optionnel.
+            action: "add", "bake" ou "modify" ; toute autre valeur équivaut à "add".
+                Les modes "bake" et "modify" lisent la timeline et n'affichent que
+                les shots déjà posés.
+
+        Returns:
+            list[dict]: les shots validés, chacun de la forme {"name", "sequence",
+            "shot_path", "taskLevel", "mediaPath"} ; [] si annulé, si la timeline est
+            vide, s'il n'y a rien à faire ou en cas d'erreur (affichée dans un popup).
+        """
         import inspect
         for name in ("addShotsToTimeline", "placeShot", "updateFrameCounters", "bakeShotsOnTimeline"):
             try:
@@ -312,7 +481,15 @@ class ShotBrowserUI(object):
 
     # ------------------------------------------------------------------ #
     def getShotFolder(self, entity):
-        """03_Production/Shots/<sq>/<sh>"""
+        """Dossier d'un shot : <projet>/03_Production/Shots/<séquence>/<shot>.
+
+        Args:
+            entity: entité Prism du shot, dict avec les clés "sequence" et "shot".
+
+        Returns:
+            str | None: le dossier ; à défaut, le chemin résolu par
+            core.getEntityPath ; None si le shot n'a pas de nom ou si rien n'est trouvé.
+        """
         seq = entity.get("sequence", "")
         shot = entity.get("shot", "")
         if not shot:
@@ -329,12 +506,22 @@ class ShotBrowserUI(object):
             return None
 
     def getTaskLevel(self, entity):
+        """Niveau d'avancement le plus avancé existant sur disque pour un shot,
+        parmi les niveaux de getActiveTaskLevels().
+
+        Args:
+            entity: entité Prism du shot.
+
+        Returns:
+            str: "Layout", "Anim", "Lighting" ou "Compositing" ; NO_LEVEL ("-") si
+            aucun média n'est trouvé ou si le dossier du shot n'existe pas.
+        """
         shotFolder = self.getShotFolder(entity)
         if not shotFolder or not os.path.isdir(shotFolder):
             return NO_LEVEL
 
         # Parcours inversé : le premier niveau trouvé est le plus avancé
-        for label, patterns in reversed(TASK_LEVELS):
+        for label, patterns in reversed(self.getActiveTaskLevels()):
             for pattern in patterns:
                 fullPattern = os.path.join(shotFolder, *pattern.split("/"))
                 if next(glob.iglob(fullPattern), None) is not None:
@@ -343,7 +530,15 @@ class ShotBrowserUI(object):
         return NO_LEVEL
 
     def getShotInfos(self, entity):
-        """Renvoie les infos affichées dans les colonnes. À adapter."""
+        """Informations affichées dans les colonnes de l'arbre pour un shot.
+
+        Args:
+            entity: entité Prism du shot.
+
+        Returns:
+            dict: {"taskLevel": str (voir getTaskLevel), "pixmap": QPixmap miniature
+            à la taille THUMB_SIZE (image vide si le shot n'a pas d'aperçu)}.
+        """
         taskLevel = self.getTaskLevel(entity)
 
         pm = None
@@ -358,9 +553,18 @@ class ShotBrowserUI(object):
         return {"taskLevel": str(taskLevel), "pixmap": pm}
 
     def updateTaskLevelColors(self, comp, perShot, masterRanges=()):
-        """Pilote la couleur de Bg_TaskLevel par expression, comme les compteurs de texte.
-        Les lignes des shots passent en premier (la 1re ligne qui correspond gagne),
-        celles du master ne servent donc que là où aucun shot n'est présent."""
+        """Pilote par expressions la couleur de fond du node Bg_TaskLevel selon le
+        niveau d'avancement du shot affiché. Les lignes des shots passent avant celles
+        du master (la première plage qui correspond gagne) ; hors plage, couleur
+        NO_LEVEL_COLOR.
+
+        Args:
+            comp: composition Fusion contenant le node Bg_TaskLevel.
+            perShot: liste de dicts de getCounterRanges (clés "start", "end",
+                "taskLevel"), frames relatives au clip de la comp.
+            masterRanges: liste de tuples (début, fin) des clips de la piste Master,
+                colorés avec la couleur de MASTER_ONLY_LEVEL.
+        """
         tool = comp.FindTool(TASK_BG_NODE)
         if not tool:
             print("[ShotBrowser] node '%s' introuvable" % TASK_BG_NODE)
@@ -382,7 +586,15 @@ class ShotBrowserUI(object):
         print("[ShotBrowser] %s -> couleurs mises à jour" % TASK_BG_NODE)
 
     def getMasterRanges(self, timeline, origin):
-        """[(début, fin)] des clips de la piste Master, en frames relatives au clip de la comp."""
+        """Plages occupées par les clips de la piste Master.
+
+        Args:
+            timeline: timeline Resolve.
+            origin: première frame du clip Fusion des compteurs ; sert de zéro.
+
+        Returns:
+            list[tuple[int, int]]: [(début, fin)] triées, en frames relatives à origin.
+        """
         ranges = []
         for t in range(1, timeline.GetTrackCount("video") + 1):
             if timeline.GetTrackName("video", t) != MASTER_TRACK_NAME:
@@ -392,7 +604,15 @@ class ShotBrowserUI(object):
         return sorted(ranges)
 
     def listSequenceFiles(self, path):
-        """[(numéro, chemin)] triés ; [(None, path)] si le fichier n'est pas numéroté."""
+        """Liste les images d'une séquence numérotée à partir d'un de ses fichiers.
+
+        Args:
+            path: chemin d'une image au format "<nom>.<numéro>.<ext>".
+
+        Returns:
+            list[tuple[int | None, str]]: [(numéro, chemin)] triés par numéro ;
+            [(None, path)] si le nom n'est pas numéroté.
+        """
         folder, name = os.path.split(path)
         m = re.match(r"^(?P<pre>.+\.)(?P<frame>\d+)(?P<ext>\.[A-Za-z0-9]+)$", name)
         if not m:
@@ -407,7 +627,17 @@ class ShotBrowserUI(object):
         return sorted(out)
     
     def isHeldMedia(self, files):
-        """True si le shot doit être 'tenu' : image fixe, ou séquence dont le step est > 1."""
+        """Indique si un shot doit être "tenu" (blocs de durée fixe sur la timeline)
+        au lieu d'être posé comme séquence continue.
+
+        Args:
+            files: résultat de listSequenceFiles.
+
+        Returns:
+            bool: True pour une image fixe unique (extension de IMAGE_EXTS) ou une
+            séquence dont l'écart entre numéros dépasse 1 ; False pour une vidéo
+            ou une séquence continue.
+        """
         if len(files) == 1:
             # fichier unique : tenu seulement si c'est une image (pas un mov/mp4)
             return os.path.splitext(files[0][1])[1].lower() in IMAGE_EXTS
@@ -415,14 +645,31 @@ class ShotBrowserUI(object):
         return any(b - a > 1 for a, b in zip(nums, nums[1:]))
     
     def clearRange(self, timeline, track, start, end):
-        """Supprime (sans ripple) les clips de la piste qui touchent [start, end)."""
+        """Supprime, sans ripple, les clips d'une piste qui touchent l'intervalle
+        [start, end).
+
+        Args:
+            timeline: timeline Resolve.
+            track: index de la piste vidéo (à partir de 1).
+            start: première frame de l'intervalle.
+            end: frame de fin, exclue.
+        """
         olds = [it for it in (timeline.GetItemListInTrack("video", track) or [])
                 if it.GetStart() < end and it.GetEnd() > start]
         if olds:
             timeline.DeleteClips(olds, False)
     
     def getTrackItemAt(self, timeline, track, startFrame):
-        """Relit la piste et renvoie le clip qui démarre exactement à startFrame."""
+        """Retrouve le clip qui démarre exactement à une frame (la piste est relue).
+
+        Args:
+            timeline: timeline Resolve.
+            track: index de la piste vidéo.
+            startFrame: frame de départ recherchée.
+
+        Returns:
+            Le clip, ou None.
+        """
         for it in (timeline.GetItemListInTrack("video", track) or []):
             try:
                 if it.GetStart() == startFrame:
@@ -432,7 +679,17 @@ class ShotBrowserUI(object):
         return None
     
     def buildSingleFrameImportItem(self, path, number):
-        """Motif Start=End pour UNE image (plan B si Resolve regroupe en séquence)."""
+        """Prépare l'import d'UNE seule image d'une séquence (plan B quand Resolve
+        regroupe les images en séquence).
+
+        Args:
+            path: chemin de l'image.
+            number: numéro de l'image dans la séquence (None si non numérotée).
+
+        Returns:
+            dict | None: {"FilePath": motif "%0Nd", "StartIndex": number,
+            "EndIndex": number} pour ImportMedia ; None si le nom n'est pas numéroté.
+        """
         if number is None:
             return None
         folder, name = os.path.split(path)
@@ -443,8 +700,18 @@ class ShotBrowserUI(object):
         return {"FilePath": pattern, "StartIndex": number, "EndIndex": number}
 
     def importSingleImage(self, pool, path, number):
-        """Importe UNE image. Chemin simple d'abord (comme une image fixe) ;
-        si Resolve en a fait une séquence, retente avec un motif Start=End."""
+        """Importe une seule image dans le Media Pool : d'abord comme fichier simple ;
+        si Resolve en a fait une séquence de plusieurs frames, retente avec un motif
+        Start = End.
+
+        Args:
+            pool: Media Pool Resolve.
+            path: chemin de l'image.
+            number: numéro de l'image (utile au plan B).
+
+        Returns:
+            L'item du Media Pool, ou None si l'import échoue.
+        """
         imported = pool.ImportMedia([path])
         mp = imported[0] if imported else None
         if mp:
@@ -475,7 +742,14 @@ class ShotBrowserUI(object):
     ##########################
 
     def getMasterEntity(self, seq):
-        """Entité Prism du shot MASTER d'une séquence (None si absent)."""
+        """Entité Prism du shot "MASTER" d'une séquence.
+
+        Args:
+            seq: nom de la séquence.
+
+        Returns:
+            dict | None: l'entité, ou None si seq est vide ou s'il n'y a pas de MASTER.
+        """
         if not seq:
             return None
         for entity in self.core.entities.getShots(sequence=seq) or []:
@@ -484,7 +758,15 @@ class ShotBrowserUI(object):
         return None
     
     def getMasterItems(self, timeline, track):
-        """{séquence: [(clip, infos du marqueur)]} des masters déjà posés sur la piste."""
+        """Retrouve les masters déjà posés sur la piste Master, d'après leurs marqueurs.
+
+        Args:
+            timeline: timeline Resolve.
+            track: index de la piste Master.
+
+        Returns:
+            dict: {séquence: [(clip, infos du marqueur)]}.
+        """
         found = {}
         for item in timeline.GetItemListInTrack("video", track) or []:
             for marker in (item.GetMarkers() or {}).values():
@@ -498,7 +780,17 @@ class ShotBrowserUI(object):
         return found
     
     def ensureMasterTrack(self, timeline, lowestShotTrack):
-        """Renvoie l'index de la piste Master ; la crée juste sous la piste de shots la plus basse."""
+        """Renvoie la piste Master, en la créant juste sous la piste de shots la plus
+        basse si elle n'existe pas, et en la nommant MASTER_TRACK_NAME.
+
+        Args:
+            timeline: timeline Resolve.
+            lowestShotTrack: index de la piste de shots la plus basse.
+
+        Returns:
+            int | None: index de la piste Master ; None si la création échoue ou si
+            Resolve ignore l'index d'insertion.
+        """
         for t in range(1, timeline.GetTrackCount("video") + 1):
             if timeline.GetTrackName("video", t) == MASTER_TRACK_NAME:
                 return t
@@ -521,8 +813,17 @@ class ShotBrowserUI(object):
         return lowestShotTrack
     
     def syncMasterTrack(self, timeline, pool):
-        """Pour chaque séquence présente sur la timeline, pose (ou met à jour) son MASTER
-        au début de la séquence, sur la piste Master. Renvoie la liste des avertissements."""
+        """Pour chaque séquence présente sur la timeline, pose (ou met à jour) son
+        MASTER au début de la séquence, sur la piste Master. Un master déjà à jour
+        (même média, même position) est laissé tel quel.
+
+        Args:
+            timeline: timeline Resolve.
+            pool: Media Pool Resolve.
+
+        Returns:
+            list[str]: avertissements (vide si tout s'est bien passé).
+        """
         warnings = []
         shots = self.getTimelineShots(timeline)
         refs = [r for refList in shots.values() for r in refList]
@@ -584,7 +885,17 @@ class ShotBrowserUI(object):
 
     
     def addShotMarker(self, tlItem, shot, length=None):
-        """Métadonnées + marqueur JSON lu par getTimelineShots."""
+        """Écrit les métadonnées Scene / Shot sur le média et pose sur le clip un
+        marqueur (frame 0) dont le customData JSON est relu par getTimelineShots.
+        Marqueur bleu pour un shot, violet pour un master.
+
+        Args:
+            tlItem: clip de la timeline.
+            shot: dict {"name", "sequence", "shot_path", "taskLevel", "mediaPath"},
+                plus "isMaster": True pour un master.
+            length: durée réelle du shot en frames, mémorisée dans le marqueur
+                (utile quand le shot est posé en plusieurs blocs) ; ignoré pour un master.
+        """
         mp = tlItem.GetMediaPoolItem()
         if mp:
             mp.SetMetadata("Scene", shot["sequence"])
@@ -616,8 +927,16 @@ class ShotBrowserUI(object):
 
 
     def setHeldMarks(self, mp, n):
-        """Règle la plage In/Out du média sur n frames (0 -> n-1).
-        Renvoie le nombre de frames réellement acceptées (0 si Resolve refuse tout)."""
+        """Règle la plage In/Out d'un média sur n frames (de 0 à n-1). Si Resolve
+        refuse, réessaie avec la moitié, jusqu'à 1.
+
+        Args:
+            mp: item du Media Pool.
+            n: nombre de frames souhaité.
+
+        Returns:
+            int: nombre de frames réellement acceptées ; 0 si Resolve refuse tout.
+        """
         while n >= 1:
             try:
                 mp.ClearMarkInOut("all")
@@ -640,14 +959,35 @@ class ShotBrowserUI(object):
         return 0
     
     def clearHeldMarks(self, mp):
+        """Efface la plage In/Out d'un média (erreurs ignorées).
+
+        Args:
+            mp: item du Media Pool.
+        """
         try:
             mp.ClearMarkInOut("all")
         except Exception:
             pass
     
     def placeHeldShot(self, shot, files, pool, timeline, trackIndex, recordFrame, target):
-        """Image fixe / séquence à step -> blocs bout à bout totalisant exactement `target` frames.
-        Renvoie (1er clip ou None, avertissement ou None)."""
+        """Pose un shot "tenu" (image fixe, ou séquence à pas > 1) en blocs bout à
+        bout dont la somme vaut exactement `target` frames. En cas d'échec, les clips
+        ajoutés par ce shot sont supprimés.
+
+        Args:
+            shot: dict du shot (voir addShotMarker).
+            files: résultat de listSequenceFiles ; chaque image démarre un bloc.
+            pool: Media Pool Resolve.
+            timeline: timeline Resolve.
+            trackIndex: piste vidéo de destination.
+            recordFrame: frame de départ sur la timeline.
+            target: durée totale voulue, en frames.
+
+        Returns:
+            tuple: (premier clip posé ou None, avertissement ou None). L'avertissement
+            signale une erreur, un trou, un chevauchement ou une durée obtenue
+            différente de target.
+        """
         recordFrame, target = int(recordFrame), int(target)
         shotEnd = recordFrame + target
         name = shot["shot_path"]
@@ -729,7 +1069,15 @@ class ShotBrowserUI(object):
         return self.getTrackItemAt(timeline, trackIndex, recordFrame), warning
 
     def findCounterTrack(self, timeline):
-        """Index de la piste vidéo qui porte le clip Fusion des compteurs (None si absent)."""
+        """Piste vidéo qui porte le clip Fusion des compteurs (celui dont une comp
+        contient le node COUNTERS[0], "SqName").
+
+        Args:
+            timeline: timeline Resolve.
+
+        Returns:
+            int | None: index de la piste, ou None si le clip est introuvable.
+        """
         for t in range(1, timeline.GetTrackCount("video") + 1):
             for item in timeline.GetItemListInTrack("video", t) or []:
                 for idx in range(1, (item.GetFusionCompCount() or 0) + 1):
@@ -740,7 +1088,15 @@ class ShotBrowserUI(object):
     
     def addShotsTrack(self, timeline):
         """Crée la piste des shots juste SOUS la piste des compteurs Fusion.
-        Renvoie l'index de la nouvelle piste, ou None si la création échoue."""
+        Si l'insertion à un index est impossible, ajoute la piste tout en haut ; sans
+        clip de compteurs, ajoute simplement une piste.
+
+        Args:
+            timeline: timeline Resolve.
+
+        Returns:
+            int | None: index de la nouvelle piste, ou None si la création échoue.
+        """
         overlayTrack = self.findCounterTrack(timeline)
         before = timeline.GetTrackCount("video")
     
@@ -766,7 +1122,17 @@ class ShotBrowserUI(object):
 
 
     def populateTree(self):
-        """Remplit l'arbre, renvoie le nombre de shots affichés."""
+        """Remplit l'arbre des shots, groupés par séquence, selon self.action.
+
+        En "add", tous les shots Prism sont listés (cochés par défaut). En "bake" et
+        "modify", seuls les shots déjà sur la timeline sont listés, avec une liste
+        déroulante des versions ; "bake" ne garde que ceux dont une version plus
+        avancée existe ; "modify" laisse tout décoché et coche un shot dès que sa
+        version change.
+
+        Returns:
+            int: nombre de shots affichés.
+        """
         self.tw_shots.clear()
         shots = self.core.entities.getShots() or []
 
@@ -851,10 +1217,16 @@ class ShotBrowserUI(object):
     
     # ------------------------------------------------------------------ #
     def getTimelineShots(self, timeline):
-        """
-        Parcourt les pistes vidéo et renvoie
-        {shot_path: [{"item", "track", "start", "duration", "taskLevel", "mediaPath"}, ...]}
-        d'après le marqueur (customData JSON) posé à l'ajout.
+        """Parcourt les pistes vidéo et relit le marqueur (customData JSON) posé par
+        addShotMarker sur chaque clip de shot.
+
+        Args:
+            timeline: timeline Resolve.
+
+        Returns:
+            dict: {shot_path: [{"item": clip, "track": index de piste, "start":
+            frame de début, "duration": durée en frames (celle du marqueur si
+            présente), "taskLevel": str, "mediaPath": str}]}.
         """
         found = {}
         for t in range(1, timeline.GetTrackCount("video") + 1):
@@ -884,8 +1256,24 @@ class ShotBrowserUI(object):
 
     # ------------------------------------------------------------------ #
     def placeShot(self, shot, pool, timeline, trackIndex, recordFrame):
-        """Importe et pose un shot. Renvoie (tlItem ou None, avertissement ou None).
-        self.lastPlacedLength = durée totale occupée sur la timeline par le shot."""
+        """Importe et pose un shot sur la timeline, puis y ajoute son marqueur.
+
+        Deux chemins : shot "tenu" (image fixe ou séquence à pas > 1) -> placeHeldShot
+        avec la durée du shot dans Prism ; sinon séquence ou vidéo posée telle quelle
+        (plusieurs essais de plage si la durée obtenue est trop courte). Met à jour
+        self.lastPlacedLength (durée occupée sur la timeline).
+
+        Args:
+            shot: dict {"name", "sequence", "shot_path", "taskLevel", "mediaPath"},
+                plus "isMaster" pour un master.
+            pool: Media Pool Resolve.
+            timeline: timeline Resolve.
+            trackIndex: piste vidéo de destination.
+            recordFrame: frame de départ sur la timeline.
+
+        Returns:
+            tuple: (clip posé ou None, avertissement ou None).
+        """
         self.lastPlacedLength = 0
     
         path = shot.get("mediaPath")
@@ -997,6 +1385,12 @@ class ShotBrowserUI(object):
 
     # ------------------------------------------------------------------ #
     def getTimelineContext(self):
+        """Récupère les objets Resolve nécessaires aux opérations sur la timeline.
+        Affiche un popup si Resolve est injoignable ou s'il n'y a pas de timeline active.
+
+        Returns:
+            tuple | None: (projet, timeline, Media Pool), ou None en cas de problème.
+        """
         resolve = self.getResolve()
         if not resolve:
             self.core.popup("Impossible de joindre DaVinci Resolve.")
@@ -1009,6 +1403,16 @@ class ShotBrowserUI(object):
         return project, timeline, project.GetMediaPool()
 
     def addShotsToTimeline(self, shots):
+        """Mode "add" : crée une piste "ShotBrowser" sous les compteurs et y pose les
+        shots les uns après les autres, à partir du curseur de lecture. Met ensuite à
+        jour la piste Master et les compteurs Fusion, puis affiche les avertissements.
+
+        Args:
+            shots: liste de dicts de shots, voir placeShot.
+
+        Returns:
+            list: clips posés ; [] si Resolve ou la piste est indisponible.
+        """
         ctx = self.getTimelineContext()
         if not ctx:
             return []
@@ -1048,6 +1452,18 @@ class ShotBrowserUI(object):
         return tlItems
 
     def bakeShotsOnTimeline(self, shots):
+        """Modes "bake" / "modify" : remplace chaque occurrence des shots donnés sur
+        la timeline par le nouveau média, à la même position. Si la pose échoue,
+        l'ancien média est remis. Met ensuite à jour la piste Master et les
+        compteurs, puis affiche un popup (nombre de clips mis à jour et avertissements,
+        dont les changements de durée).
+
+        Args:
+            shots: liste de dicts de shots avec le nouveau "taskLevel" / "mediaPath".
+
+        Returns:
+            list: nouveaux clips posés.
+        """
         ctx = self.getTimelineContext()
         if not ctx:
             return []
@@ -1101,16 +1517,35 @@ class ShotBrowserUI(object):
 
     # ------------------------------------------------------------------ #
     def setAllChecked(self, state):
+        """Coche ou décoche toutes les séquences visibles (donc leurs shots).
+
+        Args:
+            state: Qt.Checked ou Qt.Unchecked.
+        """
         for i in range(self.tw_shots.topLevelItemCount()):
             seqItem = self.tw_shots.topLevelItem(i)
             if not seqItem.isHidden():
                 seqItem.setCheckState(0, state)
 
     def isMaster(self, item):
+        """Indique si un item de l'arbre est un shot MASTER.
+
+        Args:
+            item: QTreeWidgetItem dont la colonne 0 porte l'entité Prism (UserRole).
+
+        Returns:
+            bool: True si le nom du shot est "MASTER" (insensible à la casse).
+        """
         entity = item.data(0, Qt.UserRole) or {}
         return str(entity.get("shot", "")).upper() == "MASTER"
 
     def filterTree(self, *args):
+        """Affiche ou masque séquences et shots selon le texte de recherche et la
+        case "Afficher les MASTER" ; une séquence sans shot visible est masquée.
+
+        Args:
+            *args: arguments du signal Qt (texte, état de la case), ignorés.
+        """
         text = self.e_search.text().lower()
         showMasters = self.cb_masters.isChecked()
         for i in range(self.tw_shots.topLevelItemCount()):
@@ -1127,12 +1562,21 @@ class ShotBrowserUI(object):
 
     # ------------------------------------------------------------------ #
     def getShotMedia(self, entity):
-        """(taskLevel, chemin du 1er fichier de la dernière version) du niveau le plus avancé."""
+        """Média à poser pour un shot : première image de la dernière version du
+        niveau le plus avancé parmi getActiveTaskLevels().
+
+        Args:
+            entity: entité Prism du shot.
+
+        Returns:
+            tuple[str, str | None]: (niveau, chemin du premier fichier) ;
+            (NO_LEVEL, None) si le dossier du shot ou le média est introuvable.
+        """
         shotFolder = self.getShotFolder(entity)
         if not shotFolder or not os.path.isdir(shotFolder):
             return NO_LEVEL, None
 
-        for label, patterns in reversed(TASK_LEVELS):
+        for label, patterns in reversed(self.getActiveTaskLevels()):
             files = []
             for pattern in patterns:
                 files += glob.glob(os.path.join(shotFolder, *pattern.split("/")))
@@ -1147,6 +1591,12 @@ class ShotBrowserUI(object):
 
     def getResolve(self):
         # Adapte si ton plugin expose déjà l'objet resolve
+        """Objet racine de l'API de script de DaVinci Resolve.
+
+        Returns:
+            L'objet Resolve (via DaVinciResolveScript, sinon la variable `resolve` de
+            __main__), ou None.
+        """
         try:
             import DaVinciResolveScript as dvr
             return dvr.scriptapp("Resolve")
@@ -1154,15 +1604,50 @@ class ShotBrowserUI(object):
             import __main__
             return getattr(__main__, "resolve", None)
 
+    def getResolveProjectName(self):
+        """Nom du projet Resolve courant.
+
+        Returns:
+            str: le nom, ou "" si Resolve ou le projet est injoignable.
+        """
+        try:
+            resolve = self.getResolve()
+            project = resolve.GetProjectManager().GetCurrentProject() if resolve else None
+            return project.GetName() if project else ""
+        except Exception:
+            return ""
+
+    def getActiveTaskLevels(self):
+        """Niveaux d'avancement à chercher sur disque. Si le nom du projet Resolve
+        contient LAYOUT_PROJECT_KEYWORD ("layout"), seuls les niveaux de
+        LAYOUT_PROJECT_LEVELS (Layout et Anim) sont gardés ; sinon, tous.
+
+        Returns:
+            list: sous-liste de TASK_LEVELS, de la forme [(label, [motifs glob])].
+        """
+        name = self.getResolveProjectName()
+        if LAYOUT_PROJECT_KEYWORD in name.lower():
+            return [lvl for lvl in TASK_LEVELS if lvl[0] in LAYOUT_PROJECT_LEVELS]
+        return TASK_LEVELS
+
     def getShotVersions(self, entity):
-        """Toutes les versions existantes du shot, de la plus avancée à la plus ancienne.
-        [{"label": niveau, "version": n, "path": 1er fichier, "rank": (niveau, version)}]"""
+        """Toutes les versions existantes d'un shot sur disque, parmi les niveaux de
+        getActiveTaskLevels().
+
+        Args:
+            entity: entité Prism du shot.
+
+        Returns:
+            list[dict]: [{"label": niveau, "version": numéro, "path": premier fichier,
+            "rank": rang comparable}], de la plus avancée à la plus ancienne ; []
+            si le dossier du shot n'existe pas.
+        """
         shotFolder = self.getShotFolder(entity)
         if not shotFolder or not os.path.isdir(shotFolder):
             return []
 
         versions = []
-        for label, patterns in TASK_LEVELS:
+        for label, patterns in self.getActiveTaskLevels():
             byDir = {}
             for pattern in patterns:
                 for f in glob.glob(os.path.join(shotFolder, *pattern.split("/"))):
@@ -1183,10 +1668,17 @@ class ShotBrowserUI(object):
     # ------------------------------------------------------------------ #
 
     def buildImportItem(self, path):
-        """
-        Renvoie (élément pour ImportMedia, nb de frames attendu).
-        - fichier unique (mov, etc.)  -> (path, None)
-        - séquence name.0001.exr      -> ({"FilePath": ".../name.%04d.exr", "StartIndex": 1, "EndIndex": 100}, 100)
+        """Prépare l'élément à donner à ImportMedia pour un média.
+
+        Args:
+            path: chemin d'un fichier ; si son nom est "<nom>.<numéro>.<ext>" et que
+                le dossier contient au moins 2 images de la séquence, la séquence
+                entière est importée.
+
+        Returns:
+            tuple: (élément, nombre de frames attendu). Fichier unique ou vidéo ->
+            (path, None). Séquence -> ({"FilePath": motif "%0Nd", "StartIndex",
+            "EndIndex"}, nombre d'images).
         """
         folder, name = os.path.split(path)
         m = re.match(r"^(?P<pre>.+\.)(?P<frame>\d+)(?P<ext>\.[A-Za-z0-9]+)$", name)
@@ -1209,7 +1701,17 @@ class ShotBrowserUI(object):
         return item, frames[-1] - frames[0] + 1
 
     def getCounterRanges(self, timeline, origin):
-        """Plages (frames relatives au début du clip comp) par plan et par séquence."""
+        """Plages des shots sur la timeline, relatives au clip des compteurs.
+
+        Args:
+            timeline: timeline Resolve.
+            origin: première frame du clip Fusion des compteurs ; sert de zéro.
+
+        Returns:
+            tuple: (perShot, perSeq). perShot : liste de dicts {"shot", "seq",
+            "start", "end", "taskLevel", "mediaPath"} triée par début. perSeq :
+            {séquence: (début, fin)} couvrant tous ses shots.
+        """
         shots = self.getTimelineShots(timeline)
         perShot, perSeq = [], {}
         for shotPath, refs in shots.items():
@@ -1225,7 +1727,14 @@ class ShotBrowserUI(object):
         return perShot, perSeq
     
     def findCounterComp(self, timeline):
-        """Clip portant la comp qui contient les nodes de compteur."""
+        """Trouve le clip et la composition Fusion qui contiennent les nodes de compteur.
+
+        Args:
+            timeline: timeline Resolve.
+
+        Returns:
+            tuple: (clip, composition), ou (None, None) s'ils sont introuvables.
+        """
         for t in range(1, timeline.GetTrackCount("video") + 1):
             for item in timeline.GetItemListInTrack("video", t) or []:
                 for idx in range(1, (item.GetFusionCompCount() or 0) + 1):
@@ -1234,33 +1743,16 @@ class ShotBrowserUI(object):
                         return item, comp
         return None, None
 
-    def buildCounterRows(self, timeline, overlay, scope):
-        perShot, perSeq = self.getCounterRanges(timeline, overlay.GetStart())
-        
-        # Récupérer les infos détaillées depuis getTimelineShots pour avoir le taskLevel
-        timelineShots = self.getTimelineShots(timeline)
-        
-        rows = []
-        for r in perShot:
-            shotPath = r["shot"]
-            if scope == "seq":
-                ref, label = perSeq[r["seq"]][0], sqLabel(r["seq"])
-            else:
-                # Mode plan (shot)
-                ref = r["start"]
-                # Déterminer quel label passer selon le nœud traité (si on est sur TaskLevel ou ShName)
-                # On peut récupérer le taskLevel stocké dans la timeline
-                t_level = NO_LEVEL
-                if shotPath in timelineShots and timelineShots[shotPath]:
-                    t_level = timelineShots[shotPath][0].get("taskLevel", NO_LEVEL)
-                
-                # Astuce : on gère dynamiquement selon le besoin, ou on enrichit perShot
-                label = shLabel(shotPath) # par défaut pour ShName
-            
-            rows.append((r["start"], r["end"], ref, label))
-        return rows
-
     def updateFrameCounters(self):
+        """Met à jour tous les compteurs Fusion de la timeline : pose sur chaque node
+        de COUNTERS une expression qui affiche, selon la frame, le nom de la séquence
+        ou du shot, le compteur d'images, le niveau, la date du fichier ou le nom du
+        film, puis recolore le fond du niveau (updateTaskLevelColors). Les plages
+        du master sont ajoutées au niveau d'avancement MASTER_ONLY_LEVEL.
+
+        Ne fait rien (message dans la console) si la comp des compteurs est
+        introuvable.
+        """
         ctx = self.getTimelineContext()
         if not ctx:
             return
@@ -1310,6 +1802,13 @@ class ShotBrowserUI(object):
         self.updateTaskLevelColors(comp, perShot, masterRanges)
 
     def printToolInputs(self, toolName):
+        """Outil de debug : affiche dans la console l'identifiant, le nom et le type
+        de chaque input d'un node de la comp des compteurs (utile pour trouver les
+        INPS_ID à passer à getInput).
+
+        Args:
+            toolName: nom du node Fusion (ex. "Bg_TaskLevel").
+        """
         overlay, comp = self.findCounterComp(self.getTimelineContext()[1])
         print("[ShotBrowser] comp trouvée : %s | clip : %s" % (bool(comp), overlay.GetName() if overlay else None))
         tool = comp.FindTool(toolName)
@@ -1318,7 +1817,16 @@ class ShotBrowserUI(object):
             print(attrs.get("INPS_ID"), "|", attrs.get("INPS_Name"), "|", attrs.get("INPS_DataType"))
 
     def getShotLength(self, sequence, shotName):
-        """Durée en frames d'après la plage du shot dans Prism ([début, fin] inclus)."""
+        """Durée d'un shot d'après sa plage d'images dans Prism.
+
+        Args:
+            sequence: nom de la séquence.
+            shotName: nom du shot.
+
+        Returns:
+            int | None: fin - début + 1 (plage inclusive) ; None si la plage est
+            inconnue.
+        """
         if not sequence or not shotName:
             return None
     
@@ -1344,6 +1852,16 @@ class ShotBrowserUI(object):
 
     # ------------------------------------------------------------------ #
     def onValidate(self):
+        """Bouton de validation : collecte les shots cochés et visibles, ferme la
+        fenêtre puis lance la pose (addShotsToTimeline) ou la mise à jour
+        (bakeShotsOnTimeline). En "bake" / "modify", un shot dont la version choisie
+        est celle déjà posée est ignoré ; sans changement, affiche "Aucune
+        modification à appliquer.".
+
+        Stocke la liste des shots dans self.toImportShot (renvoyée par
+        onShotBrowserTriggered), chaque élément étant {"name", "sequence",
+        "shot_path", "taskLevel", "mediaPath"}.
+        """
         result = []
         for i in range(self.tw_shots.topLevelItemCount()):
             seqItem = self.tw_shots.topLevelItem(i)
@@ -1388,17 +1906,18 @@ class ShotBrowserUI(object):
         else:
             self.addShotsToTimeline(result)
 
-    def onRenderTriggered(self):
-        project = self.getResolve().GetProjectManager().GetCurrentProject()
-
-        timelineName = project.GetCurrentTimeline().GetName()
-        folder = os.path.join(self.core.projectPath, "04_Editing", "Renders", timelineName)
-        name = "%s_%s_v0001" % (getFilmName(self.core), timelineName)
-        self.prepareDeliver(folder, name)
-
     def prepareDeliver(self, folder, name, openDeliverPage=True):
-        """Remplit 'Location' (TargetDir) et 'File name' (CustomName) du Deliver.
-        Renvoie True si Resolve a accepté les réglages."""
+        """Remplit les champs "Location" et "File name" de la page Deliver.
+
+        Args:
+            folder: dossier de sortie (TargetDir).
+            name: nom de fichier sans extension (CustomName).
+            openDeliverPage: True pour ouvrir la page Deliver ensuite.
+
+        Returns:
+            bool: True si Resolve a accepté les réglages ; False sinon (projet
+            injoignable ou réglages refusés).
+        """
         resolve = self.getResolve()
         project = resolve.GetProjectManager().GetCurrentProject() if resolve else None
         if not project:
@@ -1416,3 +1935,56 @@ class ShotBrowserUI(object):
         return bool(ok)
 
     
+
+
+    # ------------------------------------------------------------------ #
+    def resetFrameCounters(self):
+        """Réinitialise les compteurs Fusion : retire les expressions posées par le
+        Shot Browser, remet les textes de COUNTER_DEFAULTS et la couleur de fond
+        NO_LEVEL_COLOR. Les nodes restent en place, updateFrameCounters pourra les
+        piloter de nouveau.
+
+        Ne fait rien (message dans la console) si la comp des compteurs est
+        introuvable.
+        """
+        ctx = self.getTimelineContext()
+        if not ctx:
+            return
+        project, timeline, pool = ctx
+
+        overlay, comp = self.findCounterComp(timeline)
+        if not comp:
+            print("[ShotBrowser] comp des compteurs introuvable")
+            return
+
+        def clearExpression(inp):
+            try:
+                inp.SetExpression(None)
+            except Exception:
+                inp.SetExpression("")      # repli si None est refusé
+
+        comp.Lock()
+        try:
+            # Textes
+            for nodeName, mode, scope in COUNTERS:
+                tool = comp.FindTool(nodeName)
+                inp = getInput(tool, "StyledText") if tool else None
+                if not inp:
+                    print("[ShotBrowser] reset : node/input '%s' introuvable" % nodeName)
+                    continue
+                clearExpression(inp)
+                tool.SetInput("StyledText", COUNTER_DEFAULTS.get(nodeName, ""), comp.CurrentTime)
+
+            # Couleur du fond TaskLevel
+            bg = comp.FindTool(TASK_BG_NODE)
+            if bg:
+                for inputId, idx in BG_CHANNELS:
+                    inp = getInput(bg, inputId)
+                    if not inp:
+                        continue
+                    clearExpression(inp)
+                    bg.SetInput(inputId, NO_LEVEL_COLOR[idx], comp.CurrentTime)
+        finally:
+            comp.Unlock()
+
+        print("[ShotBrowser] compteurs réinitialisés")
