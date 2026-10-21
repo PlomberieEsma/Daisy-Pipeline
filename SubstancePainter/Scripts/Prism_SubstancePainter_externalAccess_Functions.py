@@ -11,7 +11,7 @@ from qtpy.QtWidgets import *
 from PrismUtils.Decorators import err_catcher_plugin as err_catcher
 
 MESH_EXTENSIONS = (".obj", ".fbx", ".abc", ".usd", ".usda", ".usdc")
-MOD_FOLDER_PATTERN = re.compile(r"^(Mod[HL]|geo)(_var\d+)?$", re.IGNORECASE)
+MOD_FOLDER_PATTERN = re.compile(r"^(Mod[HL]|geo|Sculpt)(_var\d+)?$", re.IGNORECASE)
 
 class Prism_SubstancePainter_externalAccess_Functions(object):
     def __init__(self, core, plugin):
