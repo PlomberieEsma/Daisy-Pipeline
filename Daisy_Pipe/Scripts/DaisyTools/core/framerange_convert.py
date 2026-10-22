@@ -26,7 +26,10 @@
 
 #import modules
 import json
-from Scripts.DaisyTools.core.core import get_core
+from DaisyTools.core.dcc.launcher import get_dcc
+from DaisyTools.core.core import get_core
+from DaisyTools.core import core
+# from Scripts.DaisyTools.core.core import get_core
 
 print("execute framerange_convert.py\n\n")
 
@@ -38,19 +41,29 @@ class Error(Exception):
 #=========================================================== SET VARIABLES ===============================================================
 ##########################################################################################################################################
 
-core = get_core()
-assert core is not None
+# core = get_core()
+# assert core is not None
 
-project_path = core.sequencePath.replace("\\", "/")
-project_path = project_path.removesuffix("/03_Production/Shots")
+# project_path = core.sequencePath.replace("\\", "/")
+# project_path = project_path.removesuffix("/03_Production/Shots")
 
 ##########################################################################################################################################
 #============================================================ SET CLASSES ================================================================
 ##########################################################################################################################################
 
 class FramerangeFile():
-    def __init__(self):
-        self.file_path = f"{project_path}/00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/lib/framerange.json"
+    def __init__(self, core = core):
+
+        if get_dcc() == 'houdini' or get_dcc() == 'Maya':
+            self.core = get_core()
+            assert self.core is not None
+        else:
+            self.core = core
+            
+        self.project_path = self.core.sequencePath.replace("\\", "/")
+        self.project_path = self.project_path.removesuffix("/03_Production/Shots")
+
+        self.file_path = f"{self.project_path}/00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/lib/framerange.json"
         with open(self.file_path, mode="r", encoding="utf-8") as read_file:
             try:
                 self.file = json.load(read_file)

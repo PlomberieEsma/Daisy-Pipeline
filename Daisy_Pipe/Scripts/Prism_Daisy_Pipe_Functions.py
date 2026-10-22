@@ -31,11 +31,12 @@ from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 from functools import partial
 
-import os, sys
+import os, sys, shutil
 
 from DaisyTools.core.command_launcher import Command_launcher
 from DaisyTools.core.asset_browser import AssetBrowserUI
 from DaisyTools.ui.maya_state_manager import DaisyUsdExportClass
+from DaisyTools.core.framerange_convert import FramerangeFile
 
 from PrismUtils.Decorators import err_catcher_plugin as err_catcher
 
@@ -63,6 +64,7 @@ class Prism_Daisy_Pipe_Functions(object):
         self.core.registerCallback("openPBAssetContextMenu", self.openPBAssetContextMenu, plugin=self)
         self.core.registerCallback("openPBAssetTaskContextMenu", self.openPBAssetTaskContextMenu, plugin=self)
         self.core.registerCallback("productSelectorContextMenuRequested", self.productSelectorContextMenu, plugin=self)
+        self.core.registerCallback("onShotCreated", self.createShot, plugin=self)
 
         if self.isMaya():
             self.core.registerCallback("onStateManagerOpen", self.onStateManagerOpen, plugin=self)
@@ -487,3 +489,40 @@ class Prism_Daisy_Pipe_Functions(object):
             if hasattr(state.ui, widget):
                 getattr(state.ui, widget).setVisible(False)
         maya.dlg_export.show()
+
+    ##############################################################################################################
+    ##################################     SET FRAMERANGE ON SHOT CREATION     ###################################
+    ##############################################################################################################
+
+    def createShot(self, *args):
+
+        type = args[1]["type"]
+        sequence = args[1]["sequence"]
+        shot = args[1]["shot"]
+        framerange = self.core.entities.getShotRange(args[1])
+        new_shot = shot
+
+        if type != "shot":
+            return
+        
+        # create MASTER if it's the first shot created in the sequence
+        sequence_shots = self.core.entities.getShotsFromSequence(sequence)
+        if len(sequence_shots) == 1:
+            # create MASTER
+            entity={"type": "shot", "sequence": str(sequence), "shot": str("MASTER")}
+            self.core.entities.createShot(
+                entity = entity,
+                frameRange = framerange
+            )
+
+            # delete shot created
+            path_to_delete = args[1]["project_path"] + "/03_Production/Shots/" + args[1]["sequence"] + "/" + args[1]["shot"]
+            path_to_delete = path_to_delete.replace("\\", "/")
+            shutil.rmtree(path_to_delete)
+            new_shot = "MASTER"
+
+        # add framerange to framerange.json
+        shot = new_shot
+        if shot != "MASTER":
+            framerangefile = FramerangeFile(self.core)
+            new_shot = framerangefile.set_shot(sequence, shot, framerange)
