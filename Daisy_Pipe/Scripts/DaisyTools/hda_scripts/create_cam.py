@@ -26,6 +26,7 @@
 
 #import modules
 import hou # type: ignore
+import json
 from typing import Any
 from Scripts.DaisyTools.core.core import get_core
 from Scripts.DaisyTools.core.get_entity_info import get_entity_info
@@ -79,18 +80,33 @@ def create_cam(input_node: Any, input_network_box: Any, digit_number: int) -> An
         for camera in cameras_in_scene:
             cam_name = camera.name()
             cam_name_first_part = cam_name[:11]
-            cam_name_second_part = cam_name[11+digit_number:-digit_number]
+            # cam_name_second_part = cam_name[11+digit_number:-digit_number]
+            print(f"{cam_name = }")
+            print(f"{cam_name_first_part = }")
 
-            if cam_name_first_part == "DaisyCam_sq" and cam_name_second_part == "_sh":
+            # if cam_name_first_part == "DaisyCam_sq" and cam_name_second_part == "_sh":
+            if cam_name_first_part == "DaisyCam_sq":
+                print("daisy cam")
+                # shot_number = int(cam_name[-digit_number:])
                 shot_number = int(cam_name[-digit_number:])
                 if shot_number > last_cam_shot_number:
+                    print("shot number stronger")
                     last_cam_shot_number = shot_number
                     last_cam_object = camera
 
-        if last_cam_shot_number + 10 < 100:
-            new_shot_name = f"sh0{last_cam_shot_number+10}"
+                print(f"{shot_number}")
+                print(f"{last_cam_shot_number}")
+
+        if last_cam_shot_number + 10 < 10^(digit_number-1):
+            print("choix1")
+            print(f"sh{last_cam_shot_number+10:0{digit_number}d}")
+            # new_shot_name = f"sh0{last_cam_shot_number+10}"
+            new_shot_name = f"sh{last_cam_shot_number+10:0{digit_number}d}"
         else:
-            new_shot_name = f"sh{last_cam_shot_number+10}"
+            print("choix2")
+            print(f"sh{last_cam_shot_number+10:0{digit_number}d}")
+            # new_shot_name = f"sh{last_cam_shot_number+10}"
+            new_shot_name = f"sh{last_cam_shot_number+10:0{digit_number}d}"
 
     
     # create the cam with the new shot name

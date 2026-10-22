@@ -76,7 +76,7 @@ class PaddedSpinBox(qt.QSpinBox):
     #                                                                                   #
     # return the object                                                                 #
     #-----------------------------------------------------------------------------------#
-    def __init__(self, parent=None, digits=3):
+    def __init__(self, parent=None, digits=digit_number):
         super().__init__(parent)
         self._digits = digits
 
