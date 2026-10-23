@@ -43,6 +43,10 @@ L'utilisation du plugin est très simple et très similaire aux autres logiciels
 ### Zbrush
 Dans Zbrush vous pouvez accéder au plugin en allant dans "**Zplugin/Prism/FloatingWindow**". Une fenêtre s'ouvrira avec différentes options.
 
+><img src="src/warning_red.png" width=50em><br>
+>Si vous avez une **popup d'erreur** qui s'affiche quand vous clickez sur "FloatingWindow". C'est un problème qui vient de Prism. Pour le régler, **allez dans le HUB de Prism (la fenêtre pour gérer les plugins)** et **désinstallez le plugin Zbrush** (en clickant simplement sur "uninstall").<br>
+>Malheureusement ***c'est un problème qui risque d'être récurent***, nous nous excusons pour la gène occasionnée.
+
 ![zbrush plugin window](src/zbrush/zbrush_plugin_window.png)
 
 - Cases **.ztl** et **.zpr** : permet de choisir quel extension de fichier Zbrush vous voulez
