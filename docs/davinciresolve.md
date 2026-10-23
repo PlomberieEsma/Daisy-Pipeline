@@ -8,8 +8,6 @@ Ce plugin permet aux utilisateurs de simplifier les imports de shots depuis le p
 
 Ce plugin comporte 2 presets pour le format **SCOPE (2048 x 858)** et **FLAT (1998 x 1080)**
 
-Cette documentation est destinée à des utilisateurs maîtrisant déjà l'utilisation de base du logiciel Adobe Substance 3D Painter. Voici la [documentation officielle](https://experienceleague.adobe.com/en/docs/substance-3d-painter/using/home) de ce logiciel si nécessaire.
-
 ## Sommaire
   - [Installation et développement](DaVinciResolve/development.md)
   - [Utilisation](DaVinciResolve/utilisation.md)
