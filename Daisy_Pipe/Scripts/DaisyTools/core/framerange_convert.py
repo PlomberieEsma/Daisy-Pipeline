@@ -54,7 +54,7 @@ class Error(Exception):
 class FramerangeFile():
     def __init__(self, core = core):
 
-        if get_dcc() == 'houdini' or get_dcc() == 'Maya':
+        if get_dcc() == 'houdini' or get_dcc() == 'maya':
             self.core = get_core()
             assert self.core is not None
         else:
