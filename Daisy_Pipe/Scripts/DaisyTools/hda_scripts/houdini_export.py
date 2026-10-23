@@ -2,7 +2,7 @@ import hou
 import os
 import re
 from pxr import Sdf, Vt
-from Scripts.DaisyTools.core.core import get_core, houdini_relative_path, USD_FILE_FORMAT, create_master, create_master_clips
+from Scripts.DaisyTools.core.core import get_core, houdini_relative_path, USD_FILE_FORMAT, create_master, create_master_clips, USD_CAM_KEYFRAMES
 from Scripts.DaisyTools.core.get_entity_info import get_entity_info
 from Scripts.DaisyTools.core.version_cleanup import check_version_limit_for_output
 from Scripts.DaisyTools.core.dcc.launcher import get_main_window
@@ -12,7 +12,6 @@ FILE_PER_FRAME = "fileperframe"
 FRAME_TOKEN = ".$F4"
 
 CAMERA_NODE_NAME = re.compile(r"^DaisyCam_sq\d+_sh\d+_camShape$")
-CAMERA_KEYFRAMES = "daisy:cameraKeyframes"
 
 NEXT_VERSION_PARM = "versions"
 VERSION_NUM_PARM = "selectedversion"
@@ -271,7 +270,7 @@ def write_camera_keyframes(file_path, keyframes):
         if spec.typeName != "Camera":
             return
         custom_data = dict(spec.customData)
-        custom_data[CAMERA_KEYFRAMES] = Vt.IntArray(keyframes[path.name])
+        custom_data[USD_CAM_KEYFRAMES] = Vt.IntArray(keyframes[path.name])
         spec.SetInfo("customData", custom_data)
 
     layer.Traverse(Sdf.Path.absoluteRootPath, visit)

@@ -38,6 +38,7 @@ with open(os.path.join(_pkg_root, "lib", "config.json"), "r", encoding="utf-8") 
     daisyConfig = json.load(f)
 
 USD_FILE_FORMAT = daisyConfig["global"]["usd_file_format"]
+USD_CAM_KEYFRAMES = "daisy:cameraKeyframes"
 
 
 def get_core():

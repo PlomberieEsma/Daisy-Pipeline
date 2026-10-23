@@ -17,7 +17,7 @@
 import os
 import tempfile
 
-from Scripts.DaisyTools.core.core import usdExportParams
+from Scripts.DaisyTools.core.core import usdExportParams, USD_CAM_KEYFRAMES
 
 LAYOUT_PRODUCT = "layout"
 MASTER_SHOT = "MASTER"
@@ -48,6 +48,7 @@ RIG_TASK_PURPOSES = {
 }
 DEFAULT_PURPOSE = "render"
 
+CAM_KEY_TOLERANCE = 1e-6
 
 # ------------------------------------------------------------------------------ #
 #                                 Maya hierarchy                                 #
@@ -255,6 +256,50 @@ def get_cameras_to_export(nodes=None):
     return cameras
 
 
+def get_rig_key_frames(rig):
+    # Frames of every animation curve driving the DaisyCam rig: the animator may key
+    # any controller of the rig (global, move, pan, tilt, gimbal...), not only the
+    # three the import keys, so the whole hierarchy is scanned
+    # rig = long name of the DaisyCam rig top node
+    # return the sorted list of int frames, empty if the rig has no key
+
+    import maya.cmds as cmds
+
+    nodes = [rig] + (cmds.listRelatives(rig, allDescendents=True, fullPath=True) or [])
+    curves = cmds.listConnections(nodes, type="animCurve", source=True, destination=False) or []
+
+    # Only time driven curves: set driven keys (animCurveUU/UL/UA) have an input
+    # that is not a frame
+    time_curves = [c for c in set(curves) if cmds.nodeType(c).startswith("animCurveT")]
+    if not time_curves:
+        # Never query keyframe with an empty list: Maya would fall back on the selection
+        return []
+
+    times = cmds.keyframe(time_curves, query=True, timeChange=True) or []
+    return sorted({int(round(t)) for t in times})
+
+def get_camera_state(transform, shape, frame):
+    # Transform and lens values of a Maya camera at a frame, as a tuple of floats
+    # Reuses get_camera_matrix and get_camera_lens: the state is what actually lands
+    # in the USD, so a key that does not change it is useless
+
+    matrix = get_camera_matrix(transform, frame)
+    matrix_values = tuple(matrix[row][col] for row in range(4) for col in range(4))
+    lens=get_camera_lens(shape, frame)
+    lens_value = tuple(lens[key] for key in sorted(lens))
+    return matrix_values + lens_value
+
+def values_differ(a, b):
+    # True if at least one value differs by more than the tolerance
+    return any(abs(x - y) > CAM_KEY_TOLERANCE for x, y in zip(a, b))
+
+def camera_moves_at(transform, shape, frame):
+    # A key only matters if the camera state differs one frame before or after it
+    # Mirror of _camera_moves_at in hda_scripts/houdini_export.py
+    state = get_camera_state(transform, shape, frame)
+    return any(values_differ(state, get_camera_state(transform, shape, other))
+               for other in (frame - 1, frame + 1))
+
 def get_shot_anim_nodes(core):
     #-------------------------------------------------------------------------#
     # Nodes to fill the Maya Objects list of the export state with: the geo   #
@@ -272,7 +317,6 @@ def get_shot_anim_nodes(core):
         # The DaisyCam rig has its own geo group: DaisyCam_<seq>_<shot>_geo
         nodes.append(find_geo_group(rig, rig.split("|")[-1].split(":")[-1]) or rig)
     return nodes
-
 
 # ------------------------------------------------------------------------------ #
 #                                    Assembly                                    #
