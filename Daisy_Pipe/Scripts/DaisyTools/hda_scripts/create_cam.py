@@ -27,6 +27,7 @@
 #import modules
 import hou # type: ignore
 import json
+from fractions import Fraction
 from typing import Any
 from Scripts.DaisyTools.core.core import get_core
 from Scripts.DaisyTools.core.get_entity_info import get_entity_info
@@ -53,6 +54,12 @@ project_path = project_path.removesuffix("/03_Production/Shots")
 
 sequence_name = shot_entity["sequence"]
 shot_name = shot_entity["shot"]
+
+#get variables from pipeline.json
+config_file_path = f"{project_path}/00_Pipeline/pipeline.json"
+with open(config_file_path, mode="r", encoding="utf-8") as read_file:
+    pipeline_file = json.load(read_file)
+project_resolution = pipeline_file["globals"]["resolution"]
 
 ##########################################################################################################################################
 #=========================================================== SET FUNCTIONS ===============================================================
@@ -90,7 +97,8 @@ def create_cam(input_node: Any, input_network_box: Any, digit_number: int) -> An
 
         new_shot_name = f"sh{last_cam_shot_number+10:0{digit_number}d}"
 
-
+    project_ratio_fraction = Fraction(project_resolution[0], project_resolution[1])
+    project_ratio = (project_ratio_fraction.numerator, project_ratio_fraction.denominator)
     
     # create the cam with the new shot name
     lopnet = hou.node("/stage")
@@ -99,6 +107,8 @@ def create_cam(input_node: Any, input_network_box: Any, digit_number: int) -> An
     cam1.setName(f"DaisyCam_{sequence_name}_{new_shot_name}")
     cam1.parm("primpath").set(f"/{seq_and_sht_name}/cam/DaisyCam_{sequence_name}_{new_shot_name}/DaisyCam_{sequence_name}_{new_shot_name}_geo/DaisyCam_{sequence_name}_{new_shot_name}_Offset/DaisyCam_{sequence_name}_{new_shot_name}_Hook/DaisyCam_{sequence_name}_{new_shot_name}_Move/DaisyCam_{sequence_name}_{new_shot_name}_group/DaisyCam_{sequence_name}_{new_shot_name}_cam/DaisyCam_{sequence_name}_{new_shot_name}_camShape")
     cam1.parm("xn__houdiniguidescale_s3a").deleteAllKeyframes()# delete expression of Scale Guide Geometry parameter
+    cam1.parm("aspectratiox").set(project_ratio[0])
+    cam1.parm("aspectratioy").set(project_ratio[1])
 
     #-------------------------------- rearange nodes ---------------------------------#
     if last_cam_object != None:
