@@ -59,8 +59,12 @@ assert info is not None
 project_path = core.sequencePath.replace("\\", "/")
 project_path = project_path.removesuffix("/03_Production/Shots")
 shot_entity = info["entity"]
+seq_and_sht_name = info["name"]
 
 sequence_name = shot_entity["sequence"]
+shot_name = shot_entity["shot"]
+
+env_var_path = f"$PRISM_JOB/03_Production/Shots/{sequence_name}/{shot_name}"
 
 cam_layout_name = "cam_layout"
 
@@ -70,6 +74,7 @@ with open(config_file_path, mode="r", encoding="utf-8") as read_file:
     config_file = json.load(read_file)
 
 digit_number = config_file["global"]["sh_name_digit_number"] # number of digits in the seq and sht names
+usd_file_format = config_file["global"]["usd_file_format"]
 
 ##########################################################################################################################################
 #=========================================================== SET FUNCTIONS ===============================================================
@@ -265,3 +270,47 @@ def issue_correction(kwargs: dict[str,str]):
                 removed = True
         except Exception as e:
             print(f"Error : {e}")
+
+def get_rlo_from_maya():
+    cameras_in_scene = get_cameras_in_scene()
+    last_cam_object = None
+    last_cam_shot_number = 0
+
+    if cameras_in_scene["cameras_in_scene"] != []:
+        # check every camera to find the last one
+        for camera in cameras_in_scene["cameras_in_scene"]:
+            cam_name = camera.name()
+            
+            shot_number = int(cam_name[-digit_number:])
+            if shot_number > last_cam_shot_number:
+                last_cam_shot_number = shot_number
+                last_cam_object = camera
+
+    lopnet = hou.node("/stage")
+
+    ref_rlo_maya = lopnet.createNode("Daisy::daisy_import")
+    ref_rlo_maya.setName("ref_rlo_maya")
+    ref_rlo_maya.parm("path").set(f"{env_var_path}/Export/Animation/master/{seq_and_sht_name}_Animation_master.{usd_file_format}")
+    ref_rlo_maya.parm("layerbreak").set(0)
+    ref_rlo_maya.parm("mayascale").set(0)
+
+    #-------------------------------- rearange nodes ---------------------------------#
+    if last_cam_object != None:
+        outputs_last_cam_object = last_cam_object.outputs()
+        for output in outputs_last_cam_object:
+            output.setInput(0, None)
+        ref_rlo_maya.setInput(0, last_cam_object)
+        for output in outputs_last_cam_object:
+            output.setInput(0, ref_rlo_maya)
+
+        ref_rlo_maya.setPosition([last_cam_object.position()[0],last_cam_object.position()[1]-4])
+    else:
+        input_node = last_cam_object
+        outputs_input_node = input_node.outputs()
+        for output in outputs_input_node:
+            output.setInput(0, None)
+        ref_rlo_maya.setInput(0, input_node)
+        for output in outputs_input_node:
+            output.setInput(0, ref_rlo_maya)
+
+        ref_rlo_maya.setPosition([input_node.position()[0],input_node.position()[1]-4])
