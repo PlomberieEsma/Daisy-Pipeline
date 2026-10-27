@@ -13,7 +13,7 @@ Ce plugin comporte 2 presets pour le format **SCOPE (2048 x 858)** et **FLAT (19
   - [Utilisation](DaVinciResolve/utilisation.md)
 
 *<sub>Ce plugin a été développé pour fonctionner uniquement avec la version 2.1.2.1 de Prism.<br>
-Ce plugin étant dans la verison gratuite de DaVinci Resolve, il utilise une option de script qui devient payante à partir de la version 21.1. Ce plugin a été codé pour la version 21.0.3.<sub>*
+Ce plugin étant dans la version gratuite de DaVinci Resolve, il utilise une option de script qui devient payante à partir de la version 21.1. Ce plugin a été codé pour la version 21.0.3.<sub>*
 
 ***
 [< Page précédente](README.md)

@@ -27,14 +27,16 @@ Dans DaVinci Resolve vous pouvez accéder au plugin en allant dans "**Workspace/
 
 | Nom de l'option | Fonction simplifiée du bouton |
 |:-------- |:--------:|
-| [**Project Browser**](#projectbrowser)    | Ouvrir une instance du project browser de Prism dans DaVinci REsolve   |
-| [**Open Scene**](#open-scene)    | Ouvre un explorateur de fichier du projet qui permet d'importer le fichier de montage pour travailler   |
+| [**Project Browser**](#projectbrowser)    | Ouvrir une instance du project browser de Prism dans DaVinci Resolve   |
+| [**Open Scene**](#open-scene)    | Ouvre une fenêtre de choix du fichier du projet qui permet d'importer le fichier de montage pour travailler   |
 | [**Save Version**](#save-version)    | Exporte le projet et écrase l'ancien export master   |
 | [**Save BackUp Version**](#save-backup-version)    | Exporte le projet en backup SANS écraser le master   |
 | [**Add Shot**](#add-shot)   | Ouvre un Shot Browser pour rechercher parmis les shots du projet pour en ajouter   |
-| [**Bake Current Shot**](#bake-current-shot)    | Cherche dans le pipe si les shot actuellement dasn le timeline ont une version plus récentes et propose de les remplacer  |
-| [**Modify Current Shot**](#modify-current-shot)    | Ouvre un Shot Browser pour rechercher parmis les shots toutes les versions à différents stades pour les remplacer   |
+| [**Bake Current Shot**](#bake-current-shot)    | Cherche dans le pipe si les shots actuellement dans la timeline ont une version plus récente et propose de les remplacer  |
+| [**Modify Current Shot**](#modify-current-shot)    | Ouvre un Shot Browser pour rechercher parmis les shots, actuellement dans la timeline, toutes les versions à différents stades pour les remplacer   |
 | [**Apply Render Settings**](#export)    | Rempli automatiquement le file name et la location de l'export dans le pipe   |
+
+<br>
 
 ## ProjectBrowser
 Toute la section 04_Editing de notre pipe se trouve en dehors du dossier 03_Production dans notre pipeline. Le montage est donc géré en dehors de Prism pour l'ouverture des projet de montage notamment.

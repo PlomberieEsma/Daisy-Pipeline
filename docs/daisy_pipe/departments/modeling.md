@@ -3,9 +3,10 @@
 Commençons par définir les shapes de nos assets. Nous allons nous attaquer à 2 types de modé : la modé low (ModL) et la modé high (ModH). La ModL servira de proxy dans nos futurs fichiers USD, il est donc important qu'elle soit la plus simple et légère possible. La ModH quand à elle sera la modé qui sera affichée au rendu (donc aussi celle qui sera texturée et shadée).<br>
 Alors comment gérer ce département par logiciel ?
 
-- [Prism](#prism)
-- [Maya](#maya)
-- [Houdini](#houdini)
+- [Modeling](#modeling)
+  - [Prism](#prism)
+  - [Maya](#maya)
+  - [Houdini](#houdini)
 
 ***
 
@@ -94,7 +95,7 @@ Finalement, comme pour Maya : maintenant que nous avons fini notre ModL, il est 
 Rendez-vous dans le **Project Browser** (la fenêtre Prism) à l'intérieur d'Houdini, mais gardez bien votre scène ouverte. Puis **allez dans la task ModH** et faites un **click droit dans "Files"** sélectionnez "**Create new version from current**". Votre scène est maintenant dupliquée dans ModH, pous pouvez travailler dessus et recommencer le processus d'export.
 
 ><img src="../../src/warning_red.png" width=50em><br>
-> Important : chers modelers, ayez une petite pensée pour vos collègues, et pensez bien avant vos exports à faire vos UVs mais aussi à mettre des presets de materials sur vos geo (standard surface, lambert, blin ...). Cela facilitera le travail des texture artists et des riggeurs.<br>
+> Important : chers modelers, ayez une petite pensée pour vos collègues, et pensez bien avant vos exports à faire vos UVs mais aussi à mettre des presets de materials sur vos geo (standard surface, lambert, blinn ...). Cela facilitera le travail des texture artists et des riggeurs.<br>
 > Pensez aussi à donner un nom à vos geo avec l'attribute "name". Histoire d'hygiène.
 
 [< page précédente](../departments.md) - 
