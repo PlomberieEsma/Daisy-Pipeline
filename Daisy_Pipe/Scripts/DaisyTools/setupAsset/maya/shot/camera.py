@@ -4,6 +4,8 @@ import re
 import maya.cmds as cmds
 import maya.api.OpenMaya as om
 
+from Scripts.DaisyTools.core.core import USD_CAM_KEYFRAMES
+
 DAISY_CAM_PATH = ("Integration", "otls", "DaisyCam.mb")
 CAM_GROUP_NAME = "cam"
 CAM_SEQUENCE_TOKEN =re.compile("sqX", re.IGNORECASE)
@@ -13,7 +15,6 @@ CAM_PAN_CTRL_SUFFIX = "_{sequence}_{shot}_pan_ctrl"
 CAM_TILT_CTRL_SUFFIX = "_{sequence}_{shot}_tilt_ctrl"
 CAM_CTRL_SUFFIXES = (CAM_GLOBAL_CTRL_SUFFIX, CAM_PAN_CTRL_SUFFIX, CAM_TILT_CTRL_SUFFIX)
 USD_CAM_NAME = "DaisyCam_{sequence}_{shot}_camShape"
-USD_CAM_KEYFRAMES = "daisy:cameraKeyframes"
 USD_LENS_SCALE = 100.0
 MM_PER_INCH = 25.4
 FILM_FIT_HORIZONTAL = 1
