@@ -2,7 +2,7 @@ import hou
 import os
 import re
 from pxr import Sdf, Vt
-from Scripts.DaisyTools.core.core import get_core, houdini_relative_path, USD_FILE_FORMAT, create_master, create_master_clips, USD_CAM_KEYFRAMES
+from Scripts.DaisyTools.core.core import get_core, houdini_relative_path, USD_FILE_FORMAT, create_master, create_master_clips, USD_CAM_KEYFRAMES, resolve_root_prim
 from Scripts.DaisyTools.core.get_entity_info import get_entity_info
 from Scripts.DaisyTools.core.version_cleanup import check_version_limit_for_output
 from Scripts.DaisyTools.core.dcc.launcher import get_main_window
@@ -15,6 +15,12 @@ CAMERA_NODE_NAME = re.compile(r"^DaisyCam_sq\d+_sh\d+_camShape$")
 
 NEXT_VERSION_PARM = "versions"
 VERSION_NUM_PARM = "selectedversion"
+
+DAISY_IMPORT_TYPE = "daisy_import"
+LAYER_BREAK_TYPE = "layerbreak"
+LAYER_BREAK_PARM = "layerbreak"
+STRIP_PARM = "striplayerbreaks"
+SAVE_STYLE_PARM = "savestyle"
 
 
 # ---------- Version ----------
@@ -162,6 +168,107 @@ def _reload_layers(paths):
                 layer.Reload(force=True)
             except Exception as e:
                 print(f"reload {path}: {e}")
+
+
+# ---------- Validation ----------
+
+def _parm_value(node, name, default=None):
+    # Parms move from one hda revision to the next: a missing one must not break
+    # the check itself
+    parm = node.parm(name)
+    if parm is None:
+        return default
+    try:
+        return parm.eval()
+    except hou.Error:
+        return default
+
+
+def _on_off(value):
+    return "unknown" if value is None else ("ON" if value else "OFF")
+
+
+def _stripping_nodes(hda):
+    # A Daisy Import with "Layer Break" on puts everything it loads above a layer
+    # break: with striplayerbreaks the rop drops it and the file comes out empty
+    try:
+        # defaults only: follow_subnets=True stops the walk at the first hda and
+        # would miss the imports chained behind it
+        ancestors = hda.inputAncestors()
+    except hou.Error:
+        return [], []
+
+    imports, breaks = [], []
+    for node in ancestors:
+        # nothing an artist can act on lives inside a locked hda
+        if node.isInsideLockedHDA():
+            continue
+        # match on the substring so a future ::1.0 namespace keeps working
+        type_name = node.type().name()
+        if DAISY_IMPORT_TYPE in type_name:
+            if _parm_value(node, LAYER_BREAK_PARM, 0):
+                imports.append(node.path())
+        elif type_name == LAYER_BREAK_TYPE:
+            breaks.append(node.path())
+    return imports, breaks
+
+
+def _empty_export_hint(hda):
+    # Name the nodes to fix instead of leaving the artist to search the whole network
+    imports, breaks = _stripping_nodes(hda)
+
+    lines = []
+    if imports:
+        lines.append("Daisy Import nodes with 'Layer Break' on upstream:")
+        lines += [f"  - {path}" for path in imports]
+        lines.append("Turn off their 'Layer Break' toggle (Advanced Settings) and export again.")
+    if breaks:
+        lines.append("Layer Break nodes upstream:")
+        lines += [f"  - {path}" for path in breaks]
+    if not imports and not breaks:
+        lines.append(
+            "No layer break upstream: check the node wired into Daisy Export, a Prune or a "
+            "Configure Layer can empty the stage too."
+        )
+
+    lines.append(
+        f"Write settings of this export: 'Strip Layers Above Layer Breaks' = "
+        f"{_on_off(_parm_value(hda, STRIP_PARM))}, 'Save Style' = "
+        f"{_parm_value(hda, SAVE_STYLE_PARM) or 'unknown'}."
+    )
+    return "\n".join(lines)
+
+
+def _export_error(hda, path, error):
+    # The layer break hint only makes sense when the file really came out empty:
+    # a several roots error has nothing to do with it
+    layer = Sdf.Layer.Find(path)
+    if layer is not None and not layer.rootPrims and not layer.subLayerPaths:
+        return f"{error}\n\n{_empty_export_hint(hda)}"
+    return str(error)
+
+
+def _check_export(hda, file_parm):
+    # The rop can succeed and still write stage metadata only: validate before Prism
+    # records anything, otherwise an empty file becomes a published version
+    if is_file_per_frame(hda):
+        frame_paths = _frame_paths(hda, file_parm)
+        # every frame comes out of the same network: first and last are enough
+        paths = [frame_paths[0], frame_paths[-1]] if frame_paths else []
+    else:
+        paths = [_base_path(hda, file_parm)]
+
+    # on an overwrite Houdini still holds the previous layer in memory: without a
+    # reload the check would read stale, non empty data (same reason as save_master)
+    _reload_layers(paths)
+
+    default_prim = (_parm_value(hda, "defaultprim", "") or "").lstrip("/")
+
+    for path in paths:
+        try:
+            resolve_root_prim(path, default_prim)
+        except Exception as e:
+            raise hou.NodeError(_export_error(hda, path, e))
 
 
 # ---------- Master ----------
@@ -323,6 +430,7 @@ def _finalize_export(hda, file_parm, master_parm, thumbnail=True, master_info=Tr
     update_master = hda.parm("updatemaster").evalAsInt()
 
     _check_written(hda, file_parm)
+    _check_export(hda, file_parm)
 
     if not is_file_per_frame(hda):
         write_camera_keyframes(path, get_camera_keyframes())

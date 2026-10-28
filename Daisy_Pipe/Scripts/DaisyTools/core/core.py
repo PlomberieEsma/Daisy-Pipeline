@@ -203,7 +203,7 @@ def resolve_root_prim(layer_path, wanted=""):
     #Return the name of the root prim actually present in a usd file:
     #the wanted name if it exists, else the file's defaultPrim, else its only root prim
 
-    from pxr import Sdf
+    from pxr import Sdf, Usd
 
     layer = Sdf.Layer.FindOrOpen(layer_path)
     if layer is None:
@@ -211,16 +211,44 @@ def resolve_root_prim(layer_path, wanted=""):
 
     roots = [p.name for p in layer.rootPrims]
 
+    #a layer carrying only subLayers is legitimate - that is what create_master writes,
+    #and what the usd rop writes when it keeps its sublayers. Its prims only exist on
+    #the composed stage, so compose it. GetAllChildren, not GetChildren: an overlay
+    #layer holds "over" prims, which the default predicate filters out.
+    #LoadNone keeps payloads out: only the root prim names are needed
+    if layer.subLayerPaths and (not roots or (wanted and wanted not in roots)):
+        stage = Usd.Stage.Open(layer, Usd.Stage.LoadNone)
+        roots += [p.GetName() for p in stage.GetPseudoRoot().GetAllChildren() if p.GetName() not in roots]
+
     if wanted in roots:
         return wanted
     if layer.defaultPrim and layer.defaultPrim in roots:
         return layer.defaultPrim
+
+    file_name = os.path.basename(layer_path)
+
+    #empty export: the rop succeeded but wrote stage metadata only. Checked before the
+    #single root case, otherwise an empty file is reported as having "several" roots
+    if not roots:
+        orphan = f" Its defaultPrim '{layer.defaultPrim}' points at nothing." if layer.defaultPrim else ""
+        raise RuntimeError(
+            f"{file_name} contains no prim: the export is empty, only stage metadata was written.{orphan}"
+        )
+
     if len(roots) == 1:
         return roots[0]
 
+    #defaultPrim set but missing: the root group was renamed between two versions
+    if layer.defaultPrim:
+        raise RuntimeError(
+            f"{file_name}: its defaultPrim '{layer.defaultPrim}' matches none of the root prims {roots}, "
+            f"and none is named '{wanted}': rename the root group or fix the defaultPrim."
+        )
+
+    #several roots: a master can only sublayer one of them
     raise RuntimeError(
-        f"{os.path.basename(layer_path)} contient plusieurs prims racines {roots} et aucun ne s'appelle "
-        f"'{wanted}' : regroupe l'export sous un seul groupe racine."
+        f"{file_name} has several root prims {roots} and none is named '{wanted}': "
+        f"group the export under a single root."
     )
 
 def get_master_path(core, entity, product):
