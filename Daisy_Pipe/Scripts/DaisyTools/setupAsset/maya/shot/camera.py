@@ -4,7 +4,7 @@ import re
 import maya.cmds as cmds
 import maya.api.OpenMaya as om
 
-from Scripts.DaisyTools.core.core import USD_CAM_KEYFRAMES
+from Scripts.DaisyTools.core.core import CAMERA_RIG_PREFIX, USD_CAM_KEYFRAMES, get_camera_file
 
 DAISY_CAM_PATH = ("Integration", "otls", "DaisyCam.mb")
 CAM_GROUP_NAME = "cam"
@@ -115,6 +115,130 @@ def import_daisy_cam(core, sequence, shot, reference=False):
     cameras = cmds.ls(new_nodes, type="camera", long=True) or []
     cam_transforms = cmds.listRelatives(cameras, parent=True, fullPath=True) or []
     return cam_transforms[0] if cam_transforms else None
+
+
+def offset_camera_keys(nodes, shot_range, master_range):
+    #-----------------------------------------------------------------------------#
+    # Move the keys of an imported camera from the MASTER time to the shot time   #
+    # The camera is always published from the MASTER scene, so its keys are in    #
+    # the MASTER time whatever the layout the shot loads                          #
+    #                                                                             #
+    # nodes = nodes of the imported camera                                        #
+    # shot_range = shot frame range in the shot time (or None)                    #
+    # master_range = same range in the MASTER time (or None)                      #
+    #-----------------------------------------------------------------------------#
+
+    if not shot_range or not master_range:
+        return
+
+    offset = int(master_range[0]) - int(shot_range[0])
+    if not offset:
+        return
+
+    # Only the curves driven by time: a driven key (animCurveU*) has no time input
+    # and shifting it would break the rig
+    curves = cmds.listConnections(nodes, type="animCurve", source=True, destination=False) or []
+    curves = sorted({curve for curve in curves if cmds.nodeType(curve).startswith("animCurveT")})
+    if curves:
+        cmds.keyframe(curves, edit=True, relative=True, timeChange=-offset)
+
+
+def get_rig_of_camera(cam_transform):
+    #-----------------------------------------------------------------------------#
+    # Top DaisyCam group above a camera transform, i.e. the rig itself            #
+    #                                                                             #
+    # cam_transform = long name of the camera transform                           #
+    #                                                                             #
+    # return the long name of the rig, or None if the camera is not in one        #
+    #-----------------------------------------------------------------------------#
+
+    parts = cmds.ls(cam_transform, long=True)[0].split("|")
+    for index, name in enumerate(parts):
+        if name.split(":")[-1].startswith(CAMERA_RIG_PREFIX):
+            return "|".join(parts[:index + 1])
+    return None
+
+
+def drop_imported_groups(uuids, rig):
+    #-----------------------------------------------------------------------------#
+    # Move an imported rig to the world and remove the groups that came with it   #
+    # A published camera is written with exportSelected, which keeps the ancestors#
+    # of the selection: the file carries the groups of the MASTER scene. They are #
+    # dropped here, group_daisy_cam puts the rig under the groups of this scene   #
+    #                                                                             #
+    # uuids = uuids of the imported nodes, valid across the reparenting           #
+    # rig = long name of the imported rig                                         #
+    #                                                                             #
+    # return the long name of the rig once it is at the world                     #
+    #-----------------------------------------------------------------------------#
+
+    if cmds.listRelatives(rig, parent=True):
+        # relative: the groups of the MASTER are empty groups left at the origin,
+        # so keeping the local values keeps the camera where it was
+        rig = cmds.ls(cmds.parent(rig, world=True, relative=True), long=True)[0]
+
+    # Only the imported transforms, never the anim curves, and only those left
+    # outside the rig: they are the groups it was exported under
+    leftovers = []
+    for uuid in uuids:
+        nodes = cmds.ls(uuid, long=True, type="transform") or []
+        if nodes and nodes[0] != rig and not nodes[0].startswith(rig + "|"):
+            leftovers.append(nodes[0])
+
+    # Deepest first, and never a group that still holds something
+    for node in sorted(leftovers, key=lambda path: path.count("|"), reverse=True):
+        if cmds.objExists(node) and not cmds.listRelatives(node, children=True):
+            cmds.delete(node)
+
+    return rig
+
+
+def import_shot_camera(core, entity, shot_range=None, master_range=None):
+    #-----------------------------------------------------------------------------#
+    # Import the camera published for the shot by the MASTER scene                #
+    # The file holds the DaisyCam rig already animated and already named for the  #
+    # shot: nothing to rename, and nothing to match on the USD camera             #
+    #                                                                             #
+    # core = Prism core                                                           #
+    # entity = Prism entity dict of the shot                                      #
+    # shot_range = shot frame range in the shot time (or None)                    #
+    # master_range = same range in the MASTER time (or None)                      #
+    #                                                                             #
+    # return the camera transform, or None if no camera is published              #
+    #-----------------------------------------------------------------------------#
+
+    cam_path = get_camera_file(core, entity)
+    if not cam_path:
+        return None
+
+    new_nodes = cmds.file(
+        cam_path,
+        i=True,
+        type="mayaBinary",
+        namespace=":",
+        returnNewNodes=True,
+        ignoreVersion=True,
+    )
+    # UUIDs stay valid once the rig is moved under another parent
+    uuids = cmds.ls(new_nodes, uuid=True) or []
+
+    offset_camera_keys(new_nodes, shot_range, master_range)
+
+    cameras = cmds.ls(new_nodes, type="camera", long=True) or []
+    cam_transforms = cmds.listRelatives(cameras, parent=True, fullPath=True) or []
+    if not cam_transforms:
+        cmds.warning("No camera in the published file: %s" % cam_path)
+        return None
+
+    camera_uuid = cmds.ls(cam_transforms[0], uuid=True)[0]
+    rig = get_rig_of_camera(cam_transforms[0])
+    if rig:
+        drop_imported_groups(uuids, rig)
+    else:
+        cmds.warning("No %s group above %s: the camera is imported as is" % (CAMERA_RIG_PREFIX, cam_transforms[0]))
+
+    print("Camera imported: %s" % cam_path)
+    return cmds.ls(camera_uuid, long=True)[0]
 
 
 def group_daisy_cam(cam_transform, group_name):

@@ -1,34 +1,14 @@
 import maya.cmds as cmds
 
 from Scripts.DaisyTools.core.framerange_convert import FramerangeFile
-from Scripts.DaisyTools.setupAsset.maya.scene_loaders import USD_EXTENSIONS, get_master_path, load_usd_stage
+from Scripts.DaisyTools.setupAsset.maya.scene_loaders import MASTER_SHOT, USD_EXTENSIONS, get_master_path, get_master_shot_entity, load_usd_stage
 
 LAYOUT_PRODUCT = "layout"
-MASTER_SHOT = "MASTER"
 
 
 # ------------------------------------------------------------------------------ #
 #                                     Layout                                     #
 # ------------------------------------------------------------------------------ #
-
-def get_master_shot_entity(shot_entity):
-    #------------------------------------------------------------------------#
-    # Build the entity of the MASTER shot of a shot's sequence               #
-    #                                                                        #
-    # shot_entity = Prism entity dict of the shot                            #
-    #                                                                        #
-    # return the MASTER shot entity dict (keeps the episode if there is one) #
-    #------------------------------------------------------------------------#
-
-    entity = {
-        "type": "shot",
-        "sequence": shot_entity["sequence"],
-        "shot": MASTER_SHOT,
-    }
-    if "episode" in shot_entity:
-        entity["episode"] = shot_entity["episode"]
-    return entity
-
 
 def import_master_usd(core, entity, product):
     #-------------------------------------------------------------------------------------#

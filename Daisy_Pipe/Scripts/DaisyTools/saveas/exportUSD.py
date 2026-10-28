@@ -141,16 +141,60 @@ def export_usd(params=None):
         else:
             create_master(path, master_path, default_prim=default_prim, frame_range=frame_range)
 
+    register_product(core, entity, task, path, master_path=master_path if update_master else None,
+                     comment=comment, thumbnail=update_thumbnail)
+
+    #a scene may publish a second product next to its own: the cameras of a shot
+    #go to their own product so that each shot can import its camera as a Maya
+    #file instead of rebuilding it from this overlay (see exportCamera.py)
+    if is_shot_anim:
+        export_shot_cameras(core, entity, comment=comment,
+                            nodes=None if whole_scene else nodes, update_master=update_master)
+
+    return path
+
+
+def export_shot_cameras(core, entity, comment="", nodes=None, update_master=True):
+
+    #Publish the DaisyCams of the scene as one Maya file each, in the Camera product
+
+    from Scripts.DaisyTools.core.core import CAMERA_PRODUCT
+    from Scripts.DaisyTools.saveas.exportCamera import camera_master_path, export_cameras
+
+    try:
+        paths = export_cameras(core, entity, nodes=nodes, update_master=update_master)
+    except Exception as e:
+        #the USD is already written and registered: a camera failure must not undo it
+        print(f"export_shot_cameras: {e}")
+        return []
+
+    if not paths:
+        return []
+
+    #the version info belongs to the version folder, not to each file: one call
+    #covers the cameras of the whole sequence
+    register_product(core, entity, CAMERA_PRODUCT, paths[0],
+                     master_path=camera_master_path(core, entity) if update_master else None,
+                     comment=comment, thumbnail=False)
+    return paths
+
+
+def register_product(core, entity, product, path, master_path=None, comment="", thumbnail=True):
+
+    #Register a written file as a Prism product version: version info, preview and
+    #version cap. A second product of the same run passes thumbnail=False, or the
+    #preview of the first one would be overwritten (same as the Houdini proxy export)
+
     details = dict(entity)
     details["version"] = core.products.getProductDataFromFilepath(path).get("version", "")
     details["sourceScene"] = core.getCurrentFileName()
-    details["product"] = task
+    details["product"] = product
     details["comment"] = comment
 
     info_path = core.products.getVersionInfoPathFromProductFilepath(path)
     core.saveVersionInfo(filepath=info_path, details=details)
 
-    if update_thumbnail:
+    if thumbnail:
         if not core.products.getUseProductPreviews():
             core.setConfig("globals", "capture_viewport_products", True, config="user")
 
@@ -165,13 +209,11 @@ def export_usd(params=None):
                 if not preview.save(scene_preview, "JPG"):
                     print(f"export_usd: échec d'écriture {scene_preview}")
 
-    if update_master:
+    if master_path:
         master_info_path = core.products.getVersionInfoPathFromProductFilepath(master_path)
         core.saveVersionInfo(filepath=master_info_path, details=details)
 
     from Scripts.DaisyTools.core.version_cleanup import check_version_limit_for_output
     from Scripts.DaisyTools.core.dcc.launcher import get_main_window
 
-    check_version_limit_for_output(core, entity, task, path, parent=get_main_window())
-
-    return path
+    check_version_limit_for_output(core, entity, product, path, parent=get_main_window())

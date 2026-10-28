@@ -2,7 +2,7 @@ import os
 import maya.cmds as cmds
 
 # Shared with the Houdini side, which cannot import this Maya-only module
-from Scripts.DaisyTools.core.core import get_master_path, get_source_scene
+from Scripts.DaisyTools.core.core import MASTER_SHOT, get_master_path, get_master_shot_entity, get_source_scene
 
 USD_EXTENSIONS = (".usd", ".usda", ".usdc", ".usdz")
 MAYA_EXTENSIONS = (".ma", ".mb")

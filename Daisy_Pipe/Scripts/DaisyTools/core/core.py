@@ -39,6 +39,11 @@ with open(os.path.join(_pkg_root, "lib", "config.json"), "r", encoding="utf-8") 
 
 USD_FILE_FORMAT = daisyConfig["global"]["usd_file_format"]
 USD_CAM_KEYFRAMES = "daisy:cameraKeyframes"
+#product holding one .mb per DaisyCam, published by the MASTER shot and imported
+#by each shot of the sequence (see saveas/exportCamera.py)
+CAMERA_PRODUCT = "Camera"
+CAMERA_RIG_PREFIX = "DaisyCam"
+MASTER_SHOT = "MASTER"
 
 
 def get_core():
@@ -261,6 +266,43 @@ def get_master_path(core, entity, product):
     if not master:
         return None
     return core.products.getPreferredFileFromVersion(master)
+
+def get_master_shot_entity(entity):
+
+    #Return the entity of the MASTER shot of the same sequence
+
+    master = {"type": "shot", "sequence": entity["sequence"], "shot": MASTER_SHOT}
+    if "episode" in entity:
+        master["episode"] = entity["episode"]
+    return master
+
+def get_camera_file(core, entity, extension=".mb"):
+
+    #Return the camera file published for a shot, or None if there is none.
+    #The Camera product holds one file per DaisyCam of the sequence, so the master
+    #version is a folder: the file of the shot is the one its name ends with.
+    #The shot's own product comes first, the MASTER one is the fallback, as the
+    #layout does in get_layout (saveas/exportShotAnim.py)
+
+    shot = entity.get("shot")
+    if not shot:
+        return None
+
+    suffix = "_%s%s" % (shot, extension)
+    entities = [entity]
+    if shot != MASTER_SHOT:
+        entities.append(get_master_shot_entity(entity))
+
+    for candidate in entities:
+        master_path = get_master_path(core, candidate, CAMERA_PRODUCT)
+        if not master_path:
+            continue
+        folder = os.path.dirname(master_path)
+        for name in sorted(os.listdir(folder)):
+            if name.endswith(suffix):
+                return os.path.join(folder, name)
+
+    return None
 
 def get_source_scene(core, product_path):
 
