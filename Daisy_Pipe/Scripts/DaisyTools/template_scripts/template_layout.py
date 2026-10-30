@@ -175,27 +175,25 @@ def nodes_template_layout() -> dict[str,Any]:
     #-------------------------------- create nodes ---------------------------------#
     lopnet = hou.node("/stage")
 
-    ref_MASTER_layout1 = lopnet.createNode("sublayer")
-    ref_MASTER_layout1.setName("ref_MASTER_layout1")
-    ref_MASTER_layout1.parm("loadpayloads").set(0)
-    ref_MASTER_layout1.parm("filepath1").set(f"$PRISM_JOB/03_production/shots/{sequence_name}/MASTER/Export/layout/master/{sequence_name}-MASTER_layout_master.{usd_file_format}")
-    ref_MASTER_layout1.parm("timeoffset1").set(define_time_offset())
-
-    scale_down_layout1 = lopnet.createNode("xform")
-    scale_down_layout1.setName("scale_down_layout1")
-    scale_down_layout1.setInput(0, ref_MASTER_layout1)
-    scale_down_layout1.setColor(hou.Color(color_input_box))
-    scale_down_layout1.parm("scale").set(0.01)
-    scale_down_layout1.parm("primpattern").set("/*")
+    ref_RLO = lopnet.createNode("Daisy::daisy_import")
+    ref_RLO.setName("ref_RLO")
+    old_seq_and_sht_name = seq_and_sht_name.replace(shot_name, "MASTER")
+    old_env_var_path = env_var_path.replace(shot_name, "MASTER")
+    ref_RLO.parm("path").set(f"{old_env_var_path}/Export/Layout/master/{old_seq_and_sht_name}_Layout_master.{usd_file_format}")
+    ref_RLO.parm("layerbreak").set(0)
+    ref_RLO.parm("mayascale").set(0)
+    ref_RLO.parm("loadpayloads").set(0)
 
     rename_assembly1 = lopnet.createNode("restructurescenegraph")
     rename_assembly1.setName("rename_assembly1")
-    rename_assembly1.setInput(0, scale_down_layout1)
+    rename_assembly1.setInput(0, ref_RLO)
     rename_assembly1.setColor(hou.Color(color_input_box))
     rename_assembly1.parm("op").set(1)# rename primitives
     rename_assembly1.parm("primnewname").set(seq_and_sht_name)
 
-    cameras_to_delete = f"%type:Camera ^{seq_and_sht_name}/cam/cam_{seq_and_sht_name}"
+    camera_to_keep = f"/{seq_and_sht_name}/cam/DaisyCam_{seq_and_sht_name}/DaisyCam_{seq_and_sht_name}_geo/DaisyCam_{seq_and_sht_name}_Offset/DaisyCam_{seq_and_sht_name}_Hook/DaisyCam_{seq_and_sht_name}_Move/DaisyCam_{seq_and_sht_name}_group/DaisyCam_{seq_and_sht_name}_cam/DaisyCam_{seq_and_sht_name}_camShape"
+    camera_grp_to_keep = f"/{seq_and_sht_name}/cam/DaisyCam_{seq_and_sht_name}"
+    cameras_to_delete = f"/{seq_and_sht_name}/cam/* ^{camera_grp_to_keep}"
 
     unload_cam1 = lopnet.createNode("prune")
     unload_cam1.setName("unload_cam1")
@@ -219,52 +217,41 @@ def nodes_template_layout() -> dict[str,Any]:
     camera_edit1 = lopnet.createNode("camera")
     camera_edit1.setName("camera_edit1")
     camera_edit1.setInput(0, hide_cam1)
-    camera_edit1.parm("primpattern").set(f"/{seq_and_sht_name}/cam/cam_{seq_and_sht_name}")
+    camera_edit1.parm("primpattern").set(camera_to_keep)
     camera_edit1.parm("createprims").set(0)# edit
+    camera_edit1.parm("xn__houdiniguidescale_s3a").deleteAllKeyframes()# delete expression of Scale Guide Geometry parameter
+    camera_edit1.parm("xn__houdiniguidescale_s3a").set(1)
 
-    scale_up1 = lopnet.createNode("xform")
-    scale_up1.setName("scale_up1")
-    scale_up1.setInput(0, camera_edit1)
-    scale_up1.parm("primpattern").set("/*")
-    scale_up1.parm("scale").set(100)
-
-    config_layer1 = lopnet.createNode("configurelayer")
-    config_layer1.setName("config_layer1")
-    config_layer1.setInput(0, scale_up1)
-    config_layer1.parm("setsavepath").set(1)
-    config_layer1.parm("savepath").set(f"{env_var_path}/Export/{shot_task}/{shot_version}/{seq_and_sht_name}_{shot_task}_{shot_version}.{usd_file_format}")
-    config_layer1.parm("setdefaultprim").set(1)
-    config_layer1.parm("defaultprim").set(f"{seq_and_sht_name}")
-
-    usd_rop1 = lopnet.createNode("usd_rop")
-    usd_rop1.setName("usd_rop1")
-    usd_rop1.setInput(0, config_layer1)
-    usd_rop1.parm("lopoutput").set("")
-    usd_rop1.parm("lpostrender").set("python")
+    daisy_export1 = lopnet.createNode("Daisy::daisy_export::1.0")
+    daisy_export1.setName("daisy_export1")
+    daisy_export1.setInput(0, camera_edit1)
+    daisy_export1.parm("versions").set(1)
+    daisy_export1.parm("trange").set(1)# Render Specific Frame Range
+    daisy_export1.parm("mayascale").set(0)
+    def_prim = seq_and_sht_name.replace("-", "_")
+    daisy_export1.parm("defaultprim").set(f"/{def_prim}")
+    daisy_export1.parm("configlayer").set(0)
+    daisy_export1.parm("savepayloads").set(1)
+    daisy_export1.parm("savestyle").set("flattenalllayers")
+    daisy_export1.parm("striplayerbreaks").set(0)
 
     node_list.update({
-        "ref_MASTER_layout1": ref_MASTER_layout1,
-        "scale_down_layout1": scale_down_layout1,
+        "ref_RLO" : ref_RLO,
         "rename_assembly1": rename_assembly1,
         "unload_cam1": unload_cam1,
         "hide_cam1": hide_cam1,
-        "camera_edit1": camera_edit1,
-        "scale_up1": scale_up1,
-        "config_layer1": config_layer1,
-        "usd_rop1": usd_rop1
+        "camera_edit1" : camera_edit1,
+        "daisy_export1" : daisy_export1
     })
 
     #-------------------------------- arange nodes ---------------------------------#
     lopnet.layoutChildren()
 
-    node_list["camera_edit1"].move([0, -3])
-
-    node_list["scale_up1"].move([0, -6])
-    node_list["config_layer1"].move([0, -6])
-    node_list["usd_rop1"].move([0, -6])
+    node_list["camera_edit1"].move([0, -3])    
+    node_list["daisy_export1"].move([0, -6])
 
     # set input network box
-    nodes_in_input_box = ["ref_MASTER_layout1", "scale_down_layout1", "rename_assembly1", "unload_cam1", "hide_cam1"]
+    nodes_in_input_box = ["ref_RLO", "rename_assembly1", "unload_cam1", "hide_cam1"]
     input_box = lopnet.createNetworkBox()
     input_box.setName("input_box")
     for node in nodes_in_input_box:
@@ -275,7 +262,7 @@ def nodes_template_layout() -> dict[str,Any]:
     node_list.update({"input_box" : input_box})
 
     # set output network box
-    nodes_in_output_box = ["scale_up1", "config_layer1", "usd_rop1"]
+    nodes_in_output_box = ["daisy_export1"]
     output_box = lopnet.createNetworkBox()
     output_box.setName("output_box")
     for node in nodes_in_output_box:
@@ -298,7 +285,9 @@ def nodes_template_layout() -> dict[str,Any]:
                                      "matchsize",
                                      "xform",
                                      "edit",
-                                     "followpathconstraint"], [-15,0]))
+                                     "followpathconstraint",
+                                     "configurestage",
+                                     "Daisy::camera_frustrum::1.0"], [-15,0]))
     
     elapsed_counter = perf_counter() - start_counter
     print(f"\n\nTotal time: {elapsed_counter:.2f} seconds")
