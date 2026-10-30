@@ -245,6 +245,9 @@ def nodes_template_MASTER_layout(imported_assets: list[dict[str,str]]) -> dict[s
     daisy_export1.parm("mayascale").set(0)
     def_prim = seq_and_sht_name.replace("-", "_")
     daisy_export1.parm("defaultprim").set(f"/{def_prim}")
+    daisy_export1.parm("configlayer").set(0)
+    daisy_export1.parm("savestyle").set("flattenalllayers")
+    daisy_export1.parm("striplayerbreaks").set(0)
 
     node_list.update({"ref_set_dress": ref_set_dress,
                     "create_cam1" : create_cam1,
@@ -298,7 +301,8 @@ def nodes_template_MASTER_layout(imported_assets: list[dict[str,str]]) -> dict[s
                                      "xform",
                                      "edit",
                                      "followpathconstraint",
-                                     "camera"], [-15,0]))
+                                     "camera",
+                                     "Daisy::Layout_Manager::1.0"], [-15,0]))
 
 
     elapsed_counter = perf_counter() - start_counter
