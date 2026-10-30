@@ -2,7 +2,7 @@ import maya.cmds as cmds
 
 from Scripts.DaisyTools.core.core import CAMERA_PRODUCT
 from Scripts.DaisyTools.setupAsset.maya.shot.camera import create_camera_sequence, get_usd_camera_ranges, get_usd_camera_shots, group_daisy_cam, import_daisy_cam, import_shot_camera, match_daisy_cam_to_usd
-from Scripts.DaisyTools.setupAsset.maya.shot.layout import MASTER_SHOT, deactivate_usd_cameras, get_default_prim_name, get_shot_ranges, load_shot_layout
+from Scripts.DaisyTools.setupAsset.maya.shot.layout import MASTER_SHOT, deactivate_usd_cameras, get_default_prim_name, get_shot_cut, get_shot_ranges, load_shot_layout, set_playback_range
 from Scripts.DaisyTools.setupAsset.maya.shot.rig_references import reference_rig_scenes
 
 # Departments where the MASTER shot gets a Camera Sequencer with its DaisyCams
@@ -76,14 +76,20 @@ def setup_anim(core, info):
 
     if shot == MASTER_SHOT and layout:
         # The MASTER scene is in the MASTER time: each camera uses its MASTER range
-        # Ranges from the camera keys, the frame range file is only a fallback
+        # Ranges from the frame range file, it gives the first and the last frame of
+        # every camera and the cut of every shot of the Camera Sequencer
         # published=False: this scene is the source of the Camera product, it
         # builds its DaisyCams from the rig and the USD and never imports them back
         cam_shot_names = get_usd_camera_shots(layout, sequence)
-        cam_ranges = get_usd_camera_ranges(layout, sequence, cam_shot_names)
+        cam_ranges = get_shot_cut(sequence, cam_shot_names)
+        if cam_ranges is None:
+            # The frame range file holds no cut for this sequence: the first key of
+            # each camera is the fallback, as it was before the file was used
+            cam_ranges = get_usd_camera_ranges(layout, sequence, cam_shot_names)
+
         cam_shots = []
         for cam_shot in cam_shot_names:
-            cam_range = cam_ranges.get(cam_shot) or get_shot_ranges(sequence, cam_shot)[1]
+            cam_range = cam_ranges.get(cam_shot)
             camera = setup_daisy_cam(core, entity, layout, default_prim, sequence, cam_shot, cam_range, cam_range, published=False)
             if camera:
                 cam_shots.append((cam_shot, camera, cam_range))
@@ -95,6 +101,9 @@ def setup_anim(core, info):
     else:
         camera = setup_daisy_cam(core, entity, layout, default_prim, sequence, shot, shot_range, master_range)
         cameras = [camera] if camera else []
+        # Timeline on the shot range of the frame range file
+        if shot_range:
+            set_playback_range(shot_range)
 
     # Rigs of the assets selected in the Asset Browser, under the shot group|scene
     if cameras and default_prim:

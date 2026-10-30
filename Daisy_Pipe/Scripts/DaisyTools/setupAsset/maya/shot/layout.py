@@ -103,6 +103,85 @@ def get_shot_ranges(sequence, shot):
         return None, None
 
 
+def get_sequence_master_ranges(sequence):
+    #------------------------------------------------------------------------#
+    # Get the MASTER frame range of every shot of a sequence                 #
+    # Used by the MASTER scene, which holds one camera per shot: the frame   #
+    # range file gives each camera its first and its last frame              #
+    #                                                                        #
+    # sequence = sequence name (e.g.: sq0010)                                #
+    #                                                                        #
+    # return a dict {shot: [start, end]}, empty if the sequence is not found #
+    #------------------------------------------------------------------------#
+
+    try:
+        shots = FramerangeFile().get_sequence(sequence)[sequence]
+    except Exception as e:
+        cmds.warning("Frame ranges introuvables pour %s (%s)" % (sequence, e))
+        return {}
+
+    ranges = {}
+    for shot, shot_ranges in shots.items():
+        master_range = shot_ranges.get("master_range")
+        if not master_range:
+            cmds.warning("Pas de master range pour %s_%s dans le fichier de frame ranges" % (sequence, shot))
+            continue
+        ranges[shot] = [int(master_range[0]), int(master_range[1])]
+    return ranges
+
+
+def get_shot_cut(sequence, shots):
+    #----------------------------------------------------------------------------#
+    # Get the cut of a sequence from the frame range file: the MASTER range of   #
+    # every shot, cut so that two shots never overlap                            #
+    # The file is only trusted when it holds a real cut: a shot created in Prism #
+    # keeps the default range of the project until the frame ranges are pushed   #
+    # from the Houdini layout                                                    #
+    #                                                                            #
+    # sequence = sequence name (e.g.: sq0010)                                    #
+    # shots = shot names to get (e.g.: ["sh0010", "sh0020"])                     #
+    #                                                                            #
+    # return a dict {shot: [start, end]}, or None if the file holds no cut       #
+    #----------------------------------------------------------------------------#
+
+    ranges = get_sequence_master_ranges(sequence)
+
+    missing = [shot for shot in shots if shot not in ranges]
+    if missing:
+        cmds.warning("Pas de master range dans le fichier de frame ranges pour %s : %s"
+                     % (sequence, ", ".join(missing)))
+        return None
+
+    # Sorted by start frame, the order the shots are played in
+    starts = sorted((ranges[shot][0], shot) for shot in shots)
+    if len(starts) > 1 and len({start for start, _ in starts}) != len(starts):
+        cmds.warning("Pas de découpe dans le fichier de frame ranges pour %s : les shots sont sur "
+                     "le même range, pousser les frame ranges depuis le layout Houdini" % sequence)
+        return None
+
+    # In the file a shot ends on the first frame of the next one: cut one frame before
+    cut = {}
+    for i, (start, shot) in enumerate(starts):
+        end = ranges[shot][1]
+        if i + 1 < len(starts):
+            end = min(end, starts[i + 1][0] - 1)
+        cut[shot] = [start, max(start, end)]
+    return cut
+
+
+def set_playback_range(frame_range):
+    #--------------------------------------------------------------------------#
+    # Set the first and the last frame of the Maya timeline                    #
+    #                                                                          #
+    # frame_range = frame range to play (start and end frame)                  #
+    #--------------------------------------------------------------------------#
+
+    start, end = float(frame_range[0]), float(frame_range[1])
+    cmds.playbackOptions(minTime=start, maxTime=end, animationStartTime=start, animationEndTime=end)
+    cmds.currentTime(start)
+    print("Timeline : %s -> %s" % (start, end))
+
+
 def offset_stage_time(stage_shape, shot_range, master_range):
     #--------------------------------------------------------------------------#
     # Offset the USD stage time so the shot reads the right part of the MASTER #

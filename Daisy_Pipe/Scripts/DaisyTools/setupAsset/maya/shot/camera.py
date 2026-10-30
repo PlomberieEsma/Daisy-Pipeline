@@ -5,6 +5,7 @@ import maya.cmds as cmds
 import maya.api.OpenMaya as om
 
 from Scripts.DaisyTools.core.core import CAMERA_RIG_PREFIX, USD_CAM_KEYFRAMES, get_camera_file
+from Scripts.DaisyTools.setupAsset.maya.shot.layout import set_playback_range
 
 DAISY_CAM_PATH = ("Integration", "otls", "DaisyCam.mb")
 CAM_GROUP_NAME = "cam"
@@ -271,7 +272,8 @@ def create_camera_sequence(cam_shots, sequence):
     #-----------------------------------------------------------------------------#
     # Create one Camera Sequencer shot per DaisyCam, to play the whole sequence   #
     # and switch from one camera to the next                                      #
-    # The playback range is set to the whole sequence                             #
+    # Each shot is cut on the MASTER range of the frame range file, and the       #
+    # playback range is set to the whole sequence                                 #
     #                                                                             #
     # cam_shots = list of tuples (shot name, DaisyCam transform, MASTER range)    #
     # sequence = sequence name (e.g.: sq0010)                                     #
@@ -295,7 +297,7 @@ def create_camera_sequence(cam_shots, sequence):
     if shots:
         start = min(cmds.shot(s, query=True, startTime=True) for s in shots)
         end = max(cmds.shot(s, query=True, endTime=True) for s in shots)
-        cmds.playbackOptions(minTime=start, maxTime=end, animationStartTime=start, animationEndTime=end)
+        set_playback_range([start, end])
         print("Camera Sequencer : %d shot(s) de %s à %s" % (len(shots), start, end))
         start_camera_switch(shots)
     return shots
