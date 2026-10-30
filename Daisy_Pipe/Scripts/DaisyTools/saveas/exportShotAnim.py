@@ -17,10 +17,9 @@
 import os
 import tempfile
 
-from Scripts.DaisyTools.core.core import usdExportParams, USD_CAM_KEYFRAMES
+from Scripts.DaisyTools.core.core import usdExportParams, MASTER_SHOT, USD_CAM_KEYFRAMES
 
 LAYOUT_PRODUCT = "layout"
-MASTER_SHOT = "MASTER"
 SCENE_GROUP_NAME = "scene"
 CAM_GROUP_NAME = "cam"
 GEO_GROUP_SUFFIX = "_geo"
@@ -336,16 +335,13 @@ def get_layout(core, entity):
 
     # From core.core and not from the Maya scene_loaders: the Houdini import
     # reuses this function to load the layout the overlay was exported on
-    from Scripts.DaisyTools.core.core import get_master_path
+    from Scripts.DaisyTools.core.core import get_master_path, get_master_shot_entity
 
     path = get_master_path(core, entity, LAYOUT_PRODUCT)
     if path:
         return path, 0, True
 
-    master_entity = {"type": "shot", "sequence": entity["sequence"], "shot": MASTER_SHOT}
-    if "episode" in entity:
-        master_entity["episode"] = entity["episode"]
-    path = get_master_path(core, master_entity, LAYOUT_PRODUCT)
+    path = get_master_path(core, get_master_shot_entity(entity), LAYOUT_PRODUCT)
     if not path:
         return None, 0, False
 
