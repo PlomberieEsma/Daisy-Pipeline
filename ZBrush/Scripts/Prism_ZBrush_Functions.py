@@ -948,14 +948,7 @@ class ExportWindow(ExportWindowUI):
             entity["ProductName"] = productname
 
 
-            exportPath = self.core.products.generateProductPath(
-                task=task,
-                entity=entity,
-                extension=ext,
-                comment=comment,
-                version=version,
-                location=location,
-            )
+            exportPath = self.core.products.generateProductPath(task=task, entity=entity, extension=ext, comment=comment, version=version, location=location)
 
             #check if the exportpath exists and create it if not
             if not os.path.exists(os.path.dirname(exportPath)):

@@ -134,12 +134,12 @@ def get_from_prism(kwargs: dict[str,str]):
         shot_counter += 1
 
 def update_from_prism(kwargs: dict[str,str]):
-    #---------------------------------------------------------------------------#
-    # Syncronize a single houdini shot with Prism when Update shot is clicked   #
-    # update the framerange                                                     #
-    #                                                                           #
-    # kwargs = dict taken from the HDA multiParmBlock "shot_number"             #
-    #---------------------------------------------------------------------------#
+    #-----------------------------------------------------------------------------------#
+    # Syncronize a single houdini shot with Prism when Update from Prism is clicked     #
+    # update the framerange                                                             #
+    #                                                                                   #
+    # kwargs = dict taken from the HDA multiParmBlock "shot_number"                     #
+    #-----------------------------------------------------------------------------------#
 
     parm_number = kwargs["parm_name"][12:]
     hou_node = kwargs["node"]
@@ -153,9 +153,35 @@ def update_from_prism(kwargs: dict[str,str]):
     hou_node.parm(f"sh_framerange_{parm_number}x").set(framerange[0])
     hou_node.parm(f"sh_framerange_{parm_number}y").set(framerange[1])
 
-    # get prism shot
-    # selected_shot = core.entities.getShot(sequence_name, shot_name)
-    # print(f"{selected_shot=}")
+def update_framerange(kwargs: dict[str,str]):
+    #-----------------------------------------------------------------------------------#
+    # Syncronize a single houdini shot with Prism when Update framerange is clicked     #
+    # update the framerange in json file                                                #
+    #                                                                                   #
+    # kwargs = dict taken from the HDA multiParmBlock "shot_number"                     #
+    #-----------------------------------------------------------------------------------#
+
+    parm_number = kwargs["script_multiparm_index"]
+    hou_node = kwargs["node"]
+    shot_name = hou_node.parm(f"sh_name{parm_number}").eval()
+    shot_name = shot_name[-digit_number-2:]
+
+    # get framerange from a json file
+    framerange_file = FramerangeFile()
+    master_range = framerange_file.get_master_range(sequence_name, shot_name)
+
+    # set old and new frameranges
+    old_start_frame = master_range[0]
+    new_start_frame = hou_node.parm(f"sh_framerange_{parm_number}x").eval()
+    old_end_frame = master_range[1]
+    new_end_frame = hou_node.parm(f"sh_framerange_{parm_number}y").eval()
+
+    print(f"update framerange for {shot_name}")
+    print(f"from   {old_start_frame} - {old_end_frame}\nto {new_start_frame} - {new_end_frame}")
+
+    # write new framerange in "framerange.json"
+    export_range = [int(new_start_frame), int(new_end_frame)]
+    framerange_file.set_shot(sequence_name, shot_name, export_range)
 
 #============================================================= push to prism ============================================================#
 

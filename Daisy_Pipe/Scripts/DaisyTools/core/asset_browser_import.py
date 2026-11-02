@@ -81,7 +81,7 @@ class AssetBrowserUI(object):
         self.plugin = plugin
         self.singleMode = False
 
-    def onAssetBrowserTriggered(self, entity, task, checked=False):
+    def onAssetBrowserTriggered(self, entity, task, checked=False, multiSelect=False):
 
         # -----------------------------------------------------------------------------------#
         # Window Asset Browser to select assets to load into a scene during layout          #
@@ -89,13 +89,14 @@ class AssetBrowserUI(object):
         # If opened from Task RLO, the SetDress USD file is already being selected          #
         #       only need to select Char and Props                                          #
         # Any other task : Assets and Shots are listed, only one item can be selected       #
+        # multiSelect = True forces the multi assets view whatever the task                 #
         # Entity imported for shot and sequence                                             #
         # -----------------------------------------------------------------------------------#
 
         # self.core.popup("Current entity: %s" % entity)
 
         self.toImportAsset = []  # valeur par défaut si l'utilisateur ferme sans valider
-        self.singleMode = task not in self.HANDLED_TASKS
+        self.singleMode = not multiSelect and task not in self.HANDLED_TASKS
 
         try:
             allAssetPaths = self.core.entities.getAssetPaths()

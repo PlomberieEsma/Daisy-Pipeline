@@ -1,92 +1,63 @@
-import os
-import maya.cmds as cmds
+#------------------------------------------------------------------------------#
+# Entry point of the Daisy import in Maya                                      #
+# The setup of each department lives in its own module:                        #
+#   scene_loaders.py        find Prism files, load USD stages and Maya scenes  #
+#   shot/layout.py          layout USD stage and frame range                   #
+#   shot/camera.py          DaisyCam import and matching on the USD camera     #
+#   shot/rig_references.py  rigs of the assets chosen in the Asset Browser     #
+#   shot/anim.py            02_layout and 03_anim setup                        #
+#   asset/rig.py            04_rig setup                                       #
+#------------------------------------------------------------------------------#
+
+import importlib
 
 from Scripts.DaisyTools.core.core import get_core
 from Scripts.DaisyTools.core.get_entity_info import get_entity_info
+from Scripts.DaisyTools.setupAsset.maya import scene_loaders
+from Scripts.DaisyTools.setupAsset.maya.shot import layout, camera, rig_references, anim
+from Scripts.DaisyTools.setupAsset.maya.asset import rig
 
-USD_EXTENSIONS = (".usd", ".usda", ".usdc", ".usdz")
-SETDRESS_PRODUCT = "SetDress"
-SETDRESS_SHOT = "MASTER"
-RIG_PRODUCT = "04_rig"  # à adapter au nom réel du product rig
-
-
-def get_source_scene(core, product_path):
-    data = core.paths.getCachePathData(product_path) or {}
-    src = data.get("sourceScene")
-    if src:
-        return src
-
-    info_path = core.products.getVersionInfoPathFromProductFilepath(product_path)
-    if info_path and os.path.exists(info_path):
-        return core.getConfig("sourceScene", configPath=info_path)
-    return None
+# The shelf button reloads this module only: reload the others too, dependencies
+# first, so that script changes are used without restarting Maya
+for module in (scene_loaders, layout, camera, rig_references, anim, rig):
+    importlib.reload(module)
 
 
-def get_master_path(core, entity, product):
-    versions = core.products.getVersionsFromProduct(entity, product)
-    master = next((v for v in versions if v.get("version") == "master"), None)
-    if not master:
-        return None
-    return core.products.getPreferredFileFromVersion(master)
+SHOT_DEPARTMENTS = {
+    # Same setup as the anim, only the referenced rig differs (see rig_references.py)
+    "02_layout": anim.setup_anim,
+    "03_anim": anim.setup_anim,
+}
 
-
-def load_usd_stage(path, name, scale=100.0):
-    cmds.loadPlugin("mayaUsdPlugin", quiet=True)
-    xform = cmds.createNode("transform", name=name)
-    shape = cmds.createNode("mayaUsdProxyShape", name=name + "Shape", parent=xform)
-    cmds.setAttr(shape + ".filePath", path, type="string")
-    cmds.connectAttr("time1.outTime", shape + ".time")
-    cmds.setAttr(xform + ".scale", scale, scale, scale, type="double3")
-    return shape
-
-
-def import_master_usd(core, entity, product):
-    path = get_master_path(core, entity, product)
-    if not path:
-        cmds.warning("Pas de master trouvé pour %s sur %s" % (product, entity))
-        return None
-
-    if not path.lower().endswith(USD_EXTENSIONS):
-        cmds.warning("Le fichier préféré du master n'est pas un USD : %s" % path)
-        return None
-
-    name = "%s_%s_%s" % (entity["sequence"], entity["shot"], product)
-    shape = load_usd_stage(path.replace("\\", "/"), name)
-    print("Stage chargé : %s -> %s" % (shape, path))
-    return shape
-
-
-def get_setdress_entity(shot_entity):
-    entity = {
-        "type": "shot",
-        "sequence": shot_entity["sequence"],
-        "shot": SETDRESS_SHOT,
-    }
-    if "episode" in shot_entity:
-        entity["episode"] = shot_entity["episode"]
-    return entity
+ASSET_DEPARTMENTS = {
+    "04_rig": rig.setup_rig,
+}
 
 
 def import_asset():
-    core = get_core()
+    #-----------------------------------------------------------------#
+    # Entry point: run the setup of the current scene's department    #
+    # Use SHOT_DEPARTMENTS for shots and ASSET_DEPARTMENTS for assets #
+    #                                                                 #
+    # return the setup result, or None if the department has no setup #
+    #-----------------------------------------------------------------#
+
     info = get_entity_info()
     if info is None:
-        return
+        return None
 
-    entity = info["entity"]
-
-    if entity.get("type") == "shot":
-
-        if info["departement"] == "03_anim":
-            return import_master_usd(core, get_setdress_entity(entity), SETDRESS_PRODUCT)
-
+    if info["entity"].get("type") == "shot":
+        departments = SHOT_DEPARTMENTS
     else:
-        if info["departement"] == "04_rig":
-            product_path = core.products.getLatestVersionpathFromProduct(RIG_PRODUCT, entity=entity)
-            if not product_path:
-                print("Aucune version trouvée pour %s sur %s" % (RIG_PRODUCT, entity))
-                return
+        departments = ASSET_DEPARTMENTS
 
-            source_scene = get_source_scene(core, product_path)
-            print("Product :", product_path)
-            print("Source scene :", source_scene)
+    setup = departments.get(info["department"])
+    if setup is None:
+        return None
+
+    return setup(get_core(), info)
+
+
+# Run from the script editor; the Prism shelf button calls import_asset() itself
+if __name__ == "__main__":
+    import_asset()

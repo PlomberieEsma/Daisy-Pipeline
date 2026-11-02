@@ -38,6 +38,12 @@ with open(os.path.join(_pkg_root, "lib", "config.json"), "r", encoding="utf-8") 
     daisyConfig = json.load(f)
 
 USD_FILE_FORMAT = daisyConfig["global"]["usd_file_format"]
+USD_CAM_KEYFRAMES = "daisy:cameraKeyframes"
+#product holding one .mb per DaisyCam, published by the MASTER shot and imported
+#by each shot of the sequence (see saveas/exportCamera.py)
+CAMERA_PRODUCT = "Camera"
+CAMERA_RIG_PREFIX = "DaisyCam"
+MASTER_SHOT = "MASTER"
 
 
 def get_core():
@@ -202,7 +208,7 @@ def resolve_root_prim(layer_path, wanted=""):
     #Return the name of the root prim actually present in a usd file:
     #the wanted name if it exists, else the file's defaultPrim, else its only root prim
 
-    from pxr import Sdf
+    from pxr import Sdf, Usd
 
     layer = Sdf.Layer.FindOrOpen(layer_path)
     if layer is None:
@@ -210,17 +216,108 @@ def resolve_root_prim(layer_path, wanted=""):
 
     roots = [p.name for p in layer.rootPrims]
 
+    #a layer carrying only subLayers is legitimate - that is what create_master writes,
+    #and what the usd rop writes when it keeps its sublayers. Its prims only exist on
+    #the composed stage, so compose it. GetAllChildren, not GetChildren: an overlay
+    #layer holds "over" prims, which the default predicate filters out.
+    #LoadNone keeps payloads out: only the root prim names are needed
+    if layer.subLayerPaths and (not roots or (wanted and wanted not in roots)):
+        stage = Usd.Stage.Open(layer, Usd.Stage.LoadNone)
+        roots += [p.GetName() for p in stage.GetPseudoRoot().GetAllChildren() if p.GetName() not in roots]
+
     if wanted in roots:
         return wanted
     if layer.defaultPrim and layer.defaultPrim in roots:
         return layer.defaultPrim
+
+    file_name = os.path.basename(layer_path)
+
+    #empty export: the rop succeeded but wrote stage metadata only. Checked before the
+    #single root case, otherwise an empty file is reported as having "several" roots
+    if not roots:
+        orphan = f" Its defaultPrim '{layer.defaultPrim}' points at nothing." if layer.defaultPrim else ""
+        raise RuntimeError(
+            f"{file_name} contains no prim: the export is empty, only stage metadata was written.{orphan}"
+        )
+
     if len(roots) == 1:
         return roots[0]
 
+    #defaultPrim set but missing: the root group was renamed between two versions
+    if layer.defaultPrim:
+        raise RuntimeError(
+            f"{file_name}: its defaultPrim '{layer.defaultPrim}' matches none of the root prims {roots}, "
+            f"and none is named '{wanted}': rename the root group or fix the defaultPrim."
+        )
+
+    #several roots: a master can only sublayer one of them
     raise RuntimeError(
-        f"{os.path.basename(layer_path)} contient plusieurs prims racines {roots} et aucun ne s'appelle "
-        f"'{wanted}' : regroupe l'export sous un seul groupe racine."
+        f"{file_name} has several root prims {roots} and none is named '{wanted}': "
+        f"group the export under a single root."
     )
+
+def get_master_path(core, entity, product):
+
+    #Return the preferred file of the master version of a Prism product
+    #(e.g. the layout assembly of a shot), or None if the product has no master
+
+    versions = core.products.getVersionsFromProduct(entity, product)
+    master = next((v for v in versions if v.get("version") == "master"), None)
+    if not master:
+        return None
+    return core.products.getPreferredFileFromVersion(master)
+
+def get_master_shot_entity(entity):
+
+    #Return the entity of the MASTER shot of the same sequence
+
+    master = {"type": "shot", "sequence": entity["sequence"], "shot": MASTER_SHOT}
+    if "episode" in entity:
+        master["episode"] = entity["episode"]
+    return master
+
+def get_camera_file(core, entity, extension=".mb"):
+
+    #Return the camera file published for a shot, or None if there is none.
+    #The Camera product holds one file per DaisyCam of the sequence, so the master
+    #version is a folder: the file of the shot is the one its name ends with.
+    #The shot's own product comes first, the MASTER one is the fallback, as the
+    #layout does in get_layout (saveas/exportShotAnim.py)
+
+    shot = entity.get("shot")
+    if not shot:
+        return None
+
+    suffix = "_%s%s" % (shot, extension)
+    entities = [entity]
+    if shot != MASTER_SHOT:
+        entities.append(get_master_shot_entity(entity))
+
+    for candidate in entities:
+        master_path = get_master_path(core, candidate, CAMERA_PRODUCT)
+        if not master_path:
+            continue
+        folder = os.path.dirname(master_path)
+        for name in sorted(os.listdir(folder)):
+            if name.endswith(suffix):
+                return os.path.join(folder, name)
+
+    return None
+
+def get_source_scene(core, product_path):
+
+    #Return the scene a product was published from: the cache path data first,
+    #then the versioninfo of the version. None if neither knows it
+
+    data = core.paths.getCachePathData(product_path) or {}
+    src = data.get("sourceScene")
+    if src:
+        return src
+
+    info_path = core.products.getVersionInfoPathFromProductFilepath(product_path)
+    if info_path and os.path.exists(info_path):
+        return core.getConfig("sourceScene", configPath=info_path)
+    return None
 
 def create_master(file_path, master_path, default_prim="", frame_range=None):
 
@@ -264,6 +361,9 @@ def create_master(file_path, master_path, default_prim="", frame_range=None):
 
         layer.subLayerPaths.clear() #clear sublayer paths
         layer.subLayerPaths.append(relative_file_path) #append relative file path to sublayer paths
+
+        if default_prim:
+            layer.defaultPrim = default_prim
 
         layer.startTimeCode = start_frame #keep the framerange in sync with the current export
         layer.endTimeCode = end_frame

@@ -26,7 +26,10 @@
 
 #import modules
 import json
-from Scripts.DaisyTools.core.core import get_core
+from DaisyTools.core.dcc.launcher import get_dcc
+from DaisyTools.core.core import get_core
+from DaisyTools.core import core
+# from Scripts.DaisyTools.core.core import get_core
 
 print("execute framerange_convert.py\n\n")
 
@@ -38,19 +41,29 @@ class Error(Exception):
 #=========================================================== SET VARIABLES ===============================================================
 ##########################################################################################################################################
 
-core = get_core()
-assert core is not None
+# core = get_core()
+# assert core is not None
 
-project_path = core.sequencePath.replace("\\", "/")
-project_path = project_path.removesuffix("/03_Production/Shots")
+# project_path = core.sequencePath.replace("\\", "/")
+# project_path = project_path.removesuffix("/03_Production/Shots")
 
 ##########################################################################################################################################
 #============================================================ SET CLASSES ================================================================
 ##########################################################################################################################################
 
 class FramerangeFile():
-    def __init__(self):
-        self.file_path = f"{project_path}/00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/lib/framerange.json"
+    def __init__(self, core = core):
+
+        if get_dcc() == 'houdini' or get_dcc() == 'maya':
+            self.core = get_core()
+            assert self.core is not None
+        else:
+            self.core = core
+            
+        self.project_path = self.core.sequencePath.replace("\\", "/")
+        self.project_path = self.project_path.removesuffix("/03_Production/Shots")
+
+        self.file_path = f"{self.project_path}/00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/lib/framerange.json"
         with open(self.file_path, mode="r", encoding="utf-8") as read_file:
             try:
                 self.file = json.load(read_file)
@@ -192,5 +205,35 @@ class FramerangeFile():
         self.add_sequence(sq_name)
         self.add_shot(sq_name, sh_name, range)
 
+        self.write(self.file)
+        return self.file
+
+    def delete_sequence(self, sq_name: str):
+        #-------------------------------------------------------#
+        # Delete an entire sequence in json file                #
+        #                                                       #
+        # sq_name = name of the sequence (e.g.: sq032)          #
+        #                                                       #
+        # return the new file content                           #
+        #-------------------------------------------------------#
+
+        self.file.pop(sq_name)
+        self.write(self.file)
+        return self.file
+
+    def delete_shot(self, sq_name: str, sh_name: str):
+        #-------------------------------------------------------#
+        # Delete a specific shot in json file                   #
+        #                                                       #
+        # sq_name = name of the sequence (e.g.: sq032)          #
+        # sh_name = name of the shot (e.g.: sh028)              #
+        #                                                       #
+        # return the new file content                           #
+        #-------------------------------------------------------#
+
+        for sequence in self.file:
+            if sequence != sq_name:
+                continue
+            self.file[sequence].pop(sh_name)
         self.write(self.file)
         return self.file

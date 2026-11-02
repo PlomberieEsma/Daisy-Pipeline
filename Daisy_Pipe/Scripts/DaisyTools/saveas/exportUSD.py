@@ -26,9 +26,12 @@
 
 import os
 
-from DaisyTools.core.get_entity_info import get_entity_info
-from DaisyTools.core.core import get_core, write_usd, create_master, create_master_clips, SUBDIVISION_METHOD_MAP, USD_FILE_FORMAT
-from DaisyTools.core.dcc.launcher import get_dcc
+from Scripts.DaisyTools.core.get_entity_info import get_entity_info
+from Scripts.DaisyTools.core.core import get_core, write_usd, create_master, create_master_clips, SUBDIVISION_METHOD_MAP, USD_FILE_FORMAT
+from Scripts.DaisyTools.core.dcc.launcher import get_dcc
+
+# Shot departments exported from Maya as an overlay of the layout assembly (see exportShotAnim.py)
+SHOT_ANIM_DEPARTMENTS = ("02_layout", "03_anim")
 
 
 def export_usd(params=None):
@@ -70,7 +73,9 @@ def export_usd(params=None):
     end_frame = params.get("end_frame")
     comment = params.get("comment", "")
 
-    if not whole_scene and nodes and get_dcc() == "maya":
+    is_shot_anim = is_shot and department in SHOT_ANIM_DEPARTMENTS and get_dcc() == "maya"
+
+    if not whole_scene and nodes and get_dcc() == "maya" and not is_shot_anim:
         # pyrefly: ignore [missing-import]
         import maya.cmds as cmds
         cmds.select(nodes, replace=True)
@@ -98,6 +103,19 @@ def export_usd(params=None):
 
     is_file_per_frame = animation_type == "File per Frame" and frame_range and frame_range[0] != frame_range[1]
 
+    if is_shot_anim:
+        #rigs of |<shot>|scene and DaisyCams of |<shot>|cam written at the path of
+        #their geo/camera in the layout assembly - the MASTER has one camera per shot
+        from Scripts.DaisyTools.saveas.exportShotAnim import write_shot_anim_usd
+
+        def write(file_path, frames):
+            return write_shot_anim_usd(core, entity, file_path, frame_range=frames, overrides=overrides,
+                                       nodes=None if whole_scene else nodes, shot_prim=params.get("default_prim_override"))
+    else:
+        def write(file_path, frames):
+            write_usd(preset_name, file_path, default_prim=default_prim, selection_only=not whole_scene, overrides=overrides, frame_range=frames, is_shot=is_shot, is_animation=is_animation)
+            return default_prim
+
     if is_file_per_frame:
         base, ext = os.path.splitext(path)
         dcc = get_dcc()
@@ -108,11 +126,11 @@ def export_usd(params=None):
                 import maya.cmds as cmds
                 cmds.currentTime(frame)
             frame_path = f"{base}.{frame:04d}{ext}"
-            write_usd(preset_name, frame_path, default_prim=default_prim, selection_only=not whole_scene, overrides=overrides, frame_range=(frame, frame), is_shot=is_shot, is_animation=is_animation)
+            default_prim = write(frame_path, (frame, frame))
             frame_paths.append(frame_path)
         print(f"USD exported (file per frame): {len(frame_paths)} files in {os.path.dirname(path)}")
     else:
-        write_usd(preset_name, path, default_prim=default_prim, selection_only=not whole_scene, overrides=overrides, frame_range=frame_range, is_shot=is_shot, is_animation=is_animation)
+        default_prim = write(path, frame_range)
         print(f"USD exported: {path}")
 
     if update_master:
@@ -123,16 +141,60 @@ def export_usd(params=None):
         else:
             create_master(path, master_path, default_prim=default_prim, frame_range=frame_range)
 
+    register_product(core, entity, task, path, master_path=master_path if update_master else None,
+                     comment=comment, thumbnail=update_thumbnail)
+
+    #a scene may publish a second product next to its own: the cameras of a shot
+    #go to their own product so that each shot can import its camera as a Maya
+    #file instead of rebuilding it from this overlay (see exportCamera.py)
+    if is_shot_anim:
+        export_shot_cameras(core, entity, comment=comment,
+                            nodes=None if whole_scene else nodes, update_master=update_master)
+
+    return path
+
+
+def export_shot_cameras(core, entity, comment="", nodes=None, update_master=True):
+
+    #Publish the DaisyCams of the scene as one Maya file each, in the Camera product
+
+    from Scripts.DaisyTools.core.core import CAMERA_PRODUCT
+    from Scripts.DaisyTools.saveas.exportCamera import camera_master_path, export_cameras
+
+    try:
+        paths = export_cameras(core, entity, nodes=nodes, update_master=update_master)
+    except Exception as e:
+        #the USD is already written and registered: a camera failure must not undo it
+        print(f"export_shot_cameras: {e}")
+        return []
+
+    if not paths:
+        return []
+
+    #the version info belongs to the version folder, not to each file: one call
+    #covers the cameras of the whole sequence
+    register_product(core, entity, CAMERA_PRODUCT, paths[0],
+                     master_path=camera_master_path(core, entity) if update_master else None,
+                     comment=comment, thumbnail=False)
+    return paths
+
+
+def register_product(core, entity, product, path, master_path=None, comment="", thumbnail=True):
+
+    #Register a written file as a Prism product version: version info, preview and
+    #version cap. A second product of the same run passes thumbnail=False, or the
+    #preview of the first one would be overwritten (same as the Houdini proxy export)
+
     details = dict(entity)
     details["version"] = core.products.getProductDataFromFilepath(path).get("version", "")
     details["sourceScene"] = core.getCurrentFileName()
-    details["product"] = task
+    details["product"] = product
     details["comment"] = comment
 
     info_path = core.products.getVersionInfoPathFromProductFilepath(path)
     core.saveVersionInfo(filepath=info_path, details=details)
 
-    if update_thumbnail:
+    if thumbnail:
         if not core.products.getUseProductPreviews():
             core.setConfig("globals", "capture_viewport_products", True, config="user")
 
@@ -147,13 +209,11 @@ def export_usd(params=None):
                 if not preview.save(scene_preview, "JPG"):
                     print(f"export_usd: échec d'écriture {scene_preview}")
 
-    if update_master:
+    if master_path:
         master_info_path = core.products.getVersionInfoPathFromProductFilepath(master_path)
         core.saveVersionInfo(filepath=master_info_path, details=details)
 
-    from DaisyTools.core.version_cleanup import check_version_limit_for_output
-    from DaisyTools.core.dcc.launcher import get_main_window
+    from Scripts.DaisyTools.core.version_cleanup import check_version_limit_for_output
+    from Scripts.DaisyTools.core.dcc.launcher import get_main_window
 
-    check_version_limit_for_output(core, entity, task, path, parent=get_main_window())
-
-    return path
+    check_version_limit_for_output(core, entity, product, path, parent=get_main_window())

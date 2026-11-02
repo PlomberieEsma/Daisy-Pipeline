@@ -27,9 +27,8 @@
 import os
 import shutil
 
-from DaisyTools.core.get_entity_info import get_entity_info
-from DaisyTools.core.core import get_core
-
+from Scripts.DaisyTools.core.get_entity_info import get_entity_info
+from Scripts.DaisyTools.core.core import get_core
 
 def _mel_bool(value):
     return "true" if value else "false"
@@ -186,8 +185,8 @@ def export_geo(params=None):
         master_info_path = core.products.getVersionInfoPathFromProductFilepath(master_path)
         core.saveVersionInfo(filepath=master_info_path, details=details)
 
-    from DaisyTools.core.version_cleanup import check_version_limit_for_output
-    from DaisyTools.core.dcc.launcher import get_main_window
+    from Scripts.DaisyTools.core.version_cleanup import check_version_limit_for_output
+    from Scripts.DaisyTools.core.dcc.launcher import get_main_window
 
     check_version_limit_for_output(core, entity, task, path, parent=get_main_window())
 
