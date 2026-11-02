@@ -42,10 +42,64 @@ def get_latest_scene(core, entity, department, task):
 #                                   USD stages                                   #
 # ------------------------------------------------------------------------------ #
 
+def find_usd_stage(name):
+    #---------------------------------------------------------------------#
+    # Find a stage already loaded under this name in the scene            #
+    #                                                                     #
+    # name = name the stage was loaded with by load_usd_stage()           #
+    #                                                                     #
+    # return the mayaUsdProxyShape long name, or None if there is none    #
+    #---------------------------------------------------------------------#
+
+    shapes = cmds.ls(name + "Shape", type="mayaUsdProxyShape", long=True) or []
+    return shapes[0] if shapes else None
+
+
+def connect_stage_time(stage_shape):
+    #---------------------------------------------------------------------#
+    # Make the stage follow the scene time                                #
+    # Replaces the time offset curve of offset_stage_time() when the      #
+    # stage is reloaded on a USD that does not need an offset any more    #
+    #                                                                     #
+    # stage_shape = mayaUsdProxyShape of the stage                        #
+    #---------------------------------------------------------------------#
+
+    cmds.connectAttr("time1.outTime", stage_shape + ".time", force=True)
+
+
+def reload_usd_stage(stage_shape, path):
+    #---------------------------------------------------------------------#
+    # Reload an already loaded stage from the disk, on the given USD      #
+    #                                                                     #
+    # stage_shape = mayaUsdProxyShape of the stage                        #
+    # path = USD file path to read (the master can be a new version)      #
+    #                                                                     #
+    # return the name of the reloaded mayaUsdProxyShape                   #
+    #---------------------------------------------------------------------#
+
+    import mayaUsd.ufe
+
+    if cmds.getAttr(stage_shape + ".filePath") != path:
+        # New master version: the stage reopens itself on the new file
+        cmds.setAttr(stage_shape + ".filePath", path, type="string")
+
+    # Re-read the layers from the disk: a republished master keeps the same path,
+    # and the layers of the previous click are still cached by USD
+    stage = mayaUsd.ufe.getStage(cmds.ls(stage_shape, long=True)[0])
+    if stage:
+        stage.Reload()
+    load_stage_payloads(stage_shape)
+    print("Stage rechargé : %s -> %s" % (stage_shape, path))
+    return stage_shape
+
+
 def load_usd_stage(path, name, scale=100.0):
     #------------------------------------------------------------------#
     # Load a USD file in the Maya scene through a mayaUsdProxyShape    #
     # The stage follows the scene time and is scaled (Houdini -> Maya) #
+    # A stage already loaded under this name is reloaded instead of    #
+    # being loaded a second time (the Daisy import button is clicked   #
+    # again)                                                           #
     #                                                                  #
     # path = USD file path                                             #
     # name = name of the created transform                             #
@@ -55,12 +109,18 @@ def load_usd_stage(path, name, scale=100.0):
     #------------------------------------------------------------------#
 
     cmds.loadPlugin("mayaUsdPlugin", quiet=True)
+
+    path = path.replace("\\", "/")
+    shape = find_usd_stage(name)
+    if shape:
+        return reload_usd_stage(shape, path)
+
     xform = cmds.createNode("transform", name=name)
     shape = cmds.createNode("mayaUsdProxyShape", name=name + "Shape", parent=xform)
     # Open the stage without payloads, they are loaded afterwards by load_stage_payloads()
     cmds.setAttr(shape + ".loadPayloads", False)
     cmds.setAttr(shape + ".filePath", path, type="string")
-    cmds.connectAttr("time1.outTime", shape + ".time")
+    connect_stage_time(shape)
     cmds.setAttr(xform + ".scale", scale, scale, scale, type="double3")
     load_stage_payloads(shape)
     return shape
