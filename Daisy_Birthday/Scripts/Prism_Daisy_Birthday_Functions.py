@@ -185,6 +185,20 @@ class Prism_Daisy_Birthday_Functions(object):
             label = MarqueeLabel(text, bg, fg, size=12, padding=4)
 
         bar.addWidget(label)
+
+        closeBtn = QToolButton(bar)
+        closeBtn.setText("✕")
+        closeBtn.setToolTip("Fermer")
+        closeBtn.setCursor(Qt.PointingHandCursor)
+        closeBtn.setFixedHeight(label.height())
+        closeBtn.setStyleSheet(
+            "QToolButton { background: %s; color: %s; border: 0; padding: 0 10px; }"
+            "QToolButton:hover { background: rgba(128, 128, 128, 70); }" % (bg.name(), fg.name())
+        )
+        closeBtn.clicked.connect(label.timer.stop)
+        closeBtn.clicked.connect(bar.hide)
+        bar.addWidget(closeBtn)
+
         origin.addToolBar(Qt.TopToolBarArea, bar)
 
 
