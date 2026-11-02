@@ -1,7 +1,7 @@
 import maya.cmds as cmds
 
 from Scripts.DaisyTools.core.framerange_convert import FramerangeFile
-from Scripts.DaisyTools.setupAsset.maya.scene_loaders import MASTER_SHOT, USD_EXTENSIONS, get_master_path, get_master_shot_entity, load_usd_stage
+from Scripts.DaisyTools.setupAsset.maya.scene_loaders import MASTER_SHOT, USD_EXTENSIONS, connect_stage_time, get_master_path, get_master_shot_entity, load_usd_stage
 
 LAYOUT_PRODUCT = "layout"
 
@@ -32,7 +32,7 @@ def import_master_usd(core, entity, product):
 
     name = "%s_%s_%s" % (entity["sequence"], entity["shot"], product)
     shape = load_usd_stage(path.replace("\\", "/"), name)
-    print("Stage chargé : %s -> %s" % (shape, path))
+    print("Stage %s : %s" % (shape, path))
     return shape
 
 
@@ -194,7 +194,12 @@ def offset_stage_time(stage_shape, shot_range, master_range):
     #--------------------------------------------------------------------------#
 
     # Time -> time curve: the shot start frame reads the shot start frame in the MASTER
-    curve = cmds.createNode("animCurveTT", name=stage_shape.split("|")[-1] + "_timeOffset")
+    name = stage_shape.split("|")[-1] + "_timeOffset"
+    # The stage can be reloaded by a new click on the Daisy import button: the curve
+    # of the previous click is rebuilt, the frame ranges may have changed since
+    if cmds.objExists(name):
+        cmds.delete(name)
+    curve = cmds.createNode("animCurveTT", name=name)
     cmds.setKeyframe(curve, time=shot_range[0], value=master_range[0])
     cmds.setKeyframe(curve, time=shot_range[1], value=master_range[0] + shot_range[1] - shot_range[0])
     cmds.keyTangent(curve, inTangentType="linear", outTangentType="linear")
@@ -221,6 +226,10 @@ def load_shot_layout(core, entity):
     if get_master_path(core, entity, LAYOUT_PRODUCT):
         # The shot layout is already in the shot time: no time offset
         layout = import_master_usd(core, entity, LAYOUT_PRODUCT)
+        if layout:
+            # A reloaded stage can still be driven by the offset of a previous click,
+            # when the shot had no layout of its own yet
+            connect_stage_time(layout)
         return layout, shot_range, shot_range
 
     core.popup(
