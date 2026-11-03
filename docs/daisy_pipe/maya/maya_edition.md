@@ -24,7 +24,6 @@ Comme les prims USD ne vivent pas dans le même graphe que les nodes Maya, les o
 
 Faites un clic droit sur le prim dans l'Outliner et choisissez _Edit As Maya Data_. Le prim est converti en nodes Maya que vous pouvez modifier avec les outils habituels. Une fois les modifications terminées, deux choix sont possibles : _Merge Maya Edits to USD_ renvoie les changements vers le stage, _Discard Maya Edits_ les annule et revient au prim d'origine.
 
-><br>
 >Avant de merger, vérifiez quel layer est défini comme target layer, afin que les changements arrivent dans le bon layer.
 
 [< page précédente](maya_usd.md)
