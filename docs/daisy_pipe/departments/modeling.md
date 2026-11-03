@@ -94,6 +94,9 @@ Puis **allez sur le node "daisy export"** et clickez sur "**save to disk**". Voi
 Finalement, comme pour Maya : maintenant que nous avons fini notre ModL, il est temps de passer à la ModH. On peut créer un nouveau fichier de ModH à partir de la modL ?<br>
 Rendez-vous dans le **Project Browser** (la fenêtre Prism) à l'intérieur d'Houdini, mais gardez bien votre scène ouverte. Puis **allez dans la task ModH** et faites un **click droit dans "Files"** sélectionnez "**Create new version from current**". Votre scène est maintenant dupliquée dans ModH, pous pouvez travailler dessus et recommencer le processus d'export.
 
+><img src="../../src/warning_yellow.png" width=50em><br>
+>Une fois que vous avez fait tous vos exports une première fois (ModH et ModL), pensez bien à faire un **[Create USD Asset](../prism.md/#create-usd-asset)**, ça vous sera essentiel pour la suite de la prod.
+
 ><img src="../../src/warning_red.png" width=50em><br>
 > Important : chers modelers, ayez une petite pensée pour vos collègues, et pensez bien avant vos exports à faire vos UVs mais aussi à mettre des presets de materials sur vos geo (standard surface, lambert, blinn ...). Cela facilitera le travail des texture artists et des riggeurs.<br>
 > Pensez aussi à donner un nom à vos geo avec l'attribute "name". Histoire d'hygiène.

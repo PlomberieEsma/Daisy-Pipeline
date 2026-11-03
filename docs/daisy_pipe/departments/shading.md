@@ -7,6 +7,9 @@ Ok, Maintenant que nous avons un asset texturé, il est temps de lui créer un s
 - [Création des shaders](#création-des-shaders)
 - [Scène de lookdev](#scène-de-lookdev)
 
+><img src="../../src/warning_red.png" width=50em><br>
+>Avant de commencer, assurez-vous bien d'avoir fait un premier **[Create USD Asset](../prism.md/#create-usd-asset)** pour que le template reconnaisse bien la geo.
+
 ***
 
 ## Création du template
@@ -32,6 +35,9 @@ Votre node est créé, dans les parameters vous avez un bouton "create template"
 
 Avant de modifier le template il est important de savoir que si un node est de la même couleur que son backdrop, il vaut mieux éviter d'y toucher. Notons également qu'il y a un backdrop en haut à gauche nommé "Toolbox", c'est un répertoir de nodes qui pourraient vous être utils (ou pas), à vous d'explorer et les tester. Maintenant passons en revue les nodes qui composent le template.
 
+><img src="../../src/information.png" width=50em><br>
+>Si vous avez utilisé le plugin de Daisy Pipe pour Substance Painter et que vous avez bien exporté vos textures, les shaders seront créés automatiquement et les textures connectées au shader. Il ne vous restera plus qu'à assigner chaque material aux primitives de votre asset et à ajouster les paramètres de vos shaders. Vous êtes libres d'en faire ce que vous voulez.
+
 ***
 
 ## Présentation du template
@@ -46,12 +52,17 @@ Avant de modifier le template il est important de savoir que si un node est de l
     - assign shader : permet d'assigner chaque shader à la bonne primitive
 3. **Le backdrop "Outputs"** qui sert à exporter votre shading en USD
     - daisy export : permet d'exporter les shaders en usd
+4. **Le backdrop "Toolbox"** répertorie des nodes qui pourraient vous être utils.
+
+Pour plus d'informations sur ce template, **[clickez ici](../houdini/templates.md/#template-de-shading)**.
 
 ***
 
 ## Création des shaders
 Maintenant que nous avons fait les présentations, passons à la pratique. Il est temps de créer nos shaders. Pour cela nous allons utiliser notre asset "pufferfish". Rentrez dans le node "**create shader**" en double clickant dessus.
 
+
+><img src="../../src/information.png" width=50em><br>
 > Petit tip, vous pouvez passer de la vue "proxy" à la vue "render" en clickant sur les lunettes à droite du viewport.<br>
 >![switch proxy render](src/shading/switch_proxy_render.png)
 
@@ -98,11 +109,11 @@ Ce node vous crée automatiquement une scène complète pour voir votre shading.
 - le type de domelight : Studio, Day, Night et Custom (où vous pouvez mettre un HDR custom, changer la couleur et l'intensité de la light)
 - le pixel variance pour gérer les samples
 - le framerange du turn
+- l'extension des fichiers de sortie
 
+><img src="../../src/warning_yellow.png" width=50em><br>
 > Sachez que le turn se fait en 2 parties égales, une fois avec l'asset qui tourne et une fois avec la light qui tourne.<br>
 > Vous ne pourrez pas changer la durée de chaque partie, seulement la durée global
-
-> Si le turn ne se met pas à jour, n'hésitez pas à modifier le framerange et le remettre pour le refresh
 
 ![houdini lookdev scene node](src/shading/lookdev_scene.png)
 
@@ -111,6 +122,10 @@ Pour lancer le turn clickez sur le bouton "Render with Rman" (ou Karma), ce qui 
 Le turn est ensuite stocké dans Prism sous forme d'une séquence d'images dans les playblasts de votre asset.
 
 ![houdini lookdev scene node](src/shading/prism_turn_result.png)
+
+><img src="../../src/warning_yellow.png" width=50em><br>
+>Une fois que vous avez fait votre export une première fois, pensez bien à faire un **[Create USD Asset](../prism.md/#create-usd-asset)** pour appliquer le shading à votre asset USD.
+
 ![houdini lookdev scene node](src/shading/turn_pufferfish.gif)
 
 [< page précédente](../departments.md) - 

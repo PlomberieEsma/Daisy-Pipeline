@@ -1,7 +1,14 @@
 # Templates
 [< page précédente](../houdini.md)
 
-### En cours d'écriture ...
+Cette page a pour but de définir chaque template et son fonctionnement de manière exhaustive.<br>
+**En cours d'écriture**
+
+## Template général d'asset
+## Template de Shading
+## Template de SetDress
+## Template de Layout MASTER
+## Template de Layout
 
 [< page précédente](../houdini.md) - 
 [page suivante >](hda.md)<br>
