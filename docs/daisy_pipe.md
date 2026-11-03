@@ -9,7 +9,7 @@ Daisy Pipeline est un plugin pour Prism Pipeline. Il a pour but gérer un pipe U
 Ci dessous la documentation relative à :
 
 - [Installation](daisy_pipe/installation.md)
-- [Maya](daisy_pipe/maya/maya.md)
+- [Maya](daisy_pipe/maya/maya_usd.md)
 - [Houdini](daisy_pipe/houdini.md)
     - [Solaris](daisy_pipe/houdini/solaris.md)
     - [Templates](daisy_pipe/houdini/templates.md)
