@@ -33,7 +33,7 @@ Dans le layout de l'exemple, la Layer Data Window montre un `metersPerUnit` à 0
 ><img src="../../src/information.png" width=50em><br>
 >Si l'échelle est incorrecte après l'import d'un asset venant d'un autre logiciel (Houdini de jeu par exemple), commencez par remettre à l'échelle l'asset en changeant la scale de l'usd dans l'attribute editor.
 
-[< page précédente](maya_usd.md) -
+[< page précédente](../maya_usd.md) -
 [page suivante >](maya_materiaux.md)
 
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

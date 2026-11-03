@@ -1,5 +1,5 @@
 # Maya
-[< retour à la page Maya](maya_usd.md)
+[< retour à la page Maya](../maya_usd.md)
 
 Cette page explique comment Maya gère les références, les payloads et les variants d'un stage USD.
 
@@ -19,6 +19,6 @@ Dans l'Outliner, un clic droit sur un prim qui porte un payload propose les opti
 
 Un variant set permet de choisir entre plusieurs versions d'un même prim, par exemple plusieurs états d'un asset. Dans Maya, la sélection se fait dans l'Attribute Editor, dans la section dédiée aux variants du prim.
 
-[< page précédente](maya_usd.md)
+[< page précédente](../maya_usd.md)
 
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

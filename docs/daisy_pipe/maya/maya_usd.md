@@ -9,12 +9,12 @@ Voici un petit sommaire pour vous aider :
 
 - [L'USD dans Maya](#lusd-dans-maya)
   - [USD Layer Editor](#usd-layer-editor)
-  - [Créer et charger un stage](maya_stage.md)
-  - [Édition : target layer et Edit As Maya Data](maya_edition.md)
-  - [Import, export et unités](maya_import_export.md)
-  - [Matériaux et RenderMan](maya_materiaux.md)
-  - [Références, payloads et variants](maya_references_variants.md)
-  - [Problèmes connus](maya_problemes_connus.md)
+  - [Créer et charger un stage](maya_usd/maya_stage.md)
+  - [Édition : target layer et Edit As Maya Data](maya_usd/maya_edition.md)
+  - [Import, export et unités](maya_usd/maya_import_export.md)
+  - [Matériaux et RenderMan](maya_usd/maya_materiaux.md)
+  - [Références, payloads et variants](maya_usd/maya_references_variants.md)
+  - [Problèmes connus](maya_usd/maya_problemes_connus.md)
 
 ## L'USD dans Maya
 

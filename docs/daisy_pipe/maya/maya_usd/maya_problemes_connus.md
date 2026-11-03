@@ -1,5 +1,5 @@
 # Problèmes connus
-[< page précédente](maya_usd.md)
+[< page précédente](../maya_usd.md)
 
 Cette page regroupe les problèmes courants rencontrés avec l'USD dans Maya, et leur solution.
 
@@ -11,6 +11,6 @@ Cette page regroupe les problèmes courants rencontrés avec l'USD dans Maya, et
 | Impossible d'éditer ou de cibler un layer. | Vérifier que le layer n'est pas verrouillé, qu'il n'est pas en lecture seule, et que vous n'éditez pas dans un layer plus faible que celui qui contient déjà la valeur. |
 | Les matériaux RenderMan ne s'affichent pas. | Ils ne sont pas pris en charge dans Maya. Voir la page [matériaux](maya_materiaux.md). |
 
-[< page précédente](maya_usd.md)
+[< page précédente](../maya_usd.md)
 
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

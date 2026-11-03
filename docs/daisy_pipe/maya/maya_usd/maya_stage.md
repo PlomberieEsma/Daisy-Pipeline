@@ -1,5 +1,5 @@
 # Créer et charger un stage
-[< page précédente](maya_usd.md)
+[< page précédente](../maya_usd.md)
 
 Cette page explique comment créer un stage USD dans Maya et comment Maya l'affiche.
 
@@ -29,6 +29,6 @@ Le bouton _Save Stage_, en haut à droite de l'arbre des layers, enregistre en u
 ><img src="../../src/information.png" width=50em><br>
 >Pour plus d'informations sur le Layer Editor, retrouvez la ***[documentation officielle ici](https://help.autodesk.com/view/MAYAUL/2026/ENU/?guid=GUID-4FAD73CA-E775-4009-9DCB-3BC6792C465E)***.
 
-[< page précédente](maya_usd.md)
+[< page précédente](../maya_usd.md)
 
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

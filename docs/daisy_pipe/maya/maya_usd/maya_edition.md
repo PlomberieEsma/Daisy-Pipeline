@@ -1,5 +1,5 @@
 # target layer et Edit As Maya Data
-[< page précédente](maya_usd.md)
+[< page précédente](../maya_usd.md)
 
 Cette page explique où vont les modifications faites sur un stage USD dans Maya, et comment éditer un prim avec les outils Maya.
 
@@ -27,6 +27,6 @@ Faites un clic droit sur le prim dans l'Outliner et choisissez _Edit As Maya Dat
 ><img src="../../src/information.png" width=50em><br>
 >Avant de merger, vérifiez quel layer est défini comme target layer, afin que les changements arrivent dans le bon layer.
 
-[< page précédente](maya_usd.md)
+[< page précédente](../maya_usd.md)
 
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
