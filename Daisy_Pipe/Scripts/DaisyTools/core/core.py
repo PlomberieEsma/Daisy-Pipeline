@@ -23,12 +23,8 @@
 #
 #   by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio
 #   art by Joan G. Stark (Spunk)
-try:
-    from DaisyTools.core.dcc.launcher import get_dcc
-    from DaisyTools.setupAsset.maya.setup_geo import setup_geo, geo_is_complete
-except:
-    from DaisyTools.core.dcc.launcher import get_dcc
-    from DaisyTools.setupAsset.maya.setup_geo import setup_geo, geo_is_complete
+from DaisyTools.core.dcc.launcher import get_dcc
+from DaisyTools.setupAsset.maya.setup_geo import setup_geo, geo_is_complete
 import json, os
 
 #path to the export usd parameters which are stocked in a json file
