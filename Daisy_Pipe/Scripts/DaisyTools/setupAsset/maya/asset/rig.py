@@ -1,6 +1,6 @@
 import maya.cmds as cmds
 
-from Scripts.DaisyTools.setupAsset.maya.scene_loaders import get_source_scene, import_maya_scene
+from DaisyTools.setupAsset.maya.scene_loaders import get_source_scene, import_maya_scene
 
 # Rig task -> modeling product whose source scene is imported
 RIG_PRODUCTS = {

@@ -24,7 +24,7 @@
 #   by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio
 #   art by Joan G. Stark (Spunk)
 
-from Scripts.DaisyTools.core.core import get_core
+from DaisyTools.core.core import get_core
 
 def get_entity_info():
     

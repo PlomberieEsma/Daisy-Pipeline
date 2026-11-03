@@ -69,7 +69,7 @@ BIRTHDAY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib", 
 
 
 class Prism_Daisy_Birthday_Functions(object):
-    UPCOMING_DAYS = 7
+    UPCOMING_DAYS = 2
     MONTHS_FR = ["janvier", "février", "mars", "avril", "mai", "juin",
                  "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
 

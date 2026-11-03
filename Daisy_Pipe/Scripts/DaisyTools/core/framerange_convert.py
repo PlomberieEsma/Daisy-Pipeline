@@ -29,7 +29,7 @@ import json
 from DaisyTools.core.dcc.launcher import get_dcc
 from DaisyTools.core.core import get_core
 from DaisyTools.core import core
-# from Scripts.DaisyTools.core.core import get_core
+# from DaisyTools.core.core import get_core
 
 print("execute framerange_convert.py\n\n")
 

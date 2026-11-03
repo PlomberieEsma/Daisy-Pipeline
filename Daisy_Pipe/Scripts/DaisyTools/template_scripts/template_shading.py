@@ -27,7 +27,7 @@
 
 #import modules
 import hou # type: ignore
-import json
+import json, os
 from time import perf_counter
 from typing import Any
 from pxr import Usd, UsdGeom # type: ignore
@@ -88,10 +88,106 @@ print(f"meters per unit : {meters_per_unit}")
 #=========================================================== SET FUNCTIONS ===============================================================
 ##########################################################################################################################################
 
-def template_shading() -> dict[str, Any]:
+def texture_detect() -> dict[str, str]:
+    #-----------------------------------------------------------#
+    # detect the textures latest version of the asset           #
+    #                                                           #
+    # return a dict of the filenames and paths of each texture  #
+    #-----------------------------------------------------------#
 
+    # get the last version of textures
+    texture_version_dir = f"{project_path}/03_Production/Assets/{asset_path}/Textures/Texturing"
+    try:
+        texture_version_list = os.listdir(texture_version_dir)
+    except:
+        print("No texture found")
+        return
+    int_greater_version = 0
+    greater_version = ""
+    for tex_version in texture_version_list:
+        int_tex_version = int(tex_version.replace("v", ""))
+        if int_tex_version > int_greater_version:
+            int_greater_version = int_tex_version
+            greater_version = tex_version
+    texture_last_version_dir = greater_version
+
+    # get textures in a list
+    texture_dir = f"{texture_version_dir}/{texture_last_version_dir}"
+    texture_dir_content = os.listdir(texture_dir)
+    texture_list = {}
+    # keep only texture in the directory and create the output
+    for content in texture_dir_content:
+        if os.path.isfile(f"{texture_dir}/{content}"):
+            texture_list.update({content : f"{texture_dir}/{content}"})
+
+    return texture_list
+
+def auto_material(parent_node: object):
+    #--------------------------------- detections ----------------------------------#
+    # create a dict with shader name, texture name and path
+    texture_dict = texture_detect()
+    if texture_dict == None:
+        return
+    material_dict: dict[str, dict[str, str]] = {}
+    shader_name_list = []
+    for texture in texture_dict:
+        map_type = texture.split("_")[-3]
+        shader_name = texture.split(f"_{map_type}")[0]
+
+        if shader_name not in shader_name_list:
+            shader_name_list.append(shader_name)
+            material_dict.update({shader_name: {texture: texture_dict[texture]}})
+        else:
+            material_dict[shader_name].update({texture: texture_dict[texture]})
+
+    #-------------------------------- create nodes ---------------------------------#
+    for shader in material_dict:
+        mat_builder = parent_node.createNode("pxrmaterialbuilder")
+        mat_builder.setName(shader)
+
+        pxr_surface = mat_builder.createNode("pxrsurface::3.0")
+        pxr_surface.setName(f"pxr_{shader}")
+
+        output_collect = hou.node(f"/stage/{parent_node.name()}/{mat_builder.name()}/output_collect")
+        output_collect.setInput(0, pxr_surface)
+
+        for tex in material_dict[shader]:
+            map_type = tex.split("_")[-3]
+
+            pxr_texture = mat_builder.createNode("pxrtexture::3.0")
+            pxr_texture.setName(map_type)
+            pxr_texture.parm("filename").set(material_dict[shader][tex].replace(project_path, "$PRISM_JOB"))
+
+            try:
+                if map_type == "Diffuse" or map_type == "BaseColor" or map_type == "Albedo":
+                    pxr_surface.setInput(2, pxr_texture)
+                elif map_type == "Specular":
+                    pxr_surface.setInput(10, pxr_texture)
+                elif map_type == "Roughness":
+                    pxr_surface.setInput(14, pxr_texture)
+                elif map_type == "Subsurface" or map_type == "SSS":
+                    pxr_surface.setInput(54, pxr_texture)
+                elif map_type == "SubsurfaceColor":
+                    pxr_surface.setInput(55, pxr_texture)
+                elif map_type == "Emissive" or map_type == "Glow":
+                    pxr_surface.setInput(113, pxr_texture)
+                elif map_type == "GlowColor":
+                    pxr_surface.setInput(114, pxr_texture)
+                elif map_type == "Opacity" or map_type == "Translucency" or map_type == "Presence":
+                    pxr_surface.setInput(118, pxr_texture)
+                else:
+                    print(f"Unrecognized map type for {map_type}")
+            except:
+                print(f"Unrecognized map type for {map_type}")
+
+        #-------------------------------- arange nodes ---------------------------------#
+        mat_builder.layoutChildren()
+    parent_node.layoutChildren()
+
+def template_shading() -> dict[str, Any]:
     #-------------------------------------------------------------------------------#
     # This function creates the houdini node template for the Shading department    #
+    #                                                                               #
     # return the list of all nodes in a dictionary                                  #
     #-------------------------------------------------------------------------------#
 
@@ -171,8 +267,9 @@ def template_shading() -> dict[str, Any]:
     node_position[1] -= 5
     daisy_export1.move(node_position)
     daisy_export1.parm("defaultprim").set("`chs(\"../create_component1/primpath\")`")
-    # daisy_export1.parm("setmetersperunit").set(0)
     daisy_export1.parm("metersperunit").set(meters_per_unit)
+
+    auto_material(create_shader1)
 
     node_list = {"ref_geo1" : ref_geo1,
               "set_variant1" : set_variant1,
