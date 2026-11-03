@@ -30,7 +30,7 @@ Maya travaille par défaut en centimètres, alors que l'USD stocke l'unité de l
 
 Dans le layout de l'exemple, la Layer Data Window montre un `metersPerUnit` à 0.01 ainsi qu'une matrice `maya_scale` à 0.01 sur le prim racine. En cas de problème d'échelle, c'est le premier endroit à contrôler.
 
-
+><img src="../../src/information.png" width=50em><br>
 >Si l'échelle est incorrecte après l'import d'un asset venant d'un autre logiciel (Houdini de jeu par exemple), commencez par remettre à l'échelle l'asset en changeant la scale de l'usd dans l'attribute editor.
 
 [< page précédente](maya_usd.md) -
