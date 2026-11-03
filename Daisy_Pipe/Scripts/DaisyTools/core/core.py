@@ -23,12 +23,8 @@
 #
 #   by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio
 #   art by Joan G. Stark (Spunk)
-try:
-    from Scripts.DaisyTools.core.dcc.launcher import get_dcc
-    from Scripts.DaisyTools.setupAsset.maya.setup_geo import setup_geo, geo_is_complete
-except:
-    from DaisyTools.core.dcc.launcher import get_dcc
-    from DaisyTools.setupAsset.maya.setup_geo import setup_geo, geo_is_complete
+from DaisyTools.core.dcc.launcher import get_dcc
+from DaisyTools.setupAsset.maya.setup_geo import setup_geo, geo_is_complete
 import json, os
 
 #path to the export usd parameters which are stocked in a json file
@@ -62,7 +58,7 @@ def get_core():
         return None
     return core
 
-    #To use it import the fonction in other modules using "from Daisy_Pipe.Scripts.DaisyTools.core.core import get_core" then execute with "core = get_core()"
+    #To use it import the fonction in other modules using "from Daisy_Pipe.DaisyTools.core.core import get_core" then execute with "core = get_core()"
     #You can then use core.exampleOfPrismFonction to call prism fonction
 
 

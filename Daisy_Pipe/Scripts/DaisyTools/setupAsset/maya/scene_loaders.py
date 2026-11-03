@@ -2,7 +2,7 @@ import os
 import maya.cmds as cmds
 
 # Shared with the Houdini side, which cannot import this Maya-only module
-from Scripts.DaisyTools.core.core import MASTER_SHOT, get_master_path, get_master_shot_entity, get_source_scene
+from DaisyTools.core.core import MASTER_SHOT, get_master_path, get_master_shot_entity, get_source_scene
 
 USD_EXTENSIONS = (".usd", ".usda", ".usdc", ".usdz")
 MAYA_EXTENSIONS = (".ma", ".mb")
@@ -214,12 +214,12 @@ def import_maya_scene(path, namespace=":"):
     return nodes
 
 
-def reference_maya_scene(path):
+def reference_maya_scene(path, namespace=":"):
     #---------------------------------------------------------------------#
     # Reference a Maya scene (.ma or .mb) in the current scene            #
-    # The nodes are referenced without namespace                          #
     #                                                                     #
     # path = path of the scene to reference                               #
+    # namespace = namespace of the reference (":" = no namespace)         #
     #                                                                     #
     # return the list of referenced nodes, or None if the file is invalid #
     #---------------------------------------------------------------------#
@@ -233,6 +233,6 @@ def reference_maya_scene(path):
         return None
 
     path = path.replace("\\", "/")
-    nodes = cmds.file(path, reference=True, namespace=":", returnNewNodes=True)
+    nodes = cmds.file(path, reference=True, namespace=namespace, returnNewNodes=True)
     print("Référencé : %s (%d nodes)" % (path, len(nodes or [])))
     return nodes

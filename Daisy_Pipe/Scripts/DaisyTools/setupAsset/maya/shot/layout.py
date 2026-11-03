@@ -1,7 +1,7 @@
 import maya.cmds as cmds
 
-from Scripts.DaisyTools.core.framerange_convert import FramerangeFile
-from Scripts.DaisyTools.setupAsset.maya.scene_loaders import MASTER_SHOT, USD_EXTENSIONS, connect_stage_time, get_master_path, get_master_shot_entity, load_usd_stage
+from DaisyTools.core.framerange_convert import FramerangeFile
+from DaisyTools.setupAsset.maya.scene_loaders import MASTER_SHOT, USD_EXTENSIONS, connect_stage_time, get_master_path, get_master_shot_entity, load_usd_stage
 
 LAYOUT_PRODUCT = "layout"
 

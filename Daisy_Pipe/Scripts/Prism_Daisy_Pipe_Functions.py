@@ -438,11 +438,7 @@ class Prism_Daisy_Pipe_Functions(object):
 
         import importlib
 
-        # maya_import imports its modules through the "Scripts" package of the plugin
-        if self.pluginDirectory not in sys.path:
-            sys.path.append(self.pluginDirectory)
-
-        from Scripts.DaisyTools.setupAsset.maya import maya_import
+        from DaisyTools.setupAsset.maya import maya_import
         importlib.reload(maya_import)
         return maya_import.import_asset()
 

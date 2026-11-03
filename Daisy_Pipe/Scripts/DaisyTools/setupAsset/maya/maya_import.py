@@ -11,11 +11,11 @@
 
 import importlib
 
-from Scripts.DaisyTools.core.core import get_core
-from Scripts.DaisyTools.core.get_entity_info import get_entity_info
-from Scripts.DaisyTools.setupAsset.maya import scene_loaders
-from Scripts.DaisyTools.setupAsset.maya.shot import layout, camera, rig_references, anim
-from Scripts.DaisyTools.setupAsset.maya.asset import rig
+from DaisyTools.core.core import get_core
+from DaisyTools.core.get_entity_info import get_entity_info
+from DaisyTools.setupAsset.maya import scene_loaders
+from DaisyTools.setupAsset.maya.shot import layout, camera, rig_references, anim
+from DaisyTools.setupAsset.maya.asset import rig
 
 # The shelf button reloads this module only: reload the others too, dependencies
 # first, so that script changes are used without restarting Maya
