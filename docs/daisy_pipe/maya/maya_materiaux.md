@@ -1,5 +1,5 @@
-# Maya
-[< retour à la page Maya](maya_usd.md)
+# Matériaux et RenderMan
+[< page précédente](maya_usd.md)
 
 Cette page explique comment gérer les matériaux avec l'USD dans Maya, et pourquoi les matériaux RenderMan posent problème.
 

@@ -1,5 +1,5 @@
-# Maya
-[< retour à la page Maya](maya_usd.md)
+# Créer et charger un stage
+[< page précédente](maya_usd.md)
 
 Cette page explique comment créer un stage USD dans Maya et comment Maya l'affiche.
 
