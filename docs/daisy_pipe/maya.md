@@ -8,3 +8,9 @@ Dans cette documentation nous partirons du principe que vous connaissez un minim
 Voici un petit sommaire pour vous aider :
 
 - [L'USD dans Maya](maya/maya_usd.md)
+- [Daisy Pipeline dans Maya](maya/maya_prism.md)
+
+[< page précédente](../installation.md) -
+[page suivante >](maya/maya_usd.md)
+
+*<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

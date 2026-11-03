@@ -20,6 +20,6 @@ Concrètement, le viewport Maya ne permet pas de juger l'aspect final d'un asset
 
 >Un asset qui s'affiche gris ou uni dans Maya n'est donc pas forcément cassé : vérifiez son matériau dans l'outil prévu pour le rendu avant de conclure à une erreur.
 
-[< retour à la page Maya](maya_usd.md)
+[< page précédente](maya_usd.md)
 
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
