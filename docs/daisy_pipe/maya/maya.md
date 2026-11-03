@@ -21,9 +21,10 @@ il faut passer par _"l'outliner"_ USD, ou utiliser « Edit As Maya Data » puis 
 ><img src="../../src/information.png" width=50em><br>
 >Pour plus d'informations sur l'USD Maya, retrouvez la ***[documentation officielle ici](https://help.autodesk.com/view/MAYAUL/2026/ENU/?guid=GUID-9E9D45F2-4DA9-497B-8D69-1573ED6B2BA8)***.
 
-Comment acceder aux outils usd de maya ? Assurez-vous d'avoir le mayaUsdPlugin de maya d'activé. Pour vérifiez, allez dans : Winsdows
+Comment accéder aux outils USD de Maya ? Assurez-vous d'avoir le mayaUsdPlugin de Maya activé. Pour vérifier, allez dans : Windows → Settings/Preferences → Plug-in Manager, 
+et vérifiez que le plugin mayaUsdPlugin est coché.
 
-<img src="src/solaris/houdini_stage_icon.png" width=200em><br>
+<img src="src/maya_plug_in_manager_access.png" width=400em><br>
 
 [< page précédente](../installation.md) - 
 [page suivante >](../houdini.md)  
