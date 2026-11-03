@@ -122,7 +122,13 @@ def texture_detect() -> dict[str, str]:
 
     return texture_list
 
-def auto_material(parent_node: object):
+def auto_material(parent_node: object) -> None:
+    #-----------------------------------------------------------------------------------#
+    # create a pxrSurface node with pxrTexture nodes set and connected automatically    #
+    #                                                                                   #
+    # parent_node : the node containing the shader                                      #
+    #-----------------------------------------------------------------------------------#
+
     #--------------------------------- detections ----------------------------------#
     # create a dict with shader name, texture name and path
     texture_dict = texture_detect()
@@ -141,6 +147,7 @@ def auto_material(parent_node: object):
             material_dict[shader_name].update({texture: texture_dict[texture]})
 
     #-------------------------------- create nodes ---------------------------------#
+    # create shader nodes
     for shader in material_dict:
         mat_builder = parent_node.createNode("pxrmaterialbuilder")
         mat_builder.setName(shader)
@@ -151,6 +158,7 @@ def auto_material(parent_node: object):
         output_collect = hou.node(f"/stage/{parent_node.name()}/{mat_builder.name()}/output_collect")
         output_collect.setInput(0, pxr_surface)
 
+        # create texture nodes
         for tex in material_dict[shader]:
             map_type = tex.split("_")[-3]
 
@@ -158,6 +166,7 @@ def auto_material(parent_node: object):
             pxr_texture.setName(map_type)
             pxr_texture.parm("filename").set(material_dict[shader][tex].replace(project_path, "$PRISM_JOB"))
 
+            # connect the pxrTexture nodes with the pxrSurface node
             try:
                 if map_type == "Diffuse" or map_type == "BaseColor" or map_type == "Albedo":
                     pxr_surface.setInput(2, pxr_texture)
