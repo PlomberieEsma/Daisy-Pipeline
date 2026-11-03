@@ -17,7 +17,7 @@
 import os
 import tempfile
 
-from Scripts.DaisyTools.core.core import usdExportParams, MASTER_SHOT, USD_CAM_KEYFRAMES
+from DaisyTools.core.core import usdExportParams, MASTER_SHOT, USD_CAM_KEYFRAMES
 
 LAYOUT_PRODUCT = "layout"
 SCENE_GROUP_NAME = "scene"
@@ -335,7 +335,7 @@ def get_layout(core, entity):
 
     # From core.core and not from the Maya scene_loaders: the Houdini import
     # reuses this function to load the layout the overlay was exported on
-    from Scripts.DaisyTools.core.core import get_master_path, get_master_shot_entity
+    from DaisyTools.core.core import get_master_path, get_master_shot_entity
 
     path = get_master_path(core, entity, LAYOUT_PRODUCT)
     if path:
@@ -346,7 +346,7 @@ def get_layout(core, entity):
         return None, 0, False
 
     try:
-        from Scripts.DaisyTools.core.framerange_convert import FramerangeFile
+        from DaisyTools.core.framerange_convert import FramerangeFile
         framerange = FramerangeFile()
         offset = framerange.get_master_range(entity["sequence"], entity["shot"])[0] - framerange.get_shot_range(entity["sequence"], entity["shot"])[0]
     except Exception as e:
