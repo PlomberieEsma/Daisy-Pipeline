@@ -33,6 +33,6 @@ Dans le layout de l'exemple, la Layer Data Window montre un `metersPerUnit` à 0
 ><br>
 >Si l'échelle est incorrecte après l'import d'un asset venant d'un autre logiciel (un moteur de jeu par exemple), commencez par mettre à jour le plugin maya-usd vers la dernière version disponible sur GitHub.
 
-<a href="javascript:history.back()">&lt; page précédente</a>
+<a href="maya_usd" onclick="if (document.referrer.includes(location.host)) { history.back(); return false; }">&lt; page précédente</a>
 
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
