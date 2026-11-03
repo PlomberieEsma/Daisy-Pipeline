@@ -51,6 +51,8 @@ Un clic droit sur un layer ouvre un menu contextuel avec les actions disponibles
   
 <img src="src/maya_usd_layer_editor_arbre.png" width=400em><br>
 
+<br>
+
 | N° | Élément | Description |
 |---|---|---|
 | 1 | Sélecteur USD Stage | Choisit le stage dont les layers sont affichés dans l'arbre. |
