@@ -26,9 +26,9 @@
 
 import os
 
-from Scripts.DaisyTools.core.get_entity_info import get_entity_info
-from Scripts.DaisyTools.core.core import get_core, write_usd, create_master, create_master_clips, SUBDIVISION_METHOD_MAP, USD_FILE_FORMAT
-from Scripts.DaisyTools.core.dcc.launcher import get_dcc
+from DaisyTools.core.get_entity_info import get_entity_info
+from DaisyTools.core.core import get_core, write_usd, create_master, create_master_clips, SUBDIVISION_METHOD_MAP, USD_FILE_FORMAT
+from DaisyTools.core.dcc.launcher import get_dcc
 
 # Shot departments exported from Maya as an overlay of the layout assembly (see exportShotAnim.py)
 SHOT_ANIM_DEPARTMENTS = ("02_layout", "03_anim")
@@ -106,7 +106,7 @@ def export_usd(params=None):
     if is_shot_anim:
         #rigs of |<shot>|scene and DaisyCams of |<shot>|cam written at the path of
         #their geo/camera in the layout assembly - the MASTER has one camera per shot
-        from Scripts.DaisyTools.saveas.exportShotAnim import write_shot_anim_usd
+        from DaisyTools.saveas.exportShotAnim import write_shot_anim_usd
 
         def write(file_path, frames):
             return write_shot_anim_usd(core, entity, file_path, frame_range=frames, overrides=overrides,
@@ -158,8 +158,8 @@ def export_shot_cameras(core, entity, comment="", nodes=None, update_master=True
 
     #Publish the DaisyCams of the scene as one Maya file each, in the Camera product
 
-    from Scripts.DaisyTools.core.core import CAMERA_PRODUCT
-    from Scripts.DaisyTools.saveas.exportCamera import camera_master_path, export_cameras
+    from DaisyTools.core.core import CAMERA_PRODUCT
+    from DaisyTools.saveas.exportCamera import camera_master_path, export_cameras
 
     try:
         paths = export_cameras(core, entity, nodes=nodes, update_master=update_master)
@@ -213,7 +213,7 @@ def register_product(core, entity, product, path, master_path=None, comment="", 
         master_info_path = core.products.getVersionInfoPathFromProductFilepath(master_path)
         core.saveVersionInfo(filepath=master_info_path, details=details)
 
-    from Scripts.DaisyTools.core.version_cleanup import check_version_limit_for_output
-    from Scripts.DaisyTools.core.dcc.launcher import get_main_window
+    from DaisyTools.core.version_cleanup import check_version_limit_for_output
+    from DaisyTools.core.dcc.launcher import get_main_window
 
     check_version_limit_for_output(core, entity, product, path, parent=get_main_window())

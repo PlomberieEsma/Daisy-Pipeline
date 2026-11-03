@@ -1,9 +1,9 @@
 import maya.cmds as cmds
 
-from Scripts.DaisyTools.core.core import CAMERA_PRODUCT
-from Scripts.DaisyTools.setupAsset.maya.shot.camera import create_camera_sequence, get_usd_camera_ranges, get_usd_camera_shots, group_daisy_cam, import_daisy_cam, import_shot_camera, match_daisy_cam_to_usd
-from Scripts.DaisyTools.setupAsset.maya.shot.layout import MASTER_SHOT, deactivate_usd_cameras, get_default_prim_name, get_shot_cut, get_shot_ranges, load_shot_layout, set_playback_range
-from Scripts.DaisyTools.setupAsset.maya.shot.rig_references import reference_rig_scenes
+from DaisyTools.core.core import CAMERA_PRODUCT
+from DaisyTools.setupAsset.maya.shot.camera import create_camera_sequence, get_usd_camera_ranges, get_usd_camera_shots, group_daisy_cam, import_daisy_cam, import_shot_camera, match_daisy_cam_to_usd
+from DaisyTools.setupAsset.maya.shot.layout import MASTER_SHOT, deactivate_usd_cameras, get_default_prim_name, get_shot_cut, get_shot_ranges, load_shot_layout, set_playback_range
+from DaisyTools.setupAsset.maya.shot.rig_references import reference_rig_scenes
 
 # Departments where the MASTER shot gets a Camera Sequencer with its DaisyCams
 CAMERA_SEQUENCE_DEPARTMENTS = ("02_layout", "03_anim")
@@ -71,6 +71,9 @@ def setup_anim(core, info):
     entity = info["entity"]
     sequence, shot = entity["sequence"], entity["shot"]
 
+    # A stage already in the scene means the import button was clicked again
+    reimport = bool(cmds.ls(type="mayaUsdProxyShape"))
+
     layout, shot_range, master_range = load_shot_layout(core, entity)
     default_prim = get_default_prim_name(layout) if layout else None
 
@@ -110,7 +113,8 @@ def setup_anim(core, info):
         shot_group = "|" + cameras[0].split("|")[1]
     else:
         shot_group = None
-    rigs = reference_rig_scenes(core, info, shot_group or default_prim or "%s_%s" % (sequence, shot))
+    rigs = reference_rig_scenes(core, info, shot_group or default_prim or "%s_%s" % (sequence, shot),
+                                layout=layout, ask=reimport)
 
     # Deactivate the USD cameras only once Maya is idle, after the DaisyCam keys are evaluated
     if layout:

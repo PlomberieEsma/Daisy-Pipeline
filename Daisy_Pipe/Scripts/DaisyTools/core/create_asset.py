@@ -35,7 +35,7 @@ print("execute create_asset.py\n\n")
 
 # title
 try:
-    from Scripts.DaisyTools.core.ascii_art import print_title
+    from DaisyTools.core.ascii_art import print_title
     print_title()
 except:
     print("\nDaisy Pipeline\n\nby Noa Escourbanies, Leeloo Trinh-Thieu et Thomas Rubio\n\n")

@@ -4,8 +4,8 @@ import re
 import maya.cmds as cmds
 import maya.api.OpenMaya as om
 
-from Scripts.DaisyTools.core.core import CAMERA_RIG_PREFIX, USD_CAM_KEYFRAMES, get_camera_file
-from Scripts.DaisyTools.setupAsset.maya.shot.layout import set_playback_range
+from DaisyTools.core.core import CAMERA_RIG_PREFIX, USD_CAM_KEYFRAMES, get_camera_file
+from DaisyTools.setupAsset.maya.shot.layout import set_playback_range
 
 DAISY_CAM_PATH = ("Integration", "otls", "DaisyCam.mb")
 CAM_GROUP_NAME = "cam"
