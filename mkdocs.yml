@@ -1,5 +1,5 @@
 site_name: Daisy Pipeline Doc
-site_url: https://sitename.exemple
+site_url: https://plomberieesma.github.io/Daisy-Pipeline/
 copyright: © 2026 Daisy Pipeline by <strong><a href="https://www.linkedin.com/in/noaescourbanies/">Noa Escourbanies</a></strong>, <strong><a href="https://www.linkedin.com/in/leeloo-trinh-thieu-ab6b70342/">Leeloo Trinh-Thieu</a></strong> and <strong><a href="https://www.linkedin.com/in/thomas-rubio-a76468239/">Thomas Rubio</a></strong>
 theme:
   name: material
