@@ -1,5 +1,4 @@
 # Zbrush
-[< page précédente](index.md)<br>
 Cette page sert de documentation pour le plugin Zbrush de Daisy Pipeline. Nous passerons en revue l'installation et l'utilisation du plugin qui sert de lien entre Prism Pipeline et Zbrush. Voici un sommaire pour naviguer sur cette page :
 
 - [Installation](#installation)
@@ -59,6 +58,4 @@ Dans Zbrush vous pouvez accéder au plugin en allant dans "**Zplugin/Prism/Float
 - **Turntable**: pour faire un turn de votre modèle 3D et le stocker dans les media de Prism
 - **Settings**: pour ouvrir les settings de Prism
 
-[< page précédente](index.md)<br>
-*<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*<br>
 <sub>*Zbrush plugin created by Mathieu Carrey (2025) and modified by Thomas Rubio (2026)*</sub>
