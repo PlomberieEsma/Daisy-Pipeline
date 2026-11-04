@@ -1,6 +1,6 @@
 <<<<<<< HEAD
 # DaVinci Resolve Plugin
-[< Page précédente](README.md)
+[< Page précédente](index.md)
 ## Général
 Ceci est la documentation du plugin DaVinci Resolve pour Prism.
 
@@ -16,6 +16,6 @@ Ce plugin comporte 2 presets pour le format **SCOPE (2048 x 858)** et **FLAT (19
 Ce plugin étant dans la version gratuite de DaVinci Resolve, il utilise une option de script qui devient payante à partir de la version 21.1. Ce plugin a été codé pour la version 21.0.3.<sub>*
 
 ***
-[< Page précédente](README.md)
+[< Page précédente](index.md)
 [Page suivante >](SubstancePainter/installation.md)<br>
 *<sub>Daisy Pipeline 2025 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

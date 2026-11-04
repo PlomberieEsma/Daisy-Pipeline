@@ -1,0 +1,55 @@
+site_name: Daisy Pipeline Doc
+site_url: https://sitename.exemple
+copyright: © 2026 Daisy Pipeline by <strong><a href="https://www.linkedin.com/in/noaescourbanies/">Noa Escourbanies</a></strong>, <strong><a href="https://www.linkedin.com/in/leeloo-trinh-thieu-ab6b70342/">Leeloo Trinh-Thieu</a></strong> and <strong><a href="https://www.linkedin.com/in/thomas-rubio-a76468239/">Thomas Rubio</a></strong>
+theme:
+  name: material
+  font:
+    text: Merriweather Sans
+    code: Red Hat Mono
+  logo: assets/daisy_logo_highres.png
+  favicon: assets/daisy_logo.ico
+  features:
+    - navigation.footer
+  palette:
+    # Dark Mode
+    - scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Dark mode
+      primary: green
+      accent: deep purple
+
+    # Light Mode
+    - scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Light mode
+      primary: blue
+      accent: deep orange
+
+
+markdown_extensions:
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+extra_css:
+  - stylesheets/extra.css

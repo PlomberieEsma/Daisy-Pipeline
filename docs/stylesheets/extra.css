@@ -1,0 +1,12 @@
+
+
+.md-copyright a {
+  color: var(--md-accent-fg-color);
+  font-weight: bold;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.md-copyright a:hover {
+  text-decoration-thickness: 2px;
+}

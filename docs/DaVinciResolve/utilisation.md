@@ -119,5 +119,5 @@ Le bouton **Apply Export Settings** permet de remplir automatiquement le filenam
 
 ***
 [< Page précédente](development.md)
-[Page suivante >](..\README.md)<br>
+[Page suivante >](..\index.md)<br>
 *<sub>Daisy Pipeline 2025 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
