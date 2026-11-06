@@ -1,12 +1,15 @@
 # Installation
-[< page précédente](index.md)<br>
+
 Cette page a pour but de documenter l'installation de l'entièreté du pipeline USD, de la hiérarchie des dossiers aux variables d'environnement de chaque logiciel. Mais tout d'abord vous devez [télécherger Daisy Pipeline sur github via ce lien](https://github.com/PlomberieEsma/Daisy-Pipeline). Dans cette documentation nous partirons du principe que vous travaillez en équipe sur un réseau local dédié au projet. L'installation de Daisy Pipeline se fait à 2 endroits distincts : le réseau sur lequel vous travaillez et en local sur votre PC. Nous allons vous montrer comment procéder aux 2 endroits.
 
-><img src="../src/information.png" width=50em><br>
->Si vous faites partie de la promo 2026-2027 de l'ESMA Montpellier, **vous n'avez pas à vous occuper de la partie "Sur le server"** car elle a déjà été mise en place par les développeurs de Daisy Pipeline.<br>
->**Nous vous invitons à passer directement à la partie "En local"**.
+!!! info
 
-Voici un petit sommaire pour vous aider :
+    Si vous faites partie de la promo 2026-2027 de l'ESMA Montpellier, **vous n'avez pas à vous occuper de la partie "Sur le server"** car elle a déjà été mise en place par les développeurs de Daisy Pipeline.<br>
+    **Nous vous invitons à passer directement à la partie "En local"**.
+
+<div class="page-toc" markdown>
+
+<p class="toc-title">Sommaire</p>
 
 - [Sur le server](#sur-le-server)
     - [Les fondations du pipe](#les-fondations-du-pipe)
@@ -16,9 +19,11 @@ Voici un petit sommaire pour vous aider :
     - [Les variables d'environnement](#les-variables-denvironnement)
     - [usd-core](#usd-core)
     - [Le lecteur réseau](#le-lecteur-réseau)
+</div>
 
-> <img src="../assets/images/github_logo.png" width="20" class="github-icon">
-> Retrouvez le code source <a href="https://github.com/PlomberieEsma/Daisy-Pipeline"><i><strong>ici</strong></i></a>.
+!!! github "Daysi Pipeline Code Source"
+
+    Retrouvez le code source de Daisy Pipeline <a href="https://github.com/PlomberieEsma/Daisy-Pipeline"><i><strong>ici</strong></i></a>.
 
 ***
 
@@ -45,18 +50,19 @@ Une fois téléchargé, dézipez le dossier et entrez dedans. Copiez son contenu
 ![stripped usd_root content](../assets/images/daisypipe/installation/stripped_usd_root_content.png)
 
 ### Le fichier config.json
-Maintenant que vous avez tout téléchargé et installé il vous reste une étape sur le réseau : le fichier config.json. C'est un fichier qui répertorie les variables principales utilisées dans les scripts du pipe. Vous le retrouverez dans **Scripts/DaisyTools/lib**. Vous deverez le modifier pour qu'il corresponde à votre projet. Voici la liste des paramètres qu'il contient :
+Maintenant que vous avez tout téléchargé et installé il vous reste une étape sur le réseau : le fichier config.json. C'est un fichier qui répertorie les variables principales utilisées dans les scripts du pipe. Vous le retrouverez dans **Scripts/DaisyTools/lib**. Vous deverez le modifier pour qu'il corresponde à votre projet. Voici la liste des paramètres qu'il contient :  
+
 - **global** : paramètres globaux du pipe
     - **usd file format** : format des fichiers usd du pipe (en général garder en usdc ou usd pour plus d'optimisation)
     - **sh name digit number** : combien de chiffres composent le nom des shots
     - **max product version** : nombre maximal de versions de products atteignable avant que la popup de suppression de version se déclenche
     - **max scene version** : nombre maximal de versions de scène atteignable avant que la popup de suppression de version se déclenche
-- **create usd asset** : paramètres relatifs à la fonction "create USD asset"
-    - **autoproxy polygone number** : si vous avez une ModH mais pas de ModL le script create USD asset crée automatiquement une modL à partir de la modH, ce paramètre désigne le nombre de polygones maximum utilisés
+- **create usd asset** : paramètres relatifs à la fonction « create USD asset »
+    - **autoproxy polygone number** : si vous avez une ModH mais pas de ModL, le script create USD asset crée automatiquement une ModL à partir de la ModH, ce paramètre désigne le nombre de polygones maximum utilisés
     - **variant digit number** : nombre de chiffres dans le nom des variants
 - **software** : liens vers les différents logiciels tiers utilisés dans le pipe
-    - **hython** : lien vers le fichier "hython.exe" dans les dossiers d'Houdini
-    - **usdview** : lien vers "usdview.bat" dans usd_root
+    - **hython** : lien vers le fichier « hython.exe » dans les dossiers d'Houdini
+    - **usdview** : lien vers « usdview.bat » dans usd_root
 - **network** : paramètres relatifs au réseau sur lequel vous avez installé le pipe
     - **UNC path** : chemin UNC vers le dossier qui contient le projet
     - **mapped drive path** : disque virtuel qui pointe vers le réseau (vers le chemin UNC), le sujet sera abordé plus tard sur cette page
@@ -92,14 +98,19 @@ Suivez les consignes d'installation en prenant soin de cocher les bonnes version
 Maintenant que Prism est installé, il est temps de lier Daisy Pipeline à Houdini et Maya. Mais comment faire ? Voici un petit tuto.<br>
 Nous allons créer des variables d'environnement pour chaque logiciel.
 
-><img src="../src/warning_yellow.png" width=50em><br>
->À noter que si vous faites partie de la promo 2026-2027 de l'ESMA Montpellier, **vous avez déjà vos variables d'environnement de faites, vous n'avez plus qu'à les copier depuis le réseau 100_DEV_PIPE/00_INSTALLATION vers les dossiers mentionnés ci dessous**. Néanmoins, si vous ne faites pas partie de la promo, vous avez toujours un preset de ces fichiers de disponible.
+!!! note
+
+    À noter que si vous faites partie de la promo 2026-2027 de l'ESMA Montpellier, **vous avez déjà vos variables d'environnement de faites, vous n'avez plus qu'à les copier depuis le réseau `100_DEV_PIPE/00_INSTALLATION` vers les dossiers mentionnés ci dessous**. Néanmoins, si vous ne faites pas partie de la promo, vous avez toujours un preset de ces fichiers de disponible.
 
 Maintenant voici où placer les fichiers :<br>
 Pour Maya, allez dans **Documents/maya/2026** et remplacez (ou éditez) le fichier **Maya.env**. Voici son contenu :
 
 ![maya.env content](../assets/images/daisypipe/installation/maya_env.png)
 
+``` ini title="maya.env" linenums="1"
+MAYA_SCRIPT_PATH = //minerva/3D5_2627/100_DEV_PIPE/DEEP_DIVE/00_Pipeline/Plugins/Daisy_Pipe;&
+PYTHONPATH = //minerva/3D5_2627/100_DEV_PIPE/DEEP_DIVE/00_Pipeline/Plugins/Daisy_Pipe;&
+```
 Pour Houdini, allez dans **Documents/houdini21.0/packages** (remplacez avec la bonne version d'Houdini) et copiez **DaisyPipe.json** dedans. Si le dossier packages n'existe pas, vous pouvez le créer. Voici son contenu :
 
 ![daisyPipe.json content](../assets/images/daisypipe/installation/houdini_env.png)
@@ -137,7 +148,3 @@ Une fenêtre apparait. Choisissez la lettre que vous voulez voir connectée au r
 > J'ai parlé de chemin UNC juste au dessus, mais qu'est-ce que c'est ?
 >> Un chemin UNC (Universal Name Convention) est une façon d'écrire un chemin vers une ressource sur un réseau sous Windows. Il s'écrit \\\\nom_du_réseau\\nom_du_dossier_de_partage\\...
 >> Un chemin mapped drive quand à lui est un lecteur réseau qui est associé à une lettre de lecteur. Il sert à accéder au réseau comme s'il était un disque local. C'est un chemin à éviter au maximum dans votre pipeline car si l'un des PC du réseau n'a pas la même lettre (ou pas de mapped drive du tout), il ne comprendra pas le lien.
-
-[< page précédente](index.md) - 
-[page suivante >](maya/maya_usd.md)<br>
-*<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
