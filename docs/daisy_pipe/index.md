@@ -15,7 +15,7 @@ Ci dessous la documentation relative à :
 <p class="toc-title">Sommaire</p>
 
 - [Installation](installation.md)
-- [Maya](maya/maya_usd.md)
+- [Maya](maya/index.md)
 - [Houdini](houdini/index.md)
     - [Solaris](houdini/solaris.md)
     - [Templates](houdini/templates.md)

@@ -105,35 +105,61 @@ Nous allons créer des variables d'environnement pour chaque logiciel.
 Maintenant voici où placer les fichiers :<br>
 Pour Maya, allez dans **Documents/maya/2026** et remplacez (ou éditez) le fichier **Maya.env**. Voici son contenu :
 
-![maya.env content](../assets/images/daisypipe/installation/maya_env.png)
-
 ``` ini title="maya.env" linenums="1"
 MAYA_SCRIPT_PATH = //minerva/3D5_2627/100_DEV_PIPE/DEEP_DIVE/00_Pipeline/Plugins/Daisy_Pipe;&
 PYTHONPATH = //minerva/3D5_2627/100_DEV_PIPE/DEEP_DIVE/00_Pipeline/Plugins/Daisy_Pipe;&
 ```
 Pour Houdini, allez dans **Documents/houdini21.0/packages** (remplacez avec la bonne version d'Houdini) et copiez **DaisyPipe.json** dedans. Si le dossier packages n'existe pas, vous pouvez le créer. Voici son contenu :
 
-![daisyPipe.json content](../assets/images/daisypipe/installation/houdini_env.png)
+``` json title="DaisyPipe.json" linenums="1"
+{
+    "path": "//minerva/3D5_2627/100_DEV_PIPE/DEEP_DIVE/00_Pipeline/Plugins/Daisy_Pipe/Integration;&",
+    "env": [
+        {
+            "PYTHONPATH": "//minerva/3D5_2627/100_DEV_PIPE/DEEP_DIVE/00_Pipeline/Plugins/Daisy_Pipe;&"
+        },
+        {
+            "HOUDINI_OTLSCAN_PATH": "//minerva/3D5_2627/100_DEV_PIPE/DEEP_DIVE/00_Pipeline/Plugins/Daisy_Pipe;&"
+        },
+        {
+            "HOUDINI_DISABLE_CONSOLE": 0
+        }
+    ]
+}
+```
 
 ### usd-core
-><img src="../src/warning_yellow.png" width=50em><br>
->**Cette section n'est pas nécessaire pour la promo 2026-2027 de l'ESMA Montpellier. La manipulation a déjà été réalisée par les développeurs du pipe.**
+
+!!! warning
+
+    **Cette section n'est pas nécessaire pour la promo 2026-2027 de l'ESMA Montpellier. La manipulation a déjà été réalisée par les développeurs du pipe.**
 
 À présent, il va falloir installer l'USD sur votre machine. Pour cela il va falloir passer par une ligne de commande. MAIS PAS DE PANIQUE ! Je vais tout vous expliquer.<br>
-Ouvrez un terminal comma Powershell par exemple. Et tapez la commande suivante :
+Ouvrez un terminal, par exemple `PowerShell`, et tapez la commande suivante :
 
-> pip install usd-core
+``` powershell title="PowerShell"
+pip install usd-core
+```
 
 Voilà, c'est terminé, vous avez installé l'USD. Toutes mes félicitations !
 
-> Si Comme moi vous êtes curieux\.se et que vouv vous demandez ce que fait cette commande, laissez moi vous expliquer
->> La commande "pip" fait référence à ce qu'on appel un "gestionnaire de paquets" qui sert à ajouter, supprimer et gérer des paquets en Python.
->> "install" est une fonction de pip qui permet d'installer des paquets.
->> Et "usd-core" est le nom du paquet, il sert à gérer les fonctions USD les plus essentielles.
+??? question "Que fait cette commande ?"
+
+    Si, comme moi, vous êtes curieux·se et que vous vous demandez ce que fait cette commande, laissez-moi vous l'expliquer.
+
+    `pip`
+    :  Fait référence à ce qu'on appel un « gestionnaire de paquets » qui sert à ajouter, supprimer et gérer des paquets en Python.
+
+    `install`
+    :   Est une fonction de pip qui permet d'installer des paquets.
+
+    `usd-core`
+    :   Et "usd-core" est le nom du paquet, il sert à gérer les fonctions USD les plus essentielles.
 
 ### Le lecteur réseau
-><img src="../src/warning_yellow.png" width=50em><br>
->**Cette section n'est pas nécessaire pour la promo 2026-2027 de l'ESMA Montpellier. La manipulation a déjà été réalisée par les développeurs du pipe.**
+!!! warning
+
+    **Cette section n'est pas nécessaire pour la promo 2026-2027 de l'ESMA Montpellier. La manipulation a déjà été réalisée par les développeurs du pipe.**
 
 Maintenant que vous avez tout installé, il nous reste une toute dernière manipulation à réaliser. Cette manipulation va nous permettre de créer un lecteur (comme le disque C:/) qui va pointer vers votre réseau. Certains scripts de Daisy Pipeline en ont besoin pour bien fonctionner. Mais comment procéder ?
 
@@ -145,6 +171,10 @@ Une fenêtre apparait. Choisissez la lettre que vous voulez voir connectée au r
 
 ![file explorer](../assets/images/daisypipe/installation/connect_network_window.png)
 
-> J'ai parlé de chemin UNC juste au dessus, mais qu'est-ce que c'est ?
->> Un chemin UNC (Universal Name Convention) est une façon d'écrire un chemin vers une ressource sur un réseau sous Windows. Il s'écrit \\\\nom_du_réseau\\nom_du_dossier_de_partage\\...
->> Un chemin mapped drive quand à lui est un lecteur réseau qui est associé à une lettre de lecteur. Il sert à accéder au réseau comme s'il était un disque local. C'est un chemin à éviter au maximum dans votre pipeline car si l'un des PC du réseau n'a pas la même lettre (ou pas de mapped drive du tout), il ne comprendra pas le lien.
+??? question "UNC, Mais qu'est-ce que c'est ?"
+
+    <span style="font-size: 1.12rem">`UNC`</span>
+    :  Un chemin UNC (Universal Name Convention) est une façon d'écrire un chemin vers une ressource sur un réseau sous Windows. Il s'écrit : <br><br> <span style="font-size: 0.8rem">`\\\\nom_du_réseau\\nom_du_dossier_de_partage\\...`</span>
+    <br>
+    <br>
+       Un chemin mapped drive quand à lui est un lecteur réseau qui est associé à une lettre de lecteur. Il sert à accéder au réseau comme s'il était un disque local. C'est un chemin à éviter au maximum dans votre pipeline car si l'un des PC du réseau n'a pas la même lettre (ou pas de mapped drive du tout), il ne comprendra pas le lien.

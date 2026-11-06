@@ -38,6 +38,18 @@
   font-weight: 700;
 }
 
+/* Icônes dans les titres */
+.md-typeset h2 .twemoji,
+.md-typeset h3 .twemoji {
+  vertical-align: -0.1em;
+  margin-right: 0.3rem;
+}
+
+/* ===== Page plus large ===== */
+.md-grid {
+  max-width: 90rem;
+}
+
 /* ===== Navigation latérale : indicateur accent sur le lien uniquement ===== */
 .md-nav__link {
   font-weight: 600;
@@ -74,11 +86,18 @@ label.md-nav__link:hover {
   padding-left: 0.5rem;
 }
 
-/* ===== Blocs de code : fond teinté, coloration syntaxique conservée ===== */
+/* Trait vertical des sous-menus de la sidebar */
+.md-sidebar--primary .md-nav__item--nested > .md-nav > .md-nav__list {
+  margin-left: 0.6rem;
+  padding-left: 0.6rem;
+  border-left: 1px solid rgba(128, 128, 128, 0.3);
+}
+
+/* ===== Code : layout de base conservé, seules les couleurs changent ===== */
 .md-typeset pre > code,
 .md-typeset code {
-  background-color: #f2f7f2;
-  border: 1px solid #dfe8df;
+  background-color: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.18);
   border-radius: 6px;
 }
 
@@ -86,6 +105,25 @@ label.md-nav__link:hover {
 [data-md-color-scheme="slate"] .md-typeset code {
   background-color: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Thème clair : mêmes teintes de syntaxe que le thème sombre
+   (clés en bleu, chaînes en vert, nombres en rouge) */
+[data-md-color-scheme="default"] {
+  --md-code-fg-color: #24292f;
+  --md-code-hl-color: #4a7c4f26;
+  --md-code-hl-keyword-color: #0550ae;
+  --md-code-hl-string-color: #1a7f37;
+  --md-code-hl-number-color: #cf222e;
+  --md-code-hl-constant-color: #8250df;
+  --md-code-hl-function-color: #8250df;
+  --md-code-hl-special-color: #bc4c00;
+  --md-code-hl-name-color: #24292f;
+  --md-code-hl-operator-color: #57606a;
+  --md-code-hl-punctuation-color: #57606a;
+  --md-code-hl-comment-color: #6e7781;
+  --md-code-hl-generic-color: #57606a;
+  --md-code-hl-variable-color: #953800;
 }
 
 /* ===== Tableaux ===== */
@@ -185,6 +223,31 @@ label.md-nav__link:hover {
 [data-md-color-scheme="default"] .md-typeset .github > .admonition-title::before,
 [data-md-color-scheme="default"] .md-typeset .github > summary::before {
   background-color: #1f2328;
+}
+
+/* ===== Cartes : cadre visible dans les deux thèmes ===== */
+.md-typeset .grid.cards > ul > li,
+.md-typeset .grid > .card {
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 0.8rem;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .grid.cards > ul > li,
+[data-md-color-scheme="slate"] .md-typeset .grid > .card {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.md-typeset .grid.cards > ul > li:hover,
+.md-typeset .grid > .card:hover {
+  border-color: var(--md-accent-fg-color);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+/* Icônes aux couleurs de l'accent */
+.md-typeset .grid.cards .twemoji {
+  color: var(--md-accent-fg-color);
 }
 
 /* ===== Liste de liens avec tuiles d'icônes ===== */
@@ -300,16 +363,79 @@ label.md-nav__link:hover {
   color: var(--md-accent-fg-color);
 }
 
-/* ===== Trait vertical des sous-menus de la sidebar ===== */
-.md-sidebar--primary .md-nav__item--nested > .md-nav > .md-nav__list {
-  margin-left: 0.6rem;
-  padding-left: 0.6rem;
-  border-left: 1px solid rgba(128, 128, 128, 0.3);
+.md-typeset .highlight pre > code {
+  font-size: 0.72rem;
 }
 
-.md-typeset h2 .twemoji,
-.md-typeset h3 .twemoji {
-  vertical-align: -0.1em;
-  margin-right: 0.3rem;
+/* ===== Terminal PowerShell : même rendu dans les deux thèmes ===== */
+.language-powershell,
+.language-ps1con {
+  --md-code-fg-color: #f9f1a5;
+  --md-code-hl-name-color: #f9f1a5;
+  --md-code-hl-keyword-color: #f9f1a5;
+  --md-code-hl-function-color: #f9f1a5;
+  --md-code-hl-constant-color: #f9f1a5;
+  --md-code-hl-special-color: #f9f1a5;
+  --md-code-hl-operator-color: #f9f1a5;
+  --md-code-hl-punctuation-color: #f9f1a5;
+  --md-code-hl-number-color: #f9f1a5;
+  --md-code-hl-string-color: #3a96dd;
+  --md-code-hl-variable-color: #16c60c;
+  --md-code-hl-comment-color: #13a10e;
+  --md-code-hl-generic-color: #cccccc;
 }
 
+/* Thème clair : teintes plus foncées pour rester lisibles */
+[data-md-color-scheme="default"] .language-powershell,
+[data-md-color-scheme="default"] .language-ps1con {
+  --md-code-fg-color: #9a6700;
+  --md-code-hl-name-color: #9a6700;
+  --md-code-hl-keyword-color: #9a6700;
+  --md-code-hl-function-color: #9a6700;
+  --md-code-hl-constant-color: #9a6700;
+  --md-code-hl-special-color: #9a6700;
+  --md-code-hl-operator-color: #9a6700;
+  --md-code-hl-punctuation-color: #9a6700;
+  --md-code-hl-number-color: #9a6700;
+  --md-code-hl-string-color: #0550ae;
+  --md-code-hl-variable-color: #1a7f37;
+  --md-code-hl-comment-color: #57606a;
+  --md-code-hl-generic-color: #57606a;
+}
+
+.language-powershell .md-code__button:hover,
+.language-powershell .md-clipboard:hover,
+.language-ps1con .md-code__button:hover,
+.language-ps1con .md-clipboard:hover {
+  color: #f9f1a5;
+}
+
+[data-md-color-scheme="default"] .language-powershell .md-code__button:hover,
+[data-md-color-scheme="default"] .language-powershell .md-clipboard:hover,
+[data-md-color-scheme="default"] .language-ps1con .md-code__button:hover,
+[data-md-color-scheme="default"] .language-ps1con .md-clipboard:hover {
+  color: #9a6700;
+}
+
+/* Invite affichée par le thème : visible mais jamais copiée */
+.language-powershell code span[id^="__span"]::before {
+  content: "PS C:\\WINDOWS\\system32> ";
+  color: var(--md-code-hl-generic-color);
+  user-select: none;
+}
+
+/* ===== Bouton de copie visible en thème clair ===== */
+[data-md-color-scheme="default"] .md-code__button,
+[data-md-color-scheme="default"] .md-clipboard {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+[data-md-color-scheme="default"] .md-code__button:hover,
+[data-md-color-scheme="default"] .md-clipboard:hover {
+  color: var(--md-accent-fg-color);
+}
+
+[data-md-color-scheme="slate"] .md-code__button:hover,
+[data-md-color-scheme="slate"] .md-clipboard:hover {
+  color: var(--md-accent-fg-color);
+}

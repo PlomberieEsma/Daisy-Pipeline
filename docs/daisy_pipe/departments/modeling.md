@@ -1,12 +1,18 @@
 # Modeling
-[< page précédente](index.md)<br>
+
 Commençons par définir les shapes de nos assets. Nous allons nous attaquer à 2 types de modé : la modé low (ModL) et la modé high (ModH). La ModL servira de proxy dans nos futurs fichiers USD, il est donc important qu'elle soit la plus simple et légère possible. La ModH quand à elle sera la modé qui sera affichée au rendu (donc aussi celle qui sera texturée et shadée).<br>
 Alors comment gérer ce département par logiciel ?
+
+<div class="page-toc" markdown>
+
+<p class="toc-title">Sommaire</p>
 
 - [Modeling](#modeling)
   - [Prism](#prism)
   - [Maya](#maya)
   - [Houdini](#houdini)
+  - 
+</div>
 
 ***
 
@@ -40,7 +46,10 @@ Cette fenêtre sert aux imports et aux exports, vous pouvez faire des listes de 
 ![maya state manager](../../assets/images/departments/modeling/maya_state_manager.png)
 
 À droite vous retrouvez les paramètres d'export. Ce qu'il faut avant toute chose c'est **sélectionner votre mesh** ou vos meshs et **clicker sur add selected** pour les ajouter à l'export.<br>
-> Vous remarquerez que vos mesh ont étés placés dans des goupes et que nous avons créé un selection set, ils sont nécessaires au reste du pipe donc il ne faut pas y toucher.
+
+!!! warning
+
+    Vous remarquerez que vos mesh ont étés placés dans des goupes et que nous avons créé un selection set, ils sont nécessaires au reste du pipe donc il ne faut pas y toucher.
 
 ![maya state manager](../../assets/images/departments/modeling/maya_daisy_usd_export.png)
 
@@ -57,8 +66,9 @@ Tout simplement en dupliquant la scène ! Rendez-vous dans le **Project Browser*
 
 ![maya create from current](../../assets/images/departments/modeling/maya_create_from_current.png)
 
-><img src="../../src/warning_red.png" width=50em><br>
-> Important : chers modelers, ayez une petite pensée pour vos collègues, et pensez bien avant vos exports à faire vos UVs mais aussi à mettre des presets de materials sur vos geo (standard surface, lambert, blin ...). Cela facilitera le travail des texture artists et des riggeurs.
+!!! warning
+
+    Important : chers modelers, ayez une petite pensée pour vos collègues, et pensez bien avant vos exports à faire vos UVs mais aussi à mettre des presets de materials sur vos geo (standard surface, lambert, blin ...). Cela facilitera le travail des texture artists et des riggeurs.
 
 ***
 
@@ -77,13 +87,13 @@ Tout d'abbord, assurez-vous que vous êtes bien dans le **contexte "Stage"** (So
 
 Maintenant que Houdini est prêt à être utilisé, il est temps de créer le template de modeling (un template général, rien de très spécifique au département). Mais comment faire ? Créez un nouveau node **en appuyant sur TAB ou en faisant un click droit** dans le node editor et cherchez le node "**Create template**" rangé dans "Daisy Pipe". Puis dans les paramètres du node **clickez sur le bouton "Create template"**.<br>
 Magie !!! Un template est créé. Il peut prendre 2 formes :<br>
-<img src="src/modeling/general_template1.png" width=49%>
-<img src="src/modeling/general_template2.png" width=49%><br>
+[general_template1.png](../../assets/images/departments/modeling/general_template1.png)
+[general_template2.png](../../assets/images/departments/modeling/general_template2.png)<br>
 Chaque forme se crée en fonction de la présence ou non d'un export USD de la task active. Et en français ? Par exemple, ici je suis dans la task ModL_var02, mais c'est la première fois que je crée ma modé, donc j'aurai la première forme. Mais si j'ai déjà fait un export dans cette task, j'aurai la seconde forme qui importe l'asset USD global (que nous verrons plus tard).
 
 Si vous n'avez pas compris le paragraphe du dessus, c'est pas grâve. Dans tous les cas, l'endroit où vous allez travailler sera le second node : le "**sop create**". Pour commencer votre modé, vous pouvez rentrer dedans en **double clickant dessus**. Et je vous souhaite bon courage pour votre modé.
 
-![houdini layout_config](../../assets/images/departments/modeling/houdini_sop_create.png)
+![houdini_sop_create.png](../../assets/images/departments/modeling/houdini_sop_create.png)
 
 Une fois votre modé terminée, vous pouvez l'exporter. Assurez-vous qu'elle est bien placée dans ce type de hiérarchie : /\<asset\>/\<asset\>_geo/\<mesh\>
 
@@ -94,13 +104,11 @@ Puis **allez sur le node "daisy export"** et clickez sur "**save to disk**". Voi
 Finalement, comme pour Maya : maintenant que nous avons fini notre ModL, il est temps de passer à la ModH. On peut créer un nouveau fichier de ModH à partir de la modL ?<br>
 Rendez-vous dans le **Project Browser** (la fenêtre Prism) à l'intérieur d'Houdini, mais gardez bien votre scène ouverte. Puis **allez dans la task ModH** et faites un **click droit dans "Files"** sélectionnez "**Create new version from current**". Votre scène est maintenant dupliquée dans ModH, pous pouvez travailler dessus et recommencer le processus d'export.
 
-><img src="../../src/warning_yellow.png" width=50em><br>
->Une fois que vous avez fait tous vos exports une première fois (ModH et ModL), pensez bien à faire un **[Create USD Asset](../prism.md/#create-usd-asset)**, ça vous sera essentiel pour la suite de la prod.
+!!! warning
+  
+    Une fois que vous avez fait tous vos exports une première fois (ModH et ModL), pensez bien à faire un **[Create USD Asset](../prism.md/#create-usd-asset)**, ça vous sera essentiel pour la suite de la prod.
 
-><img src="../../src/warning_red.png" width=50em><br>
-> Important : chers modelers, ayez une petite pensée pour vos collègues, et pensez bien avant vos exports à faire vos UVs mais aussi à mettre des presets de materials sur vos geo (standard surface, lambert, blinn ...). Cela facilitera le travail des texture artists et des riggeurs.<br>
-> Pensez aussi à donner un nom à vos geo avec l'attribute "name". Histoire d'hygiène.
+!!! danger "Important"
 
-[< page précédente](index.md) - 
-[page suivante >](texturing.md)<br>
-*<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
+    Important : chers modelers, ayez une petite pensée pour vos collègues, et pensez bien avant vos exports à faire vos UVs mais aussi à mettre des presets de materials sur vos geo (standard surface, lambert, blinn ...). Cela facilitera le travail des texture artists et des riggeurs.<br>
+    Pensez aussi à donner un nom à vos geo avec l'attribute "name". Histoire d'hygiène.

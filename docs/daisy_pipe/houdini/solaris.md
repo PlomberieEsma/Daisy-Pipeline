@@ -1,8 +1,10 @@
 # Solaris
-[< page précédente](index.md)
 
 Cette page est une introduction à Solaris, le contexte Houdini qui sert à gérer l'USD. Ici nous partirons du principe que vous avez déjà les bases de l'USD. SI vous avez besoin de plus d'informations à ce sujet, vous pouvez vous rendre sur la [page de la doc dédiée à l'USD](../../overview/usd.md).<br>
-Ce document est un peu long donc voici un sommaire de la page pour aller directement à la partie qui vous intéresse :
+
+<div class="page-toc" markdown>
+
+<p class="toc-title">Sommaire</p>
 
 - [Solaris, qu'est-ce que c'est ?](#solaris-quest-ce-que-cest-)
 - [Le viewport](#le-viewport)
@@ -15,28 +17,36 @@ Ce document est un peu long donc voici un sommaire de la page pour aller directe
     - [Le scene graph details](#le-scene-graph-details)
 - [Le Scene Graph Layers](#le-scene-graph-layers)
 
+</div>
+
 ***
 
 ## Solaris, qu'est-ce que c'est ?
 Tout d'abord, il faut savoir qu'houdini fonctionne en "**contextes**". "Mais qu'est-ce qu'un contexte ?" me demanderez-vous. Un contexte est une section d'Houdini spécialisée dans une tâche spécifique. Par exemple il existe un contexte pour gérer la géométrie (SOP), pour le compositing (COP ou Copernicus), pour les rendus (ROP) ou encore pour l'USD (LOP aussi appelé Solaris).<br>
 Ce qui est plutôt pratique c'est que dans Houdini, vous pouvez passer très facilement d'un contexte à l'autre. Soit en créant un node (par exemple si je suis dans un SOP, je peux créer un node LOP et rentrer dedans pour accéder à Solaris), soit en allant en haut du node graph pour choisir un contexte.
 
-><img src="../../src/information.png" width=50em><br>
->Pour plus d'informations sur Solaris, retrouvez la ***[documentation officielle ici](https://www.sidefx.com/docs/houdini21.0/solaris/index.html)***.
+!!! info
+  
+    Pour plus d'informations sur Solaris, retrouvez la ***[documentation officielle ici](https://www.sidefx.com/docs/houdini21.0/solaris/index.html)***.
 
 Donc comment aller dans Solaris ? Assurez-vous que vous avez bien le petit logo orangé en haut du node editor.<br>
-<img src="src/solaris/houdini_stage_icon.png" width=200em><br>
+
+![houdini_stage_icon.png](../../assets/images/houdini/solaris/houdini_stage_icon.png)
+
 Vous pouvez également changer la disposition des fenêtres en allant dans le menu déroulant tout en haut d'Houdini et en clickant sur "Solaris".<br>
-<img src="src/solaris/houdini_change_layout.png" width=500em><br>
+
+![houdini_change_layout.png](../../assets/images/houdini/solaris/houdini_change_layout.png)
+
 À savoir que si vous avez créé votre scène avec Daisy Pipe, vous devriez automatiquement être dans Solaris avec une bonne disposition de fenêtres. Voici à quoi ressemblera Houdini après cette dernière manipulation. 
 
 ![houdini home](../../assets/images/houdini/solaris/houdini_home.png)
+
 1. Le viewport
 2. Le node editor
 3. Les parameters
 4. Le scene graph tree
 
-Maintenant, pour plus de confort je vais modifier l'organisation des fenêtres (mais ça ne change rien, pas de panique). À partir de maintenant c'est cette disposition que j'utiliserai pour vous expliquer Houdini.
+Pour plus de confort je vais modifier l'organisation des fenêtres (mais ça ne change rien, pas de panique). À partir de maintenant c'est cette disposition que j'utiliserai pour vous expliquer Houdini.
 
 ![houdini layout config](../../assets/images/houdini/solaris/houdini_layout_config.png)
 
@@ -49,17 +59,19 @@ Comme dans tout logiciel de 3D le viewport est essentiel, il nous permet de voir
 
 Tout d'abord, ces 2 menus vous seront très utils.<br>
 ![houdini top viewport buttons](../../assets/images/houdini/solaris/houdini_top_viewport_buttons.png)<br>
-Le premier vous permettra entre autre de lancer un IPR avec le moteur de rendu que vous voulez. Le second sert entre autre à prendre la vue d'une caméra.<br>
+Le premier vous permettra entre autre de lancer un IPR avec le moteur de rendu que vous voulez. Le second sert entre autre à prendre la vue d'une caméra.
 
 ### Outils du viewport
 À gauche vous trouverez les outils du viewport :
+
 - les options de transform
 - les options de snapping
 - la render region (pour faire vos IPR sur une petite partie du viewport)
 - l'inspecteur (pour avoir plein d'informations en un click sur la primitive ou le pixel que vous pointez)
 - le flipbook (équivalent du playblast Maya, vous sert à enregistrer votre viewport)
 - les snapshots (pour sauvegarder des instantanées du viewport)<br>
-...
+
+***
 
 ### Options d'outils
 En haut vous avez les options d'outils, pour la sélection, la caméra, les transform ...<br>
@@ -67,10 +79,12 @@ Je vous laisse découvrir tout ça par vous même.
 
 ### Options d'affichage
 Et à droite, vous retrouverez les paramètres d'affichage :
+
 - les options d'affichage de lighting
 - de material
 - de rendu
-...
+
+*** 
 
 Si vous voulez connaitre mes paramètres préférés, je vous les donne. Et si vous ne voulez pas ... Tant pis, je vous les donne quand même :
 
@@ -102,23 +116,27 @@ Passons à la fenêtre qui fait peur ...<br>
 
 Alors, qu'est ce que c'est que cette horreur ?<br>
 Je vous présente le "Scene Graph Tree", c'est l'équivalent de l'outliner de Maya, il présente la hiérarchie des primitives de la scène. Vous pouvez voir que la fenêtre est découpée en 2 parties :
+
 - le scene graph tree (à gauche)
 - le scene graph details (à droite)
 
 ### Le Scene Graph Tree
 Commençons avec la partie de gauche. On peut voir une sorte de tableau découpé en 10 colonnes. Je pense que les premières colonnes sont assez explicites donc je vais vous parler des dernières.
 
-><img src="../../src/warning_yellow.png" width=50em><br>
-> À noter que les options que je vais présenter ci-dessous ne sont pas écrites dans les fichiers USD, elles ne sont effectives que dans le viewport pour cette scène. Elles ne sont pas non plus compatibles avec certains nodes, vous pourez donc les utiliser ponctuellement pour facilter votre travail en sachant bien que ce n'est pas la version finale de la scène.
+!!! note
+    
+    À noter que les options que je vais présenter ci-dessous ne sont pas écrites dans les fichiers USD, elles ne sont effectives que dans le viewport pour cette scène. Elles ne sont pas non plus compatibles avec certains nodes, vous pourez donc les utiliser ponctuellement pour facilter votre travail en sachant bien que ce n'est pas la version finale de la scène.
 
 ![houdini scene graph tree zoom](../../assets/images/houdini/solaris/houdini_scene_graph_tree_zoom1.png)
 
 1. Le **P** représente le "**population mask**" il permet de définir les éléments qui seront dans un population mask (je ne m'attarderai pas dessus car nous avons choisis de ne pas l'utiliser dans le pipe mais d'utiliser les payloads à la place, si vous voulez ajouter cette fonctionnalité au votre vous pouvez sans problème). On peut passer par le node "configure stage" pour gérer les payloads de manière plus stable.
-2. Le **L** permet de **load ou unload les payloads**. On peut passer par **le node "configure stage"** pour gérer les payloads de manière plus stable, c'est d'ailleurs ce node qui est utilisé dans les outils du pipe.<br>
-><img src="../../src/warning_yellow.png" width=50em><br>
-> Les 2 options précédentes ne sont activables que si vous désactivez les options "Populate all primitives in viewport" (pour les population masks) ou "Load all payloads in viewport" (pour les payloads) dans "Manage viewport load masks"
->![houdini manage viewport load mask icon](../../assets/images/houdini/solaris/houdini_manage_load_masks_icon.png)
-> en haut.<br>
+2. Le **L** permet de **load ou unload les payloads**. On peut passer par **le node "configure stage"** pour gérer les payloads de manière plus stable, c'est d'ailleurs ce node qui est utilisé dans les outils du pipe.
+
+    !!! warning
+
+        Les 2 options précédentes ne sont activables que si vous désactivez les options "Populate all primitives in viewport" (pour les population masks) ou "Load all payloads in viewport" (pour les payloads) dans "Manage viewport load masks"
+        ![houdini manage viewport load mask icon](../../assets/images/houdini/solaris/houdini_manage_load_masks_icon.png) en haut.
+
 3. Le **bouton d'activation jaune** sert à **activer ou non une primitive**. On peut aussi passer par **le node "prune"** pour le gérer de manière plus stable.
 4. L'**oeil bleu** sert à **cacher une primitive** ou non. C'est la fonctionnalité qui se rapproche le plus de la fonction hide de Maya.
 5. La petite **étoile** sert à afficher seulement la primitive sélectionnée. C'est le "**solo mode**".
@@ -168,17 +186,15 @@ Le scene graph layers sert à faire la liste des layers de la scène et à donne
 On peut retrouver certaines fonctionnalité similaires au scene graph tree comme la possibilité de mute des layers (pour qu'Houdini ne les charge pas), afficher une partie du scene graph details, afficher une légende ...<br>
 On peut également afficher le contenu d'un layer (son code) en clickant sur le bouton en forme de liste en haut à gauche.
 
-><img src="../../src/warning_yellow.png" width=50em><br>
-> À propos de la case "Mute in Viewer", il est important de comprendre que l'action sera réalisée uniquement dans le viewport, elle ne sera pas écrite dans le futur fichier USD.<br>
-> Vous avez une autre façon de mute des layers, en utilisant le node "configure stage". Cette façon de faire nous permet une utilisation plus stable et ancrée dans le fichier Houdini (mais toujours pas écrit dans l'USD).
+!!! warning
+
+    À propos de la case "Mute in Viewer", il est important de comprendre que l'action sera réalisée uniquement dans le viewport, elle ne sera pas écrite dans le futur fichier USD.<br>
+    Vous avez une autre façon de mute des layers, en utilisant le node "configure stage". Cette façon de faire nous permet une utilisation plus stable et ancrée dans le fichier Houdini (mais toujours pas écrit dans l'USD).
 
 ***
 
 Voilà, la torture est terminée. C'était un morceau très dense, difficile à appréhender et non exhaustif, mais c'était un morceau nécessaire. Vous allez passer beaucoup de temps dans cette interface alors c'est important d'apprendre à l'apprivoiser.
 
-><img src="../../src/information.png" width=50em><br>
->Pour plus d'informations sur Solaris, retrouvez la ***[documentation officielle ici](https://www.sidefx.com/docs/houdini21.0/solaris/index.html)***.
-
-[< page précédente](index.md) - 
-[page suivante >](templates.md)<br>
-*<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
+!!! info
+  
+    Pour plus d'informations sur Solaris, retrouvez la ***[documentation officielle ici](https://www.sidefx.com/docs/houdini21.0/solaris/index.html)***.

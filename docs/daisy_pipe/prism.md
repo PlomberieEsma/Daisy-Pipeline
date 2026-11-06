@@ -1,13 +1,19 @@
 # Prism (Daisy Pipe)
-[< page précédente](index.md)
 
 Daisy Pipeline est un plugin Prism, il intègre des fonctionnalités sur Houdini et Maya mais aussi dans Prism lui même. Cette page fait l'inventaire de ces fonctionnalités, certaines plus importantes que d'autres mais toutes très utiles. Voici ce qu'elle contient :
+
+<div class="page-toc" markdown>
+
+<p class="toc-title">Sommaire</p>
 
 - [Create USD asset](#create-usd-asset)
 - [Pack USD asset](#pack-usd-asset)
 - [Add variant](#add-variant)
 - [Duplicate and convert USD](#duplicate-and-convert-usd)
 - [View with usdview](#view-with-usdview)
+
+</div>
+
 
 ## Create USD asset
 Commençons avec l'une des actions que vous allez le plus utiliser dans Prism. Le "Create USD Asset". Mais qu'est-ce que c'est ?<br>
@@ -29,15 +35,17 @@ Tout d'abord **ouvrez Prism** (de préférence pas depuis un logiciel, ouvrez di
 
 ![prism create usd asset](../assets/images/daisypipe/prism/prism_create_usd_asset.png)
 
-><img src="../src/information.png" width=50em><br>
->On peut aussi noter que cette fonction crée un fichier Houdini qui sert à créer l'asset en question. Cette scène peut-être utile pour débugger les potentiels problèmes qui peuvent arriver pendant la création mais aussi pour aporter des moidifications à droite, à gauche à l'asset (si vous faites ça pensez bien à sauvegarder une copie, sinon le fichier sera écrasé au prochain "create USD asset").
+!!! info
+
+    On peut aussi noter que cette fonction crée un fichier Houdini qui sert à créer l'asset en question. Cette scène peut-être utile pour débugger les potentiels problèmes qui peuvent arriver pendant la création mais aussi pour aporter des moidifications à droite, à gauche à l'asset (si vous faites ça pensez bien à sauvegarder une copie, sinon le fichier sera écrasé au prochain "create USD asset").
 
 ## Pack USD asset
 Il existe une autre façon de créer un asset USD, cette manière permet de compresser l'asset dans seulement quelques fichiers. Contrairement au "create USD asset" classique qui référence tous les layers, ce qui peut être assez lourd pour une configuration réseau inadaptée à l'USD. C'est pourquoi le "Pack USD Asset" existe, pour être plus supportable pour une render farm. Ça fera des fichiers plus lourds mais beaucoup moins nombreux au lieu de plein de petits fichiers légers.
 
-><img src="../src/warning_yellow.png" width=50em><br>
->Attention, si vous utilisez cette fonction, la mise à jour des différents layers de l'asset ne se fera plus automatiquement, il est donc conseillé de l'utiliser quand l'asset est plus ou moins finalisé.<br>
->Mais pas de panique, si vous avez fait un pack de votre asset, vous pouvez toujours le mettre à jour en en refaisant un nouveau. Vous pouvez aussi faire un create USD asset classique pour remplacer le pack et remettre la mise à jour automatique.
+!!! warning
+
+    Attention, si vous utilisez cette fonction, la mise à jour des différents layers de l'asset ne se fera plus automatiquement, il est donc conseillé de l'utiliser quand l'asset est plus ou moins finalisé.<br>
+    Mais pas de panique, si vous avez fait un pack de votre asset, vous pouvez toujours le mettre à jour en en refaisant un nouveau. Vous pouvez aussi faire un create USD asset classique pour remplacer le pack et remettre la mise à jour automatique.
 
 Comment faire ? De la même manière que pour le "Create USD Asset", **allez dans Prism**, faites un **click droit sur votre asset** et choisissez "**Pack USD Asset**".
 
@@ -49,8 +57,9 @@ Comment procéder ? Commencez par sélectionner votre asset, puis votre départe
 
 ![prism add variant](../assets/images/daisypipe/prism/prism_add_variant.png)
 
-><img src="../src/warning_yellow.png" width=50em><br>
->Les noms des variants seront toujours créés selon ce format de nom (sinon ils ne seraient pas reconnus par la suite). Nous vous conseillons donc pour les différencier de garder sous la main un tableau qui répertorie tous vos variants avec au moins leur nom et une description.
+!!! warning
+
+    Les noms des variants seront toujours créés selon ce format de nom (sinon ils ne seraient pas reconnus par la suite). Nous vous conseillons donc pour les différencier de garder sous la main un tableau qui répertorie tous vos variants avec au moins leur nom et une description.
 
 ## Duplicate and convert USD
 En USD, il y a plusieurs formats de fichiers : usd, usda, usdc, usdz, usdnc ... Dans Daisy Pipe, nous utilisons majoritairement l'usdc (Universal Scene Description Crate) qui est le format USD compilé (et qui permet donc de meilleurs performances). Mais parfois, Nous avons besoin de lire ce qu'il y a à l'intérieur de notre fichier USD, c'est là que le format usda (Universal Scene Description ASCII) intervient. Il est donc très intéressant d'avoir la possibilité de convertir les usdc en usda et inversement.
@@ -61,11 +70,13 @@ Mais comment faire ? Tout d'abord, **rendez-vous sur Prism, dans les products** 
 
 ![prism convert usdc to usda](../assets/images/daisypipe/prism/prism_convert_to_usda.png)
 
-><img src="../src/information.png" width=50em><br>
->Vous pouvez aussi convertir des usda en usdc, les manipulations seront les mêmes. À noter que le script fonctionne aussi avec le format USD (qui se comporte comme l'usdc et qui peut donc être convertit en usda).
+!!! info
 
-><img src="../src/warning_yellow.png" width=50em><br>
->Pensez bien que Daisy Pipeline ne lit qu'un seul type d'USD (celui que vous avez configuré dans le fichier config.json). Donc si vous convertissez votre fichier usdc en usda, le fichier usda ne sera pas lu par la suite (sauf si vous avez changé le config.json), il sert juste à lire le contenu de l'USD.
+    Vous pouvez aussi convertir des usda en usdc, les manipulations seront les mêmes. À noter que le script fonctionne aussi avec le format USD (qui se comporte comme l'usdc et qui peut donc être convertit en usda).
+
+!!! warning
+
+    Pensez bien que Daisy Pipeline ne lit qu'un seul type d'USD (celui que vous avez configuré dans le fichier config.json). Donc si vous convertissez votre fichier usdc en usda, le fichier usda ne sera pas lu par la suite (sauf si vous avez changé le config.json), il sert juste à lire le contenu de l'USD.
 
 ## View with UsdView
 Parfois, on peut avoir envie de visualiser et inspecter un fichier USD sans ouvrir un gros logiciel comme Houdini. La solution : UsdView.<br>
@@ -78,7 +89,3 @@ Malheureusement, il n'est utilisable qu'à partir d'une ligne de commande. C'est
 Voici à quoi ressemble l'interface d'UsdView. Pour en apprendre plus sur l'utilisation d'UsdView, voici [une bonne ressource](https://docs.omniverse.nvidia.com/usd/latest/usdview/user_interface.html).
 
 ![usdview](../assets/images/daisypipe/prism/usdview.png)
-
-[< page précédente](index.md) - 
-[page suivante >](departments/index.md)<br>
-*<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

@@ -1,6 +1,8 @@
 # HDA
-[< page précédente](index.md)<br>
+
 Cette page sert à lister les HDA (c'est à dire les nodes custom) de Daisy Pipe. Ils sont accessibles dans le TAB menu d'Houdini mais uniquement dans le contexte de Solaris (stage). En voici la liste :
+
+<div class="page-toc" markdown>
 
 - [Create template](#create-template)
 - [Daisy Import](#daisy-import)
@@ -11,13 +13,16 @@ Cette page sert à lister les HDA (c'est à dire les nodes custom) de Daisy Pipe
 - [Save loaded paloads](#save-loaded-payloads)
 - [Load saved payloads](#load-saved-payloads)
 
+</div>
+
 ***
 
 ## Create template
 Ce node permet de créer un template pour chaque task de la production. Il est très simple d'utilisation : créez le node, clickez sur le bouton "Create template" et c'est fini.
 
-><img src="../../src/warning_yellow.png" width=50em><br>
-> Il est important pour le bon déroulement des scripts d'avoir une scène vide, sans aucun node existant. Si vous avez des nodes avant de créer le template, ils risquent de rentrer en conflit les uns avec les autres et de perturber le placement du template.
+!!! warning
+
+    Il est important pour le bon déroulement des scripts d'avoir une scène vide, sans aucun node existant. Si vous avez des nodes avant de créer le template, ils risquent de rentrer en conflit les uns avec les autres et de perturber le placement du template.
 
 ## Daisy Import
 Voici un node que vous allez utiliser très souvent. Il permet d'importer la dernière version d'un product depuis Prism. Voici comment l'utiliser :<br>
@@ -55,8 +60,3 @@ Ci dessous la liste des paramètres du node :
 ## Save loaded payloads
 
 ## Load saved payloads
-
-
-[< page précédente](index.md) - 
-[page suivante >](../prism.md)<br>
-*<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

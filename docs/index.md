@@ -26,13 +26,13 @@ Ci-dessous, les liens vers chaque documentation :
 
     [:octicons-arrow-right-24: Accéder](daisy_pipe/index.md)
 
--   :material-movie-open-outline:{ .lg .middle } **DaVinci Resolve**
+-   :material-cube-outline:{ .lg .middle } **ZBrush**
 
     ---
 
-    Installation, développement et utilisation de DaVinci Resolve.
+    Documentation ZBrush.
 
-    [:octicons-arrow-right-24: Accéder](davinciresolve.md)
+    [:octicons-arrow-right-24: Accéder](zbrush.md)
 
 -   :material-texture-box:{ .lg .middle } **Substance Painter**
 
@@ -42,12 +42,12 @@ Ci-dessous, les liens vers chaque documentation :
 
     [:octicons-arrow-right-24: Accéder](SubstancePainter/index.md)
 
--   :material-cube-outline:{ .lg .middle } **ZBrush**
+-   :material-movie-open-outline:{ .lg .middle } **DaVinci Resolve**
 
     ---
 
-    Documentation ZBrush.
+    Installation, développement et utilisation de DaVinci Resolve.
 
-    [:octicons-arrow-right-24: Accéder](zbrush.md)
+    [:octicons-arrow-right-24: Accéder](DaVinciResolve/index.md)
 
 </div>

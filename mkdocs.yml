@@ -78,7 +78,7 @@ markdown_extensions:
       configurations:
         - targets:
             include:
-              - index.md
+              - "*"
 
 extra_css:
   - assets/stylesheets/extra.css
@@ -108,7 +108,7 @@ nav:
   - Daisy Pipeline:
     - daisy_pipe/index.md
     - Installation: daisy_pipe/installation.md
-    - Maya: daisy_pipe/maya.md
+    - Maya: daisy_pipe/maya/index.md
     - Houdini:
       - daisy_pipe/houdini/index.md
       - Solaris: daisy_pipe/houdini/solaris.md
