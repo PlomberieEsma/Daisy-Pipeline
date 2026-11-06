@@ -74,9 +74,9 @@ env_var_path = f"$PRISM_JOB/03_Production/Shots/{sequence_name}/{shot_name}"
 node_position = [0,0]
 color_input_box = [0.33, 0.18, 0.44]
 color_output_box = [0.86, 0.85, 0.72]
-color_animation_box = [0.86, 0.85, 0.72]
-color_cfx_box = [0.86, 0.85, 0.72]
-color_fx_box = [0.86, 0.85, 0.72]
+color_animation_box = [0.41, 0.4, 0.64]
+color_cfx_box = [0.52, 0.66, 0.75]
+color_fx_box = [0.7, 0.8, 0.72]
 
 #get variables from config.json
 config_file_path = f"{project_path}/00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/lib/config.json"
@@ -178,6 +178,9 @@ def nodes_template_assembly() -> dict[str,Any]:
     animation_box.setColor(hou.Color(color_animation_box))
     animation_box.setComment("Animation")
     animation_box.fitAroundContents()
+    animation_box.resize(hou.Vector2(0, 1.5))
+    for node_in_box in animation_box.nodes():
+        node_in_box.move([0, 1.5])
     node_list.update({"animation_box" : animation_box})
 
     # set cfx network box
@@ -188,6 +191,9 @@ def nodes_template_assembly() -> dict[str,Any]:
     cfx_box.setColor(hou.Color(color_cfx_box))
     cfx_box.setComment("CFX")
     cfx_box.fitAroundContents()
+    cfx_box.resize(hou.Vector2(0, 1.5))
+    for node_in_box in cfx_box.nodes():
+        node_in_box.move([0, 1.5])
     node_list.update({"cfx_box" : cfx_box})
 
     # set fx network box
@@ -198,6 +204,9 @@ def nodes_template_assembly() -> dict[str,Any]:
     fx_box.setColor(hou.Color(color_fx_box))
     fx_box.setComment("FX")
     fx_box.fitAroundContents()
+    fx_box.resize(hou.Vector2(0, 1.5))
+    for node_in_box in fx_box.nodes():
+        node_in_box.move([0, 1.5])
     node_list.update({"fx_box" : fx_box})
 
     # set output network box
