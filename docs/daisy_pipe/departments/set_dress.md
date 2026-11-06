@@ -1,5 +1,5 @@
 # Set Dress
-[< page précédente](../departments.md)<br>
+[< page précédente](index.md)<br>
 Maintenant que nos assets sont créés, il est temps de les mettre tous ensemble dans une scène. C'est tout l'intérêt du set dress. Dans ce département nous allons utiliser Houdini pour assembler le décor de notre séquence. Alors, comment faire ? Voici un petit sommaire ...
 
 - [Création du template](#création-du-template)
@@ -15,8 +15,8 @@ Maintenant que nos assets sont créés, il est temps de les mettre tous ensemble
 
 Pour commencer, ouvrons Prism. Nous allons créer une nouvelle séquence en allant dans "**Shots**", en faisant un **click droit** et en choisissant "**Create Shot...**". Choisissez le nom de la séquence (**sous la forme "sq\<nombre\>" comme par exemple : "sq010"**) et écrivez "MASTER" dans le nom du shot. **C'est très important d'utiliser exactement le nom "MASTER"** pour que les scripts de Daisy Pipe puissent détecter que nous travaillons dans la séquence complète et pas dans un shot.
 
-![prism create shot](src/setdress/prism_create_shot.png)
-![prism create shot popup](src/setdress/prism_create_shot_popup.png)
+![prism create shot](../../assets/images/departments/setdress/prism_create_shot.png)
+![prism create shot popup](../../assets/images/departments/setdress/prism_create_shot_popup.png)
 
 ><img src="../../src/information.png" width=50em><br>
 >Si vous avez oublié d'écrire "MASTER", pas de panique, Daisy pipe renomme automatiquement le premier shot en "MASTER". Par contre **pensez bien à nommer vos séquences avec le bon nombre de zéros et la bonne convention de nommage**.
@@ -26,7 +26,7 @@ Non, c'était un prank. Il faut maintenant créer la task "SetDress" dans le dé
 
 La fenêtre "**Asset Browser**" s'ouvre, elle vous sert à sélectionner les éléments que vous voulez ajouter à votre set dress. Pour les sélectionner, faites un **drag and drop** des assets que vous voulez de la colonne de gauche vers la colonne de droite. Une fois que vous êtes satisfait de votre sélection, clickez sur "**Validate**" pour créer le template.
 
-![houdini asset browser](src/setdress/houdini_asset_browser.png)
+![houdini asset browser](../../assets/images/departments/setdress/houdini_asset_browser.png)
 
 ***
 
@@ -34,7 +34,7 @@ La fenêtre "**Asset Browser**" s'ouvre, elle vous sert à sélectionner les él
 
 Voici à quoi ressemble le template pour le set dress. Le votre pourrait être légèrement différent mais devrait quand même ressembler à ça :
 
-![houdini template](src/setdress/houdini_template.png)
+![houdini template](../../assets/images/departments/setdress/houdini_template.png)
 
 Il est important de noter que certains nodes sont de la mêm couleur que leur backdrop, ça veut dire que vous n'avez pas besoin d'y toucher à moins de savoir parfaitement ce que vous faites. Maintenant que cela est dit, comment se décompose le template ?<br>
 1. **Le backdrop "Inputs"** vous retrouverez tous les nodes relatifs à l'import et au placement de chaque asset, sa taille dépendra du nombre d'asset que vous importerez.
@@ -55,8 +55,8 @@ De manière générale, **vous travaillerez entre le node "graft_set_dress1" et 
 
 Si vous devez dupliquer des objets plusieurs fois, n'hésitez pas à utiliser **les nodes d'instance** comme le "**copy to point**", l'"**instancer**" ou le "**point instancer**". Ces nodes rendront votre scène BEAUCOUP plus légère alors ils sont importants en cas de scattering d'objets.
 
-![houdini final result](src/setdress/houdini_final_result.png)
+![houdini final result](../../assets/images/departments/setdress/houdini_final_result.png)
 
-[< page précédente](../departments.md) - 
+[< page précédente](index.md) - 
 [page suivante >](layout.md)<br>
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

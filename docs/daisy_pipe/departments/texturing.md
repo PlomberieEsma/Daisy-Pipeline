@@ -1,5 +1,5 @@
 # Texturing
-[< page précédente](../departments.md)<br>
+[< page précédente](index.md)<br>
 
 
 - [Texturing](#texturing)
@@ -45,6 +45,6 @@ Vous pouvez bien sûr utiliser d'autres workflow en dehors de Substance Painter 
 
 
 
-[< page précédente](../departments.md) - 
+[< page précédente](index.md) - 
 [page suivante >](shading.md)<br>
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

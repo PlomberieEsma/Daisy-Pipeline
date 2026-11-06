@@ -1,13 +1,20 @@
 # Zbrush
 Cette page sert de documentation pour le plugin Zbrush de Daisy Pipeline. Nous passerons en revue l'installation et l'utilisation du plugin qui sert de lien entre Prism Pipeline et Zbrush. Voici un sommaire pour naviguer sur cette page :
 
+<div class="page-toc" markdown>
+
+<p class="toc-title">Sommaire</p>
+
 - [Installation](#installation)
     - [Prism](#prism)
     - [Zbrush](#zbrush-1)
 - [Utilisation](#utilisation)
 
-> <img src="src/github_logo.png" width=20em class="github-icon">
-> Retrouvez le code source <a href="https://github.com/PlomberieEsma/Daisy-Pipeline"><i><strong>ici</strong></i></a>.
+</div>
+
+!!! github "Daysi Pipeline Code Source"
+
+    Retrouvez le code source de Daisy Pipeline Substance Painter <a href="https://github.com/PlomberieEsma/Daisy-Pipeline/tree/main/ZBrush"><i><strong>ici</strong></i></a>.
 
 ***
 
@@ -23,11 +30,11 @@ Puis copiez le **dossier Zbrush complet** dans **C:/Program Files/Prism2/Plugins
 Ensuite vous deverez installer le plugin dans Prism. Mais comment faire ?<br>
 Ouvrez Prism, allez dans **Options/Settings**.
 
-![prism main window](src/zbrush/prism_main_window.png)
+![prism main window](assets/images/zbrush/prism_main_window.png)
 
 Allez dans l'onglet **"Plugins"** et clickez sur le "+" en haut à droite pour ajouter un plugin existant. Finalement allez chercher le dossier Zbrush que vous avez précédemment glissé dans "Apps" avec l'explorateur qui s'ouvre.
 
-![prism plugins window](src/zbrush/prism_plugins_window.png)
+![prism plugins window](assets/images/zbrush/prism_plugins_window.png)
 
 Si le plugin ne fonctionne pas dans Zbrush, allez dans "Scripts/Load" et chargez le fichier "**prism_menu.txt**". Zbrush devrait compiler le script à l'intérieur et créer un fichier ".zsc".
 
@@ -46,7 +53,7 @@ Dans Zbrush vous pouvez accéder au plugin en allant dans "**Zplugin/Prism/Float
 >Si vous avez une **popup d'erreur** qui s'affiche quand vous clickez sur "FloatingWindow". C'est un problème qui vient de Prism. Pour le régler, **allez dans le HUB de Prism (la fenêtre pour gérer les plugins)** et **désinstallez le plugin Zbrush** (en clickant simplement sur "uninstall").<br>
 >Malheureusement ***c'est un problème qui risque d'être récurent***, nous nous excusons pour la gène occasionnée.
 
-![zbrush plugin window](src/zbrush/zbrush_plugin_window.png)
+![zbrush plugin window](assets/images/zbrush/zbrush_plugin_window.png)
 
 - Cases **.ztl** et **.zpr** : permet de choisir quel extension de fichier Zbrush vous voulez
 - **Save**: pour sauvegarder votre fichier (en mettant à jour le versioninfo.json de Prism)
@@ -58,4 +65,12 @@ Dans Zbrush vous pouvez accéder au plugin en allant dans "**Zplugin/Prism/Float
 - **Turntable**: pour faire un turn de votre modèle 3D et le stocker dans les media de Prism
 - **Settings**: pour ouvrir les settings de Prism
 
-<sub>*Zbrush plugin created by Mathieu Carrey (2025) and modified by Thomas Rubio (2026)*</sub>
+<div class="grid cards" markdown>
+
+-   :material-cube-outline:{ .lg .middle } **ZBrush**
+
+    ---
+
+    *Zbrush plugin created by [Mathieu Carrey](https://www.linkedin.com/in/mathieu-carrey-91531b327/){target="_blank"} (2025) and modified by [Thomas Rubio](https://www.linkedin.com/in/thomas-rubio-a76468239/){target="_blank"} (2026)*
+
+</div>

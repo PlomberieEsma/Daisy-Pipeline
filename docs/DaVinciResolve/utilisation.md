@@ -1,10 +1,8 @@
 # Utilisation
-[< Page précédente](development.md)
-
 
 L'utilisation de ce plugin est centralisée sur DaVinci Resolve. Aucune scène de montage n'est ouvrable depuis Prism même et le Project Browser de Prism n'est pas utilisé.
 
-# Sommaire
+## Sommaire
 - [Utilisation](#utilisation)
 - [Sommaire](#sommaire)
   - [Générale](#générale)
@@ -20,25 +18,23 @@ L'utilisation de ce plugin est centralisée sur DaVinci Resolve. Aucune scène d
     - [Template](#template)
   - [Export](#export)
 
-## Générale
+### Générale
 Dans DaVinci Resolve vous pouvez accéder au plugin en allant dans "**Workspace/Scripts/Prism**". Une fenêtre s'ouvrira avec différentes options.
 
-![davinci resolve plugin window](src/dvr_plugin_window.png)
+![davinci resolve plugin window](../assets/images/davinci/dvr_plugin_window.png)
 
 | Nom de l'option | Fonction simplifiée du bouton |
-|:-------- |:--------:|
-| [**Project Browser**](#projectbrowser)    | Ouvrir une instance du project browser de Prism dans DaVinci Resolve   |
-| [**Open Scene**](#open-scene)    | Ouvre une fenêtre de choix du fichier du projet qui permet d'importer le fichier de montage pour travailler   |
-| [**Save Version**](#save-version)    | Exporte le projet et écrase l'ancien export master   |
-| [**Save BackUp Version**](#save-backup-version)    | Exporte le projet en backup SANS écraser le master   |
-| [**Add Shot**](#add-shot)   | Ouvre un Shot Browser pour rechercher parmis les shots du projet pour en ajouter   |
-| [**Bake Current Shot**](#bake-current-shot)    | Cherche dans le pipe si les shots actuellement dans la timeline ont une version plus récente et propose de les remplacer  |
-| [**Modify Current Shot**](#modify-current-shot)    | Ouvre un Shot Browser pour rechercher parmis les shots, actuellement dans la timeline, toutes les versions à différents stades pour les remplacer   |
-| [**Apply Render Settings**](#export)    | Rempli automatiquement le file name et la location de l'export dans le pipe   |
+|:----------------|:------------------------------|
+| [**Project Browser**](#projectbrowser) | Ouvrir une instance du project browser de Prism dans DaVinci Resolve |
+| [**Open Scene**](#open-scene) | Ouvre une fenêtre de choix du fichier du projet qui permet d'importer le fichier de montage pour travailler |
+| [**Save Version**](#save-version) | Exporte le projet et écrase l'ancien export master |
+| [**Save BackUp Version**](#save-backup-version) | Exporte le projet en backup SANS écraser le master |
+| [**Add Shot**](#add-shot) | Ouvre un Shot Browser pour rechercher parmis les shots du projet pour en ajouter |
+| [**Bake Current Shot**](#bake-current-shot) | Cherche dans le pipe si les shots actuellement dans la timeline ont une version plus récente et propose de les remplacer |
+| [**Modify Current Shot**](#modify-current-shot) | Ouvre un Shot Browser pour rechercher parmis les shots, actuellement dans la timeline, toutes les versions à différents stades pour les remplacer |
+| [**Apply Render Settings**](#export) | Rempli automatiquement le file name et la location de l'export dans le pipe |
 
-<br>
-
-## ProjectBrowser
+##### ProjectBrowser
 Toute la section 04_Editing de notre pipe se trouve en dehors du dossier 03_Production dans notre pipeline. Le montage est donc géré en dehors de Prism pour l'ouverture des projet de montage notamment.
 
 Merci donc de ne pas essayer d'ouvrir votre montage depuis Prism.
@@ -47,7 +43,7 @@ De plus, ce plugin vous permettant directement d'ajouter des shots et stockant d
 
 Ce Project Browser vous permet cependant de checker si vous êtes bien sur le bon projet.
 
-## Scenefile
+##### Scenefile
 La gestion d'ouverture de projet de montage se gère directement depuis les boutons de la fenêtre du plugin.
 
 Comme DaVinci stock les informations de votre avancée en montage en local sur votre PC et que nos projet se font en équipe sur un réseau, nous allons fonctionner en export et import de projet.
@@ -56,17 +52,17 @@ Comme DaVinci stock les informations de votre avancée en montage en local sur v
 
 Ici sont regroupés les boutons concernant la gestion des projet de montage.
 
-### Open Scene
+##### Open Scene
 Ce bouton permet d'ouvrir un explorateur de fichier du projet qui permet d'importer le fichier de montage pour travailler.
 
 Si un autre projet de même nom existe sur le PC *(exemple: vous avez travaillez sur ce projet mais votre collègue l'a amélioré entre-temps)*, ce script supprimera l'ancien projet et le remplacera par la version à jour.
 
-### Save Version
+##### Save Version
 Ce bouton permet d'**exporter le projet sur lequel vous avez travaillé et écrase l'ancien export master**.
 
 Cette action est à faire **à chaque fois que vous finissez votre session de travail** pour que la prochaine personne qui travaillera sur votre projet ai la version à jour.
 
-### Save BackUp Version
+##### Save BackUp Version
 Ce bouton permet d'exporter le projet sur lequel vous avez travaillé en back up au cas où vous voudriez pouvoir revenir à cette étape plus tard.
 
 Cette action est à faire à chaque fois que vous souhaitez garder en mémoire une version de votre montage.
@@ -76,23 +72,23 @@ A noter: **Cette action ne met pas à jour le master de montage**, il ne faut do
 La gestion des shots et de leur mise à jour simpifiée se fait à travrs le Shot Browser.
 Il référencie les shots à leur différents niveau d'avancement dans le pipe et permet de les importer ou mettre à jour ainsi que mettre à jour les infos visuelles ajoutées sur l'écran.
 
-![davinci resolve shot browser add](src/dvr_shotbrowser_add.png)
+![davinci resolve shot browser add](../assets/images/davinci/dvr_shotbrowser_add.png)
 
-### Add Shot
+##### Add Shot
 Ce bouton permet d'ajouter des shots dans leur dernière version la plus avancée trouvée. Le shot est ajouté au niveau du curseur rouge, dans une nouvelle timeline pour éviter d'écraser les shots déjà présents.
 
-### Bake Current Shot
+##### Bake Current Shot
 Ce bouton permet de checker dans le pipe les shots qui ne sont plus à jour et propose de les remplacer par une version plus récente au choix.
 
-![davinci resolve shot browser bake](src/dvr_shotbrowser_bake.png)
+![davinci resolve shot browser bake](../assets/images/davinci/dvr_shotbrowser_bake.png)
 
-### Modify Current Shot
+##### Modify Current Shot
 Ce bouton permet d'ouvrir le Shot Browser avec tous les shots affichés et toutes leur versions au choix pour charger le niveau d'avancement spécifiquement voulu.
 
-### Template
+##### Template
 Grâce au Shot Browser, des informations sont visibles à l'écran.
 
-![davinci resolve shot browser bake](src/dvr_infos_visuelles.png)
+![davinci resolve shot browser bake](../assets/images/davinci/dvr_infos_visuelles.png)
 
 A gauche on retrouve:
 -  Le **nom du projet** Prism
@@ -112,10 +108,10 @@ A droite on retrouve:
 
 Ces information visuelles ne sont pas dynamique mais se mettent à jour sur les shots en fonction de la timeline. Pour les mettre à jours, il suffit de cliquer **Valider dans le Shot Browser** (peu importe qu'il soit en mode Add, Bake ou Modify).
 
-## Export
+### Export
 Le bouton **Apply Export Settings** permet de remplir automatiquement le filename et la location de l'export qui va être fait. Tout autre paramètre d'export reste libre pour plus d'adaptabilité aux projets.
 
-![davinci resolve export](src/dvr_plugin_export.png)
+![davinci resolve export](../assets/images/davinci/dvr_plugin_export.png)
 
 ***
 [< Page précédente](development.md)

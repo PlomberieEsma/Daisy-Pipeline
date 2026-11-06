@@ -1,5 +1,5 @@
 # Prism (Daisy Pipe)
-[< page précédente](../daisy_pipe.md)
+[< page précédente](index.md)
 
 Daisy Pipeline est un plugin Prism, il intègre des fonctionnalités sur Houdini et Maya mais aussi dans Prism lui même. Cette page fait l'inventaire de ces fonctionnalités, certaines plus importantes que d'autres mais toutes très utiles. Voici ce qu'elle contient :
 
@@ -15,7 +15,7 @@ Tout d'abord il faut comprendre ce qu'est un **asset** en USD. C'est un fichier 
 
 Par exemple, j'ai un asset de poisson. Je lui ai créé une geo et un shader, que j'ai exporté en 2 USD séparés. Je vais créer un asset USD pour combiner ma geo et mon shader dans un seul fichier qui référencera les 2. Comme ça, si je veux retoucher la geo et que quelqu'un veut modifier le shader, on pourra le faire en même temps et l'asset final sera mis à jour automatiquement.
 
-![houdini pufferfish asset](src/prism/houdini_pufferfish_asset.png)
+![houdini pufferfish asset](../assets/images/daisypipe/prism/houdini_pufferfish_asset.png)
 
 Cette fonctionnalité d'asset USD permet également d'ajouter des éléments propres à l'USD comme :
 - la création de variants
@@ -27,7 +27,7 @@ Maintenant vous vous dites peut-être : "Ok super, t'es bien gentil mais comment
 
 Tout d'abord **ouvrez Prism** (de préférence pas depuis un logiciel, ouvrez directement Prism). Ensuite, faites un **click droit sur un asset** et choisissez "**Create USD Asset**".
 
-![prism create usd asset](src/prism/prism_create_usd_asset.png)
+![prism create usd asset](../assets/images/daisypipe/prism/prism_create_usd_asset.png)
 
 ><img src="../src/information.png" width=50em><br>
 >On peut aussi noter que cette fonction crée un fichier Houdini qui sert à créer l'asset en question. Cette scène peut-être utile pour débugger les potentiels problèmes qui peuvent arriver pendant la création mais aussi pour aporter des moidifications à droite, à gauche à l'asset (si vous faites ça pensez bien à sauvegarder une copie, sinon le fichier sera écrasé au prochain "create USD asset").
@@ -41,13 +41,13 @@ Il existe une autre façon de créer un asset USD, cette manière permet de comp
 
 Comment faire ? De la même manière que pour le "Create USD Asset", **allez dans Prism**, faites un **click droit sur votre asset** et choisissez "**Pack USD Asset**".
 
-![prism create usd asset](src/prism/prism_create_usd_asset.png)
+![prism create usd asset](../assets/images/daisypipe/prism/prism_create_usd_asset.png)
 
 ## Add variant
 Pour ajouter un variant, il est important de créer une nouvelle task dans Prism avec un format de nom bien particulier. Pour vous éviter des problèmes de nommage, nous vous avons créé une fonction "Add Variant" qui vous permet d'ajouter un variant dans une task spécifique.<br>
 Comment procéder ? Commencez par sélectionner votre asset, puis votre département. Ensuite, faites un click droit dans les tasks, choisissez "Add Variant" et clickez sur la task qui vous intéresse. Une nouvelle task sera créée avec le nom "\<task\>_var\<nombre du variant\>".<br>
 
-![prism add variant](src/prism/prism_add_variant.png)
+![prism add variant](../assets/images/daisypipe/prism/prism_add_variant.png)
 
 ><img src="../src/warning_yellow.png" width=50em><br>
 >Les noms des variants seront toujours créés selon ce format de nom (sinon ils ne seraient pas reconnus par la suite). Nous vous conseillons donc pour les différencier de garder sous la main un tableau qui répertorie tous vos variants avec au moins leur nom et une description.
@@ -59,7 +59,7 @@ C'est là que l'outil usdcat intervient, il permet justement ce type de manipula
 
 Mais comment faire ? Tout d'abord, **rendez-vous sur Prism, dans les products** (d'un asset ou d'un shot peu importe). **Sélectionnez le département et la task**, puis faites un **click droit sur la version que vous voulez convertir**. Sélectionnez "**Duplicate and Convert to usda**". Comme son nom l'indique, cette fonction créera une copie de votre fichier usdc en usda, il suffira d'aller le chercher par la suite dans votre explorateur de fichiers et de l'ouvrir.
 
-![prism convert usdc to usda](src/prism/prism_convert_to_usda.png)
+![prism convert usdc to usda](../assets/images/daisypipe/prism/prism_convert_to_usda.png)
 
 ><img src="../src/information.png" width=50em><br>
 >Vous pouvez aussi convertir des usda en usdc, les manipulations seront les mêmes. À noter que le script fonctionne aussi avec le format USD (qui se comporte comme l'usdc et qui peut donc être convertit en usda).
@@ -73,12 +73,12 @@ UsdView est un petit logiciel proposé par Pixar qui permet de voir le contenu d
 
 Malheureusement, il n'est utilisable qu'à partir d'une ligne de commande. C'est pourquoi nous l'avons implanté dans Daisy Pipeline. Mais comment l'utiliser ? **Allez dans Prism, dans les products**. **Sélectionnez le départment puis la task**. Faites un **click droit sur la version que vous voulez** et choisissez "**View with UsdView**". Le logiciel peut mettre un peu de temps à se lancer la première fois mais les suivantes il est plus rapide.
 
-![prism convert usdc to usda](src/prism/prism_convert_to_usda.png)
+![prism convert usdc to usda](../assets/images/daisypipe/prism/prism_convert_to_usda.png)
 
 Voici à quoi ressemble l'interface d'UsdView. Pour en apprendre plus sur l'utilisation d'UsdView, voici [une bonne ressource](https://docs.omniverse.nvidia.com/usd/latest/usdview/user_interface.html).
 
-![usdview](src/prism/usdview.png)
+![usdview](../assets/images/daisypipe/prism/usdview.png)
 
-[< page précédente](../daisy_pipe.md) - 
-[page suivante >](departments.md)<br>
+[< page précédente](index.md) - 
+[page suivante >](departments/index.md)<br>
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

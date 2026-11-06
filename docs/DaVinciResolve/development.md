@@ -21,7 +21,7 @@ Dans le dossier de plugin DaVinciResolve/Integration:
   > **{"path": "\\\\CheminAuProjetPrism\\00_Pipeline\\Plugins\\DaVinciResolve"}**
   >> Adaptez le début du chemin à l'emplacement local de votre projet/plugin
   Exemple pour un projet se nommant *05_UNDINES_CURSE*:
-  ![davinci resolve plugin install](src/dvr_install.png)
+  ![davinci resolve plugin install](../assets/images/davinci/dvr_install.png)
 
   <br>
   <br>

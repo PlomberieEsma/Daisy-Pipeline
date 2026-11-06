@@ -1,5 +1,5 @@
 # Installation
-[< page précédente](../daisy_pipe.md)<br>
+[< page précédente](index.md)<br>
 Cette page a pour but de documenter l'installation de l'entièreté du pipeline USD, de la hiérarchie des dossiers aux variables d'environnement de chaque logiciel. Mais tout d'abord vous devez [télécherger Daisy Pipeline sur github via ce lien](https://github.com/PlomberieEsma/Daisy-Pipeline). Dans cette documentation nous partirons du principe que vous travaillez en équipe sur un réseau local dédié au projet. L'installation de Daisy Pipeline se fait à 2 endroits distincts : le réseau sur lequel vous travaillez et en local sur votre PC. Nous allons vous montrer comment procéder aux 2 endroits.
 
 ><img src="../src/information.png" width=50em><br>
@@ -17,7 +17,7 @@ Voici un petit sommaire pour vous aider :
     - [usd-core](#usd-core)
     - [Le lecteur réseau](#le-lecteur-réseau)
 
-> <img src="../src/github_logo.png" width="20" class="github-icon">
+> <img src="../assets/images/github_logo.png" width="20" class="github-icon">
 > Retrouvez le code source <a href="https://github.com/PlomberieEsma/Daisy-Pipeline"><i><strong>ici</strong></i></a>.
 
 ***
@@ -34,15 +34,15 @@ Puis entrez à l'intérieur. Vous devriez rerouver 3 dossiers :
 
 Gardons cet endroit en tête. Il est temps de se rendre sur internet pour aller chercher le code source de l'usd. Vous pouvez y accéder directement via ce lien : [https://developer.nvidia.com/openusd](https://developer.nvidia.com/openusd). Vous arriverez sur cette page.
 
-![home page of open usd on nvidia website](src/installation/nvidia_home_usd.png)
+![home page of open usd on nvidia website](../assets/images/daisypipe/installation/nvidia_home_usd.png)
 
 Descendez pour atteindre la partie "Get Started With OpenUSD" avec 3 rectangles. Seul le rectangle du centre nous intéresse. Clickez sur "Windows" pour télécharger la dernière version du code source d'OpenUSD.
 
-![OpenUSD download part of the nvidia website](src/installation/nvidia_download_usd.png)
+![OpenUSD download part of the nvidia website](../assets/images/daisypipe/installation/nvidia_download_usd.png)
 
 Une fois téléchargé, dézipez le dossier et entrez dedans. Copiez son contenu et retournez dans votre pipe. Entrez dans **ExternalModules/usd_root** et collez le contenu du code source d'OpenUSD. Si vous voulez optimiser un peu la taille de votre pipe, vous pouvez supprimer une partie des dossiers d'OpenUSD pour vous retrouver avec ceci directement dans le dossier usd_root :
 
-![stripped usd_root content](src/installation/stripped_usd_root_content.png)
+![stripped usd_root content](../assets/images/daisypipe/installation/stripped_usd_root_content.png)
 
 ### Le fichier config.json
 Maintenant que vous avez tout téléchargé et installé il vous reste une étape sur le réseau : le fichier config.json. C'est un fichier qui répertorie les variables principales utilisées dans les scripts du pipe. Vous le retrouverez dans **Scripts/DaisyTools/lib**. Vous deverez le modifier pour qu'il corresponde à votre projet. Voici la liste des paramètres qu'il contient :
@@ -77,16 +77,16 @@ Daisy Pipeline est avant tout un plugin pour Prism Pipeline, il est donc essenti
 
 Commencez par ouvrir Prism. Si c'est la première fois que vous l'ouvrez, vous verrez cette fenêtre. Clickez sur "Browse plugins...".
 
-![prism first window](src/installation/prism_first_window.png)
+![prism first window](../assets/images/daisypipe/installation/prism_first_window.png)
 
 Si vous l'avez déjà ouvert, vous devrez aller chercher dans "Options / Hub...".
 
-![prism main window](src/installation/prism_project_window.png)
+![prism main window](../assets/images/daisypipe/installation/prism_project_window.png)
 
 Vous arriverez sur la fenêtre Hub de Prism qui vous permettra de télécharger vos plugins. **Attention**, il faut vous créer un compte Prism pour les installer.<br>
 Suivez les consignes d'installation en prenant soin de cocher les bonnes versions de vos logiciels.
 
-![prism hub window](src/installation/prism_hub.png)
+![prism hub window](../assets/images/daisypipe/installation/prism_hub.png)
 
 ### Les variables d'environnement
 Maintenant que Prism est installé, il est temps de lier Daisy Pipeline à Houdini et Maya. Mais comment faire ? Voici un petit tuto.<br>
@@ -98,11 +98,11 @@ Nous allons créer des variables d'environnement pour chaque logiciel.
 Maintenant voici où placer les fichiers :<br>
 Pour Maya, allez dans **Documents/maya/2026** et remplacez (ou éditez) le fichier **Maya.env**. Voici son contenu :
 
-![maya.env content](src/installation/maya_env.png)
+![maya.env content](../assets/images/daisypipe/installation/maya_env.png)
 
 Pour Houdini, allez dans **Documents/houdini21.0/packages** (remplacez avec la bonne version d'Houdini) et copiez **DaisyPipe.json** dedans. Si le dossier packages n'existe pas, vous pouvez le créer. Voici son contenu :
 
-![daisyPipe.json content](src/installation/houdini_env.png)
+![daisyPipe.json content](../assets/images/daisypipe/installation/houdini_env.png)
 
 ### usd-core
 ><img src="../src/warning_yellow.png" width=50em><br>
@@ -128,16 +128,16 @@ Maintenant que vous avez tout installé, il nous reste une toute dernière manip
 
 Ouvrez l'explorateur de fichiers et allez dans Ce PC. Clickez ensuite sur "..." à côté de "Afficher". Puis clickez sur "Connecter un lecteur réseau" dans le menu déroulant.
 
-![file explorer](src/installation/connect_network.png)
+![file explorer](../assets/images/daisypipe/installation/connect_network.png)
 
 Une fenêtre apparait. Choisissez la lettre que vous voulez voir connectée au réseau (attention il faut la même pour tous les PC qui utiliseront Daisy Pipe). Puis ajoutez le chemin UNC vers le réseau juste en dessous. Clickez sur "Terminer" et c'est fini, vous devriez voir apparaitre un nouveau lecteur dans "Ce PC".
 
-![file explorer](src/installation/connect_network_window.png)
+![file explorer](../assets/images/daisypipe/installation/connect_network_window.png)
 
 > J'ai parlé de chemin UNC juste au dessus, mais qu'est-ce que c'est ?
 >> Un chemin UNC (Universal Name Convention) est une façon d'écrire un chemin vers une ressource sur un réseau sous Windows. Il s'écrit \\\\nom_du_réseau\\nom_du_dossier_de_partage\\...
 >> Un chemin mapped drive quand à lui est un lecteur réseau qui est associé à une lettre de lecteur. Il sert à accéder au réseau comme s'il était un disque local. C'est un chemin à éviter au maximum dans votre pipeline car si l'un des PC du réseau n'a pas la même lettre (ou pas de mapped drive du tout), il ne comprendra pas le lien.
 
-[< page précédente](../daisy_pipe.md) - 
+[< page précédente](index.md) - 
 [page suivante >](maya/maya_usd.md)<br>
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

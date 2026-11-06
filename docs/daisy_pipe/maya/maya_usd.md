@@ -63,7 +63,7 @@ Un clic droit sur un layer ouvre un menu contextuel avec les actions disponibles
 | 6 | Flèche de dépliage | Affiche ou masque les sublayers d'un layer. |
 | 7 | Save Stage | Enregistre en une fois toutes les modifications non sauvegardées du stage. |
 
-![maya_usd_layer_editor_right_click.png](src/maya_usd_layer_editor_right_click.png)
+![maya_usd_layer_editor_right_click.png](../../assets/images/maya/maya_usd_layer_editor_right_click.png)
 
 | Action | Description |
 |---|---|
@@ -84,6 +84,6 @@ On y trouve les métadonnées du layer (prim par défaut, plage de frames, caden
 C'est l'outil à utiliser pour contrôler les références d'un layer ou comprendre l'origine d'une valeur.
 
 [< page précédente](../maya.md) -
-[page suivante >](../houdini.md)  
+[page suivante >](../houdini/index.md)  
 
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

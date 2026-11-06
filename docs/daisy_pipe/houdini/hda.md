@@ -1,5 +1,5 @@
 # HDA
-[< page précédente](../houdini.md)<br>
+[< page précédente](index.md)<br>
 Cette page sert à lister les HDA (c'est à dire les nodes custom) de Daisy Pipe. Ils sont accessibles dans le TAB menu d'Houdini mais uniquement dans le contexte de Solaris (stage). En voici la liste :
 
 - [Create template](#create-template)
@@ -23,11 +23,11 @@ Ce node permet de créer un template pour chaque task de la production. Il est t
 Voici un node que vous allez utiliser très souvent. Il permet d'importer la dernière version d'un product depuis Prism. Voici comment l'utiliser :<br>
 Clickez sur le bouton "**Browse Asset**", une fenêtre s'ouvre, c'est l'Asset Browser. Cette fenêtre vous permet de choisir un asset à importer. Faites un **drag and drop de l'asset** que vous voulez importer dans la colonne de droite et clickez sur "**Validate**".
 
-![daisy import asset browser](src/hda/daisy_import_asset_browser.png)
+![daisy import asset browser](../../assets/images/houdini/hda/daisy_import_asset_browser.png)
 
 Une autre fenêtre s'ouvre pour choisir cette fois-ci le product que vous voulez importer. **Sélectionnez-le** et clickez sur "**Accept**". Voilà, c'est importé.
 
-![daisy import asset browser](src/hda/daisy_import_product.png)
+![daisy import asset browser](../../assets/images/houdini/hda/daisy_import_product.png)
 
 Ci dessous la liste des paramètres du node :
 
@@ -57,6 +57,6 @@ Ci dessous la liste des paramètres du node :
 ## Load saved payloads
 
 
-[< page précédente](../houdini.md) - 
+[< page précédente](index.md) - 
 [page suivante >](../prism.md)<br>
 *<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

@@ -1,6 +1,9 @@
-# Général
-[< page précédente](index.md)<br>
+# Daisy Pipeline
 Voici la présentation générale du pipeline (alembic et USD). Ici, nous allons passer en revue la hiérarchie des dossiers, les bases de l'utilisation de Prism, les bases de l'USD (si vous en avez besoin) et des rappels généraux concernant l'optimisation. Voir les sections ci-dessous :
+
+<div class="page-toc" markdown>
+
+<p class="toc-title">Sommaire</p>
 
 - [Hiérarchie](overview/hierarchy.md)
 - [Prism](overview/prism.md)
@@ -8,10 +11,8 @@ Voici la présentation générale du pipeline (alembic et USD). Ici, nous allons
     - [Départements](overview/prism/department.md)
 - [USD](overview/usd.md)
 - [Optimisation](overview/optimisation.md)
+</div>
 
-> <img src="src/github_logo.png" width=20em class="github-icon">
-> Retrouvez le code source <a href="https://github.com/PlomberieEsma/Daisy-Pipeline"><i><strong>ici</strong></i></a>.
+!!! github "Daysi Pipeline Code Source"
 
-[< page précédente](index.md) - 
-[page suivante >](overview/hierarchy.md)<br>
-*<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
+    Retrouvez le code source de Daisy Pipeline <a href="https://github.com/PlomberieEsma/Daisy-Pipeline"><i><strong>ici</strong></i></a>.

@@ -1,35 +1,65 @@
 site_name: Daisy Pipeline Doc
 site_url: https://plomberieesma.github.io/Daisy-Pipeline/
 copyright: © 2026 Daisy Pipeline by <strong><a href="https://www.linkedin.com/in/noaescourbanies/">Noa Escourbanies</a></strong>, <strong><a href="https://www.linkedin.com/in/leeloo-trinh-thieu-ab6b70342/">Leeloo Trinh-Thieu</a></strong> and <strong><a href="https://www.linkedin.com/in/thomas-rubio-a76468239/">Thomas Rubio</a></strong>
+repo_url: https://github.com/PlomberieEsma/Daisy-Pipeline
+repo_name: Daisy-Pipeline
 theme:
   name: material
   font:
     text: Merriweather Sans
     code: Red Hat Mono
-  logo: assets/daisy_logo_highres.png
-  favicon: assets/daisy_logo.ico
+  logo: assets/images/daisy_logo_highres.png
+  favicon: assets/images/daisy_logo.ico
   features:
     - navigation.footer
+    - navigation.top
+    - navigation.indexes
+    - navigation.instant
+    - navigation.expand
+    - navigation.path
+    - navigation.tabs
+    - toc.follow
+    - search.suggest
+    - search.share
+    - content.code.copy
+  icon:
+    repo: material/git
+    status:
+      important: material/star
   palette:
     # Dark Mode
     - scheme: slate
       toggle:
         icon: material/weather-sunny
         name: Dark mode
-      primary: green
-      accent: deep purple
+      primary: custom
+      accent: custom
 
     # Light Mode
     - scheme: default
       toggle:
         icon: material/weather-night
         name: Light mode
-      primary: blue
-      accent: deep orange
-
+      primary: custom
+      accent: custom
 
 markdown_extensions:
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - admonition
+  - pymdownx.details
   - attr_list
+  - md_in_html
+  - pymdownx.critic
+  - pymdownx.caret
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.tilde
+  - def_list
+  - toc:
+      permalink: ⚓︎
+  - pymdownx.tasklist:
+      custom_checkbox: true
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
@@ -37,19 +67,73 @@ markdown_extensions:
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
-  - pymdownx.inlinehilite
-  - pymdownx.snippets
-  - pymdownx.superfences
-  - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
-  - admonition
-  - pymdownx.details
-  - pymdownx.superfences
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
+  - material.extensions.preview:
+      configurations:
+        - targets:
+            include:
+              - index.md
+
 extra_css:
-  - stylesheets/extra.css
+  - assets/stylesheets/extra.css
+
+extra:
+  status:
+    important: Essentiel
+
+plugins:
+  - search
+  - glightbox:
+      touchNavigation: true
+      loop: false
+      effect: zoom
+      zoomable: true
+      draggable: true
+      auto_caption: false
+      caption_position: bottom
+  - tags
+
+nav:
+  - Accueil:
+      - index.md
+      - Démarrage:
+          - getting_started/index.md
+          - Installation: getting_started/Installation.md
+  - Daisy Pipeline:
+    - daisy_pipe/index.md
+    - Installation: daisy_pipe/installation.md
+    - Maya: daisy_pipe/maya.md
+    - Houdini:
+      - daisy_pipe/houdini/index.md
+      - Solaris: daisy_pipe/houdini/solaris.md
+      - Templates: daisy_pipe/houdini/templates.md
+      - HDA: daisy_pipe/houdini/hda.md
+    - Prism: daisy_pipe/prism.md
+    - Départements:
+      - daisy_pipe/departments/index.md
+      - Modeling: daisy_pipe/departments/modeling.md
+      - Texturing: daisy_pipe/departments/texturing.md
+      - Shading: daisy_pipe/departments/shading.md
+      - Set dress: daisy_pipe/departments/set_dress.md
+      - Layout: daisy_pipe/departments/layout.md
+      - Animation: daisy_pipe/departments/animation.md
+      - Lighting: daisy_pipe/departments/lighting.md
+      - Compositing: daisy_pipe/departments/compositing.md
+    - Dev: daisy_pipe/dev.md
+  - Zbrush: zbrush.md
+  - Substance Painter:
+      - SubstancePainter/index.md
+      - Installation: SubstancePainter/installation.md
+      - Imports: SubstancePainter/imports.md
+      - Exports: SubstancePainter/exports.md
+      - Developpement: SubstancePainter/development.md
+  - DavinciResolve:
+      - DaVinciResolve/index.md
+      - Installation et développement: DaVinciResolve/development.md
+      - Utilisation: DaVinciResolve/utilisation.md

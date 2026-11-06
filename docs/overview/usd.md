@@ -38,7 +38,7 @@ Le format USD est aussi pris en charge par la majorité des logiciels de 3D et d
 Les layers sont les différents fichiers USD du pipe, ils permettent à plusieurs artistes de travailler sur un même asset en même temps.<br>
 *Par exemple : Je veux travailler sur les roues d'une voiture pendant que la personne à côté de moi travail sur sa carosserie. Chacun d'entre nous va travailler sur un layer différent et nos 2 layers seront ensuite combinés dans un 3<sup>ème</sup> layer qui sera notre voiture finie.*
 
-![layers scheme](src/usd/layers_schematic.png)
+![layers scheme](../assets/images/usd/layers_schematic.png)
 
 C'est le même principe que les références dans Maya : on assemble plusieurs fichiers .ma en référence dans un plus grand fichier qui va tout contenir. La différence ici c'est que contrairement au système de Maya, on peut faire autant de couches de référence qu'on veut. Une référence, dans une référence, dans une référence, dans une référence ... C'est référenceception.
 
@@ -56,7 +56,7 @@ En USD on peut dire que **tout est primitive**. Une primitive est le plus petit 
 Bien souvent les primitives contiennent d'autres primitives pour former la hiérarchie de la scène.
 
 tout ça c'est des primitives :
-![primitive hierarchy](src/usd/primitive_hierarchy.png)
+![primitive hierarchy](../assets/images/usd/primitive_hierarchy.png)
 
 ### Name et path
 
