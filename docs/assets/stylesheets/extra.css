@@ -439,3 +439,32 @@ label.md-nav__link:hover {
 [data-md-color-scheme="slate"] .md-clipboard:hover {
   color: var(--md-accent-fg-color);
 }
+
+/* ===== Barre d'onglets : soulignement de l'onglet actif ===== */
+.md-tabs__item {
+  position: relative;
+}
+
+.md-tabs__item::after {
+  content: "";
+  position: absolute;
+  left: 0.6rem;
+  right: 0.6rem;
+  bottom: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background-color: var(--md-primary-bg-color);
+  opacity: 0;
+  transform: scaleX(0.4);
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.md-tabs__item:hover::after {
+  opacity: 0.45;
+  transform: scaleX(1);
+}
+
+.md-tabs__item--active::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
