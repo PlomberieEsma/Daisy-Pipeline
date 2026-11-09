@@ -1,14 +1,20 @@
 # Shading
-[< page précédente](index.md)<br>
 Ok, Maintenant que nous avons un asset texturé, il est temps de lui créer un shaderdans Houdini. "Quoi ?!" me direz-vous "Mais je ne connais pas Houdini ! Comment je vais faire ?! Suis-je condamné aux méandres de l'incompréhension et du désespoir ?!". Pas de panique, on va vour tout ça ensemble, étape par étape, et vous allez voir que ça ressemble plus à Maya que ce que vous pouvez croire.
+
+<div class="page-toc" markdown>
+
+<p class="toc-title">Sommaire</p>
 
 - [Création du template](#création-du-template)
 - [Présentation du template](#présentation-du-template)
 - [Création des shaders](#création-des-shaders)
 - [Scène de lookdev](#scène-de-lookdev)
 
-><img src="../../src/warning_red.png" width=50em><br>
->Avant de commencer, assurez-vous bien d'avoir fait un premier **[Create USD Asset](../prism.md/#create-usd-asset)** pour que le template reconnaisse bien la geo.
+</div>
+
+!!! danger
+
+      Avant de commencer, assurez-vous bien d'avoir fait un premier **[Create USD Asset](../prism.md/#create-usd-asset)** pour que le template reconnaisse bien la geo.
 
 ***
 
@@ -35,8 +41,9 @@ Votre node est créé, dans les parameters vous avez un bouton "create template"
 
 Avant de modifier le template il est important de savoir que si un node est de la même couleur que son backdrop, il vaut mieux éviter d'y toucher. Notons également qu'il y a un backdrop en haut à gauche nommé "Toolbox", c'est un répertoir de nodes qui pourraient vous être utils (ou pas), à vous d'explorer et les tester. Maintenant passons en revue les nodes qui composent le template.
 
-><img src="../../src/information.png" width=50em><br>
->Si vous avez utilisé le plugin de Daisy Pipe pour Substance Painter et que vous avez bien exporté vos textures, les shaders seront créés automatiquement et les textures connectées au shader. Il ne vous restera plus qu'à assigner chaque material aux primitives de votre asset et à ajouster les paramètres de vos shaders. Vous êtes libres d'en faire ce que vous voulez.
+!!! info
+
+      Si vous avez utilisé le plugin de Daisy Pipe pour Substance Painter et que vous avez bien exporté vos textures, les shaders seront créés automatiquement et les textures connectées au shader. Il ne vous restera plus qu'à assigner chaque material aux primitives de votre asset et à ajouster les paramètres de vos shaders. Vous êtes libres d'en faire ce que vous voulez.
 
 ***
 
@@ -54,7 +61,9 @@ Avant de modifier le template il est important de savoir que si un node est de l
     - daisy export : permet d'exporter les shaders en usd
 4. **Le backdrop "Toolbox"** répertorie des nodes qui pourraient vous être utils.
 
-Pour plus d'informations sur ce template, **[clickez ici](../houdini/templates.md/#template-de-shading)**.
+!!! info
+   
+      Pour plus d'informations sur ce template, **[clickez ici](../houdini/templates.md/#template-de-shading)**.
 
 ***
 
@@ -62,11 +71,13 @@ Pour plus d'informations sur ce template, **[clickez ici](../houdini/templates.m
 Maintenant que nous avons fait les présentations, passons à la pratique. Il est temps de créer nos shaders. Pour cela nous allons utiliser notre asset "pufferfish". Rentrez dans le node "**create shader**" en double clickant dessus.
 
 
-><img src="../../src/information.png" width=50em><br>
-> Petit tip, vous pouvez passer de la vue "proxy" à la vue "render" en clickant sur les lunettes à droite du viewport.<br>
->![switch proxy render](../../assets/images/departments/shading/switch_proxy_render.png)
+!!! tip
+
+      Petit tip, vous pouvez passer de la vue "proxy" à la vue "render" en clickant sur les lunettes à droite du viewport.<br>
+      ![switch proxy render](../../assets/images/departments/shading/switch_proxy_render.png)
 
 Nous allons créer un "Material builder", c'est à dire un conteneur qui encapsule les shaders comme le PxrSurface. Il existe 2 types de material builder pour Renderman dans Solaris :
+
 - Prx Material Builder
 - Renderman Material Builder (Hydra)
 
@@ -82,8 +93,10 @@ Une fois que vous avez créé vos shaders, il est temps de les assigner. Allez s
 
 Si vous voulez ajouter plusieurs shaders, pas besoin de créer un nouveau node. Clickez simplement sur le "+" de "Number of Materials" en haut des paramètres ou à côté de votr premier material (vers la petite croix rouge).
 
-> Notez que vous pouvez assigner des groupes entiers (c'est ce que j'ai fait pour les yeux, j'ai ajouté le group "eyes" qui contient les 2 geo des yeux)<br>
-> Vous pouvez aussi utiliser des expressions si vous le souhaitez mais vous en aurez surtout besoin dans d'autres départements
+!!! tip
+
+      Notez que vous pouvez assigner des groupes entiers (c'est ce que j'ai fait pour les yeux, j'ai ajouté le group "eyes" qui contient les 2 geo des yeux)<br>
+      Vous pouvez aussi utiliser des expressions si vous le souhaitez mais vous en aurez surtout besoin dans d'autres départements
 
 ![houdini assign shader](../../assets/images/departments/shading/houdini_assign_shader.png)
 
@@ -100,6 +113,7 @@ Il est finalement temps de vous présenter un petit outil que j'ai créé et qui
 ![houdini lookdev scene node](../../assets/images/departments/shading/lookdev_scene_node.png)
 
 Ce node vous crée automatiquement une scène complète pour voir votre shading. Il vous permet aussi de faire un turn automatique de votre asset. Il y a plusieurs paramètres que vous pouvez modifier.
+
 - le moteur de rendu
 - le scale global pour mettre la scène à l'échelle de l'asset
 - la possibilité de cacher certains éléments de l'interface
@@ -111,9 +125,10 @@ Ce node vous crée automatiquement une scène complète pour voir votre shading.
 - le framerange du turn
 - l'extension des fichiers de sortie
 
-><img src="../../src/warning_yellow.png" width=50em><br>
-> Sachez que le turn se fait en 2 parties égales, une fois avec l'asset qui tourne et une fois avec la light qui tourne.<br>
-> Vous ne pourrez pas changer la durée de chaque partie, seulement la durée global
+!!! warning
+
+      Sachez que le turn se fait en 2 parties égales, une fois avec l'asset qui tourne et une fois avec la light qui tourne.<br>
+      Vous ne pourrez pas changer la durée de chaque partie, seulement la durée global
 
 ![houdini lookdev scene node](../../assets/images/departments/shading/lookdev_scene.png)
 
@@ -123,11 +138,12 @@ Le turn est ensuite stocké dans Prism sous forme d'une séquence d'images dans 
 
 ![houdini lookdev scene node](../../assets/images/departments/shading/prism_turn_result.png)
 
-><img src="../../src/warning_yellow.png" width=50em><br>
->Une fois que vous avez fait votre export une première fois, pensez bien à faire un **[Create USD Asset](../prism.md/#create-usd-asset)** pour appliquer le shading à votre asset USD.
+!!! warning
+
+      Une fois que vous avez fait votre export une première fois, pensez bien à faire un **[Create USD Asset](../prism.md/#create-usd-asset)** pour appliquer le shading à votre asset USD.
 
 ![houdini lookdev scene node](../../assets/images/departments/shading/turn_pufferfish.gif)
 
-[< page précédente](index.md) - 
-[page suivante >](set_dress.md)<br>
-*<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
+!!! success
+
+      Bien joué, vous avez texturé votre premiere asset !!!

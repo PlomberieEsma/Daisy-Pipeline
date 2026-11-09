@@ -103,8 +103,14 @@ nav:
   - Accueil:
       - index.md
       - Démarrage:
-          - getting_started/index.md
-          - Installation: getting_started/Installation.md
+          - overview/index.md
+          - Hierarchie: overview/hierarchy.md
+          - Prism:
+              - overview/prism/index.md
+              - Utilisation Général: overview/prism/general_use.md
+              - Départements: overview/prism/department.md
+          - USD: overview/usd.md
+          - Optimisation: overview/optimisation.md
   - Daisy Pipeline:
     - daisy_pipe/index.md
     - Installation: daisy_pipe/installation.md
@@ -114,7 +120,7 @@ nav:
       - Solaris: daisy_pipe/houdini/solaris.md
       - Templates: daisy_pipe/houdini/templates.md
       - HDA: daisy_pipe/houdini/hda.md
-    - Prism: daisy_pipe/prism.md
+    - Prism: daisy_pipe/index.md
     - Départements:
       - daisy_pipe/departments/index.md
       - Modeling: daisy_pipe/departments/modeling.md

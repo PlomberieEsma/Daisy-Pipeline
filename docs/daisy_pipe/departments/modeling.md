@@ -76,6 +76,7 @@ Tout simplement en dupliquant la scène ! Rendez-vous dans le **Project Browser*
 Pour commencer votre modé dans Houdini, commencez par créer un nouveau projet (comme pour Maya au dessus), puis ouvrez Houdini et sélectionnez le projet. Vous arriverez sur cette fenêtre.
 
 ![houdini home](../../assets/images/departments/modeling/houdini_home.png)
+
 1. Le viewport
 2. Le node editor
 3. Les parameters
@@ -87,8 +88,9 @@ Tout d'abbord, assurez-vous que vous êtes bien dans le **contexte "Stage"** (So
 
 Maintenant que Houdini est prêt à être utilisé, il est temps de créer le template de modeling (un template général, rien de très spécifique au département). Mais comment faire ? Créez un nouveau node **en appuyant sur TAB ou en faisant un click droit** dans le node editor et cherchez le node "**Create template**" rangé dans "Daisy Pipe". Puis dans les paramètres du node **clickez sur le bouton "Create template"**.<br>
 Magie !!! Un template est créé. Il peut prendre 2 formes :<br>
-[general_template1.png](../../assets/images/departments/modeling/general_template1.png)
-[general_template2.png](../../assets/images/departments/modeling/general_template2.png)<br>
+![general_template1.png](../../assets/images/departments/modeling/general_template1.png)
+![general_template2.png](../../assets/images/departments/modeling/general_template2.png)<br>
+
 Chaque forme se crée en fonction de la présence ou non d'un export USD de la task active. Et en français ? Par exemple, ici je suis dans la task ModL_var02, mais c'est la première fois que je crée ma modé, donc j'aurai la première forme. Mais si j'ai déjà fait un export dans cette task, j'aurai la seconde forme qui importe l'asset USD global (que nous verrons plus tard).
 
 Si vous n'avez pas compris le paragraphe du dessus, c'est pas grâve. Dans tous les cas, l'endroit où vous allez travailler sera le second node : le "**sop create**". Pour commencer votre modé, vous pouvez rentrer dedans en **double clickant dessus**. Et je vous souhaite bon courage pour votre modé.

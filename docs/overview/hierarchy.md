@@ -1,5 +1,4 @@
 # Hiérarchie
-[< page précédente](../overview.md)<br>
 
 Voici les dossiers de votre hiérarchie globale et l'utilité de chaques dossiers:
 
@@ -13,7 +12,3 @@ Voici les dossiers de votre hiérarchie globale et l'utilité de chaques dossier
 - **07_Linetest** - Les éléments à montrer aux reviews ou jury pour les avoir en évidence lors des présentations.
 - **08_Dev** - Tous les scripts, nodes custom, outils de pipeline dévolppés pour le projet. Il y a un sous-dossier où sont stockés les publish de chaque outil.
 - **09_Communication** - Les fichiers relatifs à la communication (affiches, réseaux, festivals...)
-
-[< page précédente](../overview.md) - 
-[page suivante >](prism.md)<br>
-*<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

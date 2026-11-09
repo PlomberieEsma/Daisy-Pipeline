@@ -1,13 +1,19 @@
 # Set Dress
-[< page précédente](index.md)<br>
 Maintenant que nos assets sont créés, il est temps de les mettre tous ensemble dans une scène. C'est tout l'intérêt du set dress. Dans ce département nous allons utiliser Houdini pour assembler le décor de notre séquence. Alors, comment faire ? Voici un petit sommaire ...
+
+<div class="page-toc" markdown>
+
+<p class="toc-title">Sommaire</p>
 
 - [Création du template](#création-du-template)
 - [Présentation du template](#présentation-du-template)
 - [Utilisation du template](#utilisation-du-template)
 
-><img src="../../src/warning_red.png" width=50em><br>
->Avant de commencer, assurez-vous bien d'avoir fait au moins un create USD asset pour chaque asset que vous voulez importer. Sinon les scripts ne fonctionneront pas.
+</div>
+
+!!! warning
+
+      Avant de commencer, assurez-vous bien d'avoir fait au moins un create USD asset pour chaque asset que vous voulez importer. Sinon les scripts ne fonctionneront pas.
 
 ***
 
@@ -18,8 +24,9 @@ Pour commencer, ouvrons Prism. Nous allons créer une nouvelle séquence en alla
 ![prism create shot](../../assets/images/departments/setdress/prism_create_shot.png)
 ![prism create shot popup](../../assets/images/departments/setdress/prism_create_shot_popup.png)
 
-><img src="../../src/information.png" width=50em><br>
->Si vous avez oublié d'écrire "MASTER", pas de panique, Daisy pipe renomme automatiquement le premier shot en "MASTER". Par contre **pensez bien à nommer vos séquences avec le bon nombre de zéros et la bonne convention de nommage**.
+!!! info
+
+      Si vous avez oublié d'écrire "MASTER", pas de panique, Daisy pipe renomme automatiquement le premier shot en "MASTER". Par contre **pensez bien à nommer vos séquences avec le bon nombre de zéros et la bonne convention de nommage**.
 
 Une fois que vous avez créé votre shot, félicitation, le film est terminé.<br>
 Non, c'était un prank. Il faut maintenant créer la task "SetDress" dans le département du même nom. Créez une nouvelle scène Houdini, rentrez dedans et créez le template avec le node "Daisy Create Template".
@@ -56,7 +63,3 @@ De manière générale, **vous travaillerez entre le node "graft_set_dress1" et 
 Si vous devez dupliquer des objets plusieurs fois, n'hésitez pas à utiliser **les nodes d'instance** comme le "**copy to point**", l'"**instancer**" ou le "**point instancer**". Ces nodes rendront votre scène BEAUCOUP plus légère alors ils sont importants en cas de scattering d'objets.
 
 ![houdini final result](../../assets/images/departments/setdress/houdini_final_result.png)
-
-[< page précédente](index.md) - 
-[page suivante >](layout.md)<br>
-*<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

@@ -3,11 +3,15 @@ Ces guides t’accompagnent dans tes premiers pas avec Daisy Pipeline. Ils sont 
 
 <div class="link-list" markdown>
 
-[:material-tray-arrow-down: Installation](Installation.md){ .link-item }
-
-[:material-tray-arrow-down: Installation et configuration du projet](setup.md){ .link-item }
-
+[:material-tray-arrow-down: Installation et configuration du projet](Installation.md){ .link-item }
 [:material-filmstrip: Projets d'exemple](examples.md){ .link-item }
+
+</div>
+
+
+<div class="link-list" markdown>
+
+
 
 </div>
 
