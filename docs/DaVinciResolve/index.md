@@ -11,8 +11,8 @@ Ce plugin comporte 2 presets pour le format **SCOPE (2048 x 858)** et **FLAT (19
 
 <p class="toc-title">Sommaire</p>
 
-  - [Installation et développement](DaVinciResolve/development.md)
-  - [Utilisation](DaVinciResolve/utilisation.md)
+  - [Installation et développement](development.md)
+  - [Utilisation](utilisation.md)
 
 </div>
 

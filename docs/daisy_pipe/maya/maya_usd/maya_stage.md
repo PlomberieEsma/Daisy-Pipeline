@@ -1,6 +1,4 @@
 # Créer et charger un stage
-[< page précédente](../maya_usd.md)
-
 Cette page explique comment créer un stage USD dans Maya et comment Maya l'affiche.
 
 ## Créer ou charger un stage
@@ -26,9 +24,6 @@ Le bouton _Pin_, à côté du sélecteur, fige ce choix. Le stage reste affiché
 
 Le bouton _Save Stage_, en haut à droite de l'arbre des layers, enregistre en une fois toutes les modifications non sauvegardées du stage. Le nombre de modifications en attente est affiché à côté de l'icône. Pour sauvegarder un seul layer, utilisez _Save Edits_ dans son menu contextuel.
 
-><img src="../../src/information.png" width=50em><br>
->Pour plus d'informations sur le Layer Editor, retrouvez la ***[documentation officielle ici](https://help.autodesk.com/view/MAYAUL/2026/ENU/?guid=GUID-4FAD73CA-E775-4009-9DCB-3BC6792C465E)***.
-
-[< page précédente](../maya_usd.md)
-
-*<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
+!!! info
+        
+        Pour plus d'informations sur le Layer Editor, retrouvez la ***[documentation officielle ici](https://help.autodesk.com/view/MAYAUL/2026/ENU/?guid=GUID-4FAD73CA-E775-4009-9DCB-3BC6792C465E)***.

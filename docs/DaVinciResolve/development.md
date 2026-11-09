@@ -1,6 +1,4 @@
 # Développement
-[< Page précédente](../davinciresolve.md)
-
 
 ## Installation
 
@@ -29,7 +27,3 @@ Dans le dossier de plugin DaVinciResolve/Integration:
 > Pour les élèves de la promo 2026/27 de l'ESMA de Montpellier, le dossier de plugin est déjà présent dans vos pipelines respectives et comportent un fichier **README** qui comporte la marche à suivre d'installation ainsi que la ligne de code déjà adaptée à votre projet qu'il suffit de copier coller. Si vous avez une quelconque difficulté, allez voir Leeloo.
 
 ***
-
-[< Page précédente](../davinciresolve.md)
-[Page suivante >](utilisation.md)<br>
-*<sub>Daisy Pipeline 2025 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

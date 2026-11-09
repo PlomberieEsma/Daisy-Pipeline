@@ -5,12 +5,12 @@ Voici la présentation générale du pipeline (alembic et USD). Ici, nous allons
 
 <p class="toc-title">Sommaire</p>
 
-- [Hiérarchie](overview/hierarchy.md)
-- [Prism](overview/prism.md)
-    - [Utilisation générale](overview/prism/general_use.md)
-    - [Départements](overview/prism/department.md)
-- [USD](overview/usd.md)
-- [Optimisation](overview/optimisation.md)
+- [Hiérarchie](hierarchy.md)
+- [Prism](prism/index.md)
+    - [Utilisation générale](prism/general_use.md)
+    - [Départements](prism/department.md)
+- [USD](usd.md)
+- [Optimisation](optimisation.md)
 </div>
 
 !!! github "Daysi Pipeline Code Source"

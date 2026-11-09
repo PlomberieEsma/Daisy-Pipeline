@@ -16,7 +16,7 @@ Ci-dessous, les liens vers chaque documentation :
 
     Présentation générale du pipeline et de son organisation.
 
-    [:octicons-arrow-right-24: Accéder](overview.md)
+    [:octicons-arrow-right-24: Accéder](overview/index.md)
 
 -   :material-pipe:{ .lg .middle } **Daisy Pipeline (USD)**
 

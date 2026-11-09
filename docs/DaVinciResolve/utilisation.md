@@ -2,9 +2,11 @@
 
 L'utilisation de ce plugin est centralisée sur DaVinci Resolve. Aucune scène de montage n'est ouvrable depuis Prism même et le Project Browser de Prism n'est pas utilisé.
 
-## Sommaire
+<div class="page-toc" markdown>
+
+<p class="toc-title">Sommaire</p>
+
 - [Utilisation](#utilisation)
-- [Sommaire](#sommaire)
   - [Générale](#générale)
   - [ProjectBrowser](#projectbrowser)
   - [Scenefile](#scenefile)
@@ -17,6 +19,8 @@ L'utilisation de ce plugin est centralisée sur DaVinci Resolve. Aucune scène d
     - [Modify Current Shot](#modify-current-shot)
     - [Template](#template)
   - [Export](#export)
+
+</div>
 
 ### Générale
 Dans DaVinci Resolve vous pouvez accéder au plugin en allant dans "**Workspace/Scripts/Prism**". Une fenêtre s'ouvrira avec différentes options.
@@ -114,6 +118,3 @@ Le bouton **Apply Export Settings** permet de remplir automatiquement le filenam
 ![davinci resolve export](../assets/images/davinci/dvr_plugin_export.png)
 
 ***
-[< Page précédente](development.md)
-[Page suivante >](..\index.md)<br>
-*<sub>Daisy Pipeline 2025 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*

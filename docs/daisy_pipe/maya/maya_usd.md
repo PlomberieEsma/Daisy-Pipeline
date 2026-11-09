@@ -1,20 +1,19 @@
 # Maya
-[< page précédente](../maya.md)  
 
 Cette page a pour but de documenter l'utilisation de l'entièreté du pipeline alembic et USD, de la hiérarchie des groupes,
 à comment passer d'un departement a un autre au sein de Maya.
-Dans cette documentation nous partirons du principe que vous connaissez un minimum ***Maya***. Nous partirons également du principe que vous connaissez  ***[les principes de base de l'USD](../overview/usd.md)*** que nous avons expliqué dans cette documentation.  
+Dans cette documentation nous partirons du principe que vous connaissez un minimum ***Maya***. Nous partirons également du principe que vous connaissez  ***[les principes de base de l'USD](../../overview/usd.md)*** que nous avons expliqué dans cette documentation.  
 
 Voici un petit sommaire pour vous aider :
 
 - [L'USD dans Maya](#lusd-dans-maya)
   - [USD Layer Editor](#usd-layer-editor)
-  - [Créer et charger un stage](maya_stage.md)
-  - [Édition : target layer et Edit As Maya Data](maya_edition.md)
-  - [Import, export et unités](maya_import_export.md)
-  - [Matériaux et RenderMan](maya_materiaux.md)
-  - [Références, payloads et variants](maya_references_variants.md)
-  - [Problèmes connus](maya_problemes_connus.md)
+  - [Créer et charger un stage](maya_usd/maya_stage.md)
+  - [Édition : target layer et Edit As Maya Data](maya_usd/maya_edition.md)
+  - [Import, export et unités](maya_usd/maya_import_export.md)
+  - [Matériaux et RenderMan](maya_usd/maya_materiaux.md)
+  - [Références, payloads et variants](maya_usd/maya_references_variants.md)
+  - [Problèmes connus](maya_usd/maya_problemes_connus.md)
 
 ## L'USD dans Maya
 
@@ -23,20 +22,21 @@ Les prims USD (affichés via le proxy shape de maya-usd) et les nodes Maya natif
 Les outils Maya comme les deformers, les contraintes ou le rig ne peuvent donc pas agir directement sur les prims USD. Pour les modifier,
 il faut passer par _"l'outliner"_ USD, ou utiliser « Edit As Maya Data » puis renvoyer les changements vers le stage.
 
-><img src="../../src/information.png" width=50em><br>
->Pour plus d'informations sur l'USD Maya, retrouvez la ***[documentation officielle ici](https://help.autodesk.com/view/MAYAUL/2026/ENU/?guid=GUID-9E9D45F2-4DA9-497B-8D69-1573ED6B2BA8)***.
+!!! info
+
+    Pour plus d'informations sur l'USD Maya, retrouvez la ***[documentation officielle ici](https://help.autodesk.com/view/MAYAUL/2026/ENU/?guid=GUID-9E9D45F2-4DA9-497B-8D69-1573ED6B2BA8)***.
 
 Comment accéder aux outils USD de Maya ? Assurez-vous d'avoir le mayaUsdPlugin de Maya activé. Pour vérifier, allez dans : Windows → Settings/Preferences → Plug-in Manager, 
 et vérifiez que le plugin mayaUsdPlugin est coché.
 
-<img src="src/maya_plug_in_manager_access.png" width=400em><br>
+![maya_plug_in_manager_access.png](../../assets/images/maya/maya_plug_in_manager_access.png)
 
 ### Usd Layer Editor
 
 Une fois le plugin actif, vous pouvez ouvrir la fenêtre _USD Layer Editor_, qui permet de gérer les layers d'un stage USD (sublayers, ordre, layer cible d'édition).
 Pour parcourir la hiérarchie des prims, utilisez l'Outliner de Maya en dépliant le proxy shape.
   
-<img src="src/maya_usd_layer_editor.png" width=800em><br>
+![maya_usd_layer_editor.png](../../assets/images/maya/maya_usd_layer_editor.png)
 
 L'editor est divisé en 2 parties:
 
@@ -49,7 +49,7 @@ Chaque layer affiche à droite de son nom des icônes pour le définir comme tar
 Un astérisque apparaît à côté d'un layer qui contient des modifications non sauvegardées.
 Un clic droit sur un layer ouvre un menu contextuel avec les actions disponibles.
   
-<img src="src/maya_usd_layer_editor_arbre.png" width=400em><br>
+![maya_usd_layer_editor_arbre.png](../../assets/images/maya/maya_usd_layer_editor_arbre.png)
 
 <br>
 
@@ -82,8 +82,3 @@ Un clic droit sur un layer ouvre un menu contextuel avec les actions disponibles
 La Layer Data Window affiche le contenu du layer sélectionné au format texte USD (usda).
 On y trouve les métadonnées du layer (prim par défaut, plage de frames, cadence, unité, axe vertical), puis la hiérarchie des prims avec leurs références, transformations et attributs.
 C'est l'outil à utiliser pour contrôler les références d'un layer ou comprendre l'origine d'une valeur.
-
-[< page précédente](../maya.md) -
-[page suivante >](../houdini/index.md)  
-
-*<sub>Daisy Pipeline 2026 - by Noa Escourbanies, Leeloo Trinh-Thieu and Thomas Rubio</sub>*
