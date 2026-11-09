@@ -7,11 +7,10 @@ Alors comment gérer ce département par logiciel ?
 
 <p class="toc-title">Sommaire</p>
 
-- [Modeling](#modeling)
-  - [Prism](#prism)
-  - [Maya](#maya)
-  - [Houdini](#houdini)
-  - 
+- [Prism](#prism)
+- [Maya](#maya)
+- [Houdini](#houdini)
+
 </div>
 
 ***

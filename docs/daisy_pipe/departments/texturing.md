@@ -4,18 +4,17 @@
 
 <p class="toc-title">Sommaire</p>
 
-- [Texturing](#texturing)
-  - [Créer la scène de texture](#créer-la-scène-de-texture)
-  - [Travail en cours](#travail-en-cours)
-  - [Exporter votre travail](#exporter-votre-travail)
-  - [Workflow hors Substance](#workflow-hors-substance)
+- [Créer la scène de texture](#créer-la-scène-de-texture)
+- [Travail en cours](#travail-en-cours)
+- [Exporter votre travail](#exporter-votre-travail)
+- [Workflow hors Substance](#workflow-hors-substance)
 
 </div>
 
 ***
 Commençons par définir les shapes de nos assets. Nous allons nous attaquer à 2 types de modé : la modé low (ModL) et la modé high (ModH). La ModL servira de proxy dans nos futurs fichiers USD, il est donc important qu'elle soit la plus simple et légère possible. La ModH quand à elle sera la modé qui sera affichée au rendu (donc aussi celle qui sera texturée et shadée).
 
-Pour ce qui concerne le texturing, un 3eme type de modé entre en jeu : la modé issue du Sculpt dans le cas des assets sculptés sur ZBrush. C'est la verison très très high poly que vous exportez de ZBrush et que vous souhaitez utiliser pour baker vos assets dans Substance Painter.
+Pour ce qui concerne le texturing, un 3<sup>ème</sup> type de modé entre en jeu : la modé issue du Sculpt dans le cas des assets sculptés sur ZBrush. C'est la verison très très high poly que vous exportez de ZBrush et que vous souhaitez utiliser pour baker vos assets dans Substance Painter.
 
 En règle générale, cet article de documentation concerne le texturing sur Substance Painter qui sort des maps utilisées en Shading sur Maya ou sur Houdini ensuite.
 

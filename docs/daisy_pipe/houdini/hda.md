@@ -4,25 +4,28 @@ Cette page sert à lister les HDA (c'est à dire les nodes custom) de Daisy Pipe
 
 <div class="page-toc" markdown>
 
-- [Create template](#create-template)
+- [Daisy Create template](#create-template)
 - [Daisy Import](#daisy-import)
 - [Daisy Export](#daisy-export)
-- [Lookdev scene](#lookdev-scene)
+- [Daisy Lookdev scene](#daisy-lookdev-scene)
 - [Daisy layout manager](#daisy-layout-manager)
 - [Daisy camera frustrum](#daisy-camera-frustrum)
-- [Save loaded paloads](#save-loaded-payloads)
-- [Load saved payloads](#load-saved-payloads)
+- [Daisy Save loaded paloads](#daisy-save-loaded-payloads)
+- [Daisy Load saved payloads](#daisy-load-saved-payloads)
+- [Daisy occlusion](#daisy-occlusion)
 
 </div>
 
 ***
 
-## Create template
+## Create Template
 Ce node permet de créer un template pour chaque task de la production. Il est très simple d'utilisation : créez le node, clickez sur le bouton "Create template" et c'est fini.
 
 !!! warning
 
     Il est important pour le bon déroulement des scripts d'avoir une scène vide, sans aucun node existant. Si vous avez des nodes avant de créer le template, ils risquent de rentrer en conflit les uns avec les autres et de perturber le placement du template.
+
+Pour plus d'informations (et des informations détaillées), je vous invite à lire [la page dédiée aux templates](templates.md).
 
 ## Daisy Import
 Voici un node que vous allez utiliser très souvent. Il permet d'importer la dernière version d'un product depuis Prism. Voici comment l'utiliser :<br>
@@ -40,23 +43,26 @@ Ci dessous la liste des paramètres du node :
 |:---|:---
 |Import as|Permet de choisir entre 2 méthodes d'import, la référence ou le sublayer
 |Show path|Affiche le chemin d'import et permet de le modifier manuellement
+|Brows Asset|Ouvre une fenêtre pour aller chercher l'asset dans Prism
 |**Advanced Settings**|
 |Layer break|Active un node de layer break qui permet d'ignorer tout ce qui se passe avant en créant un nouveau sublayer
 |Maya scale|Adapte la taille des assets qui viennent de Maya pour les faire correspondre à l'échelle d'Houdini
-|Load payloads|Permet d'activer le node [Load saved payloads](#load-saved-payloads) décrit dessous
 |Use geometry sequence LOP for file sequences|Active l'import de séquence d'USD pour importer une animation
+|Load payloads|Permet d'activer les potentiels payloads de l'import ou non
 |Has variant|Si votre asset a un ou des variants, cette case ajoute de nouveaux paramètres pour choisir vos variants
 |Uniform scale|Si la case "Maya scale" est cochée, permet de modifier l'échelle de l'asset
 |Import path prefix|Si la case "Use geometry sequence LOP for file sequence" est cochée
 
 ## Daisy Export
 
-## Lookdev scene
+## Daisy Lookdev scene
 
-## Daisy layout manager
+## Daisy Layout Manager
 
-## Daisy camera frustrum
+## Daisy Camera Frustrum
 
-## Save loaded payloads
+## Daisy Save Loaded Payloads
 
-## Load saved payloads
+## Daisy Load Saved Payloads
+
+## Daisy Occlusion

@@ -22,7 +22,7 @@ L'utilisation de ce plugin est centralisée sur DaVinci Resolve. Aucune scène d
 
 </div>
 
-### Générale
+## Générale
 Dans DaVinci Resolve vous pouvez accéder au plugin en allant dans "**Workspace/Scripts/Prism**". Une fenêtre s'ouvrira avec différentes options.
 
 ![davinci resolve plugin window](../assets/images/davinci/dvr_plugin_window.png)
@@ -38,7 +38,7 @@ Dans DaVinci Resolve vous pouvez accéder au plugin en allant dans "**Workspace/
 | [**Modify Current Shot**](#modify-current-shot) | Ouvre un Shot Browser pour rechercher parmis les shots, actuellement dans la timeline, toutes les versions à différents stades pour les remplacer |
 | [**Apply Render Settings**](#export) | Rempli automatiquement le file name et la location de l'export dans le pipe |
 
-##### ProjectBrowser
+### ProjectBrowser
 Toute la section 04_Editing de notre pipe se trouve en dehors du dossier 03_Production dans notre pipeline. Le montage est donc géré en dehors de Prism pour l'ouverture des projet de montage notamment.
 
 Merci donc de ne pas essayer d'ouvrir votre montage depuis Prism.
@@ -47,7 +47,7 @@ De plus, ce plugin vous permettant directement d'ajouter des shots et stockant d
 
 Ce Project Browser vous permet cependant de checker si vous êtes bien sur le bon projet.
 
-##### Scenefile
+### Scenefile
 La gestion d'ouverture de projet de montage se gère directement depuis les boutons de la fenêtre du plugin.
 
 Comme DaVinci stock les informations de votre avancée en montage en local sur votre PC et que nos projet se font en équipe sur un réseau, nous allons fonctionner en export et import de projet.
@@ -56,17 +56,17 @@ Comme DaVinci stock les informations de votre avancée en montage en local sur v
 
 Ici sont regroupés les boutons concernant la gestion des projet de montage.
 
-##### Open Scene
+### Open Scene
 Ce bouton permet d'ouvrir un explorateur de fichier du projet qui permet d'importer le fichier de montage pour travailler.
 
 Si un autre projet de même nom existe sur le PC *(exemple: vous avez travaillez sur ce projet mais votre collègue l'a amélioré entre-temps)*, ce script supprimera l'ancien projet et le remplacera par la version à jour.
 
-##### Save Version
+### Save Version
 Ce bouton permet d'**exporter le projet sur lequel vous avez travaillé et écrase l'ancien export master**.
 
 Cette action est à faire **à chaque fois que vous finissez votre session de travail** pour que la prochaine personne qui travaillera sur votre projet ai la version à jour.
 
-##### Save BackUp Version
+### Save BackUp Version
 Ce bouton permet d'exporter le projet sur lequel vous avez travaillé en back up au cas où vous voudriez pouvoir revenir à cette étape plus tard.
 
 Cette action est à faire à chaque fois que vous souhaitez garder en mémoire une version de votre montage.
@@ -78,32 +78,35 @@ Il référencie les shots à leur différents niveau d'avancement dans le pipe e
 
 ![davinci resolve shot browser add](../assets/images/davinci/dvr_shotbrowser_add.png)
 
-##### Add Shot
+### Add Shot
 Ce bouton permet d'ajouter des shots dans leur dernière version la plus avancée trouvée. Le shot est ajouté au niveau du curseur rouge, dans une nouvelle timeline pour éviter d'écraser les shots déjà présents.
 
-##### Bake Current Shot
+### Bake Current Shot
 Ce bouton permet de checker dans le pipe les shots qui ne sont plus à jour et propose de les remplacer par une version plus récente au choix.
 
 ![davinci resolve shot browser bake](../assets/images/davinci/dvr_shotbrowser_bake.png)
 
-##### Modify Current Shot
+### Modify Current Shot
 Ce bouton permet d'ouvrir le Shot Browser avec tous les shots affichés et toutes leur versions au choix pour charger le niveau d'avancement spécifiquement voulu.
 
-##### Template
+### Template
 Grâce au Shot Browser, des informations sont visibles à l'écran.
 
 ![davinci resolve shot browser bake](../assets/images/davinci/dvr_infos_visuelles.png)
 
 A gauche on retrouve:
--  Le **nom du projet** Prism
+
+- Le **nom du projet** Prism
     > Dans le cas des projets pour la promo 2026-27 de l'ESMA de Montpellier, les indices "XX_", avec XX comme chiffre, sont retirés du nom du projet pour plus de lisibilité.
 - Le rond avec le **niveau d'avancement** du shot visible
+
     | Abbréviation | Avancement dans le pipe | Couleur |
     |:-----------: |:-----------------------:|:-------:|
     | **Ly**       | Layout                  | Rouge   |
     | **A**        | Animation               | Jaune   |
     | **Lg**       | Lighting                | Vert    |
     | **C**        | Compositing             | Bleu    |
+    
 - La **date** du shot visible
 
 A droite on retrouve:

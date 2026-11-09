@@ -28,6 +28,10 @@ Cette page a pour but de documenter l'installation de l'entièreté du pipeline 
 ***
 
 ## Sur le server
+
+!!! warning
+    **Cette section est réalisée par les chargés de pipeline, si vous ne faites qu'utiliser le pipe, passez directement à la partie "[En local](#en-local)"**
+
 ### Les fondations du pipe
 L'installation sur le server est la plus importante, elle comprend certes le pipeline USD mais aussi l'ensemble des dossiers dans lesquels ranger vos travaux. Vous trouverez la documentation de cette hiérarchie de dossiers ***[ici](../overview/hierarchy.md)***. Nous partirons donc du principe que vous avez la même hiérarchie que celle donnée précédement.
 
@@ -174,7 +178,7 @@ Une fenêtre apparait. Choisissez la lettre que vous voulez voir connectée au r
 ??? question "UNC, Mais qu'est-ce que c'est ?"
 
     <span style="font-size: 1.12rem">`UNC`</span>
-    :  Un chemin UNC (Universal Name Convention) est une façon d'écrire un chemin vers une ressource sur un réseau sous Windows. Il s'écrit : <br><br> <span style="font-size: 0.8rem">`\\\\nom_du_réseau\\nom_du_dossier_de_partage\\...`</span>
+    :  Un chemin UNC (Universal Name Convention) est une façon d'écrire un chemin vers une ressource sur un réseau sous Windows. Il s'écrit : <br><br> <span style="font-size: 0.8rem">`\\nom_du_réseau\nom_du_dossier_de_partage\...`</span>
     <br>
     <br>
        Un chemin mapped drive quand à lui est un lecteur réseau qui est associé à une lettre de lecteur. Il sert à accéder au réseau comme s'il était un disque local. C'est un chemin à éviter au maximum dans votre pipeline car si l'un des PC du réseau n'a pas la même lettre (ou pas de mapped drive du tout), il ne comprendra pas le lien.

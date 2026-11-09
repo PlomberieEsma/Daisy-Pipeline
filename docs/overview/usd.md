@@ -62,7 +62,7 @@ Les différents assets sont bien souvent de type "component" (vous verrez ce que
 En USD on peut dire que **tout est primitive**. Une primitive est le plus petit composant de l'USD, un objet est une primitive, un material est une primitive, une caméra, une light, un groupe, même un paramètre de rendu est une primitive.<br>
 Bien souvent les primitives contiennent d'autres primitives pour former la hiérarchie de la scène.
 
-tout ça c'est des primitives :
+tout ça, c'est des primitives :<br>
 ![primitive hierarchy](../assets/images/usd/primitive_hierarchy.png)
 
 ### Name et path

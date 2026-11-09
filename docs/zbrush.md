@@ -49,21 +49,23 @@ L'utilisation du plugin est très simple et très similaire aux autres logiciels
 ### Zbrush
 Dans Zbrush vous pouvez accéder au plugin en allant dans "**Zplugin/Prism/FloatingWindow**". Une fenêtre s'ouvrira avec différentes options.
 
-><img src="src/warning_red.png" width=50em><br>
->Si vous avez une **popup d'erreur** qui s'affiche quand vous clickez sur "FloatingWindow". C'est un problème qui vient de Prism. Pour le régler, **allez dans le HUB de Prism (la fenêtre pour gérer les plugins)** et **désinstallez le plugin Zbrush** (en clickant simplement sur "uninstall").<br>
->Malheureusement ***c'est un problème qui risque d'être récurent***, nous nous excusons pour la gène occasionnée.
+!!! danger "Attention"
+    Si vous avez une **popup d'erreur** qui s'affiche quand vous clickez sur "FloatingWindow". C'est un problème qui vient de Prism. Pour le régler, **allez dans le HUB de Prism (la fenêtre pour gérer les plugins)** et **désinstallez le plugin Zbrush** (en clickant simplement sur "uninstall").<br>
+    Malheureusement ***c'est un problème qui risque d'être récurent***, nous nous excusons pour la gène occasionnée.
 
 ![zbrush plugin window](assets/images/zbrush/zbrush_plugin_window.png)
 
-- Cases **.ztl** et **.zpr** : permet de choisir quel extension de fichier Zbrush vous voulez
-- **Save**: pour sauvegarder votre fichier (en mettant à jour le versioninfo.json de Prism)
-- **Save Version**: pour sauvegarder une nouvelle version
-- **Save Extended**: pour sauvegarder une nouvelle version avec des options en plus comme l'ajout d'un commentaire, d'une description et d'une image de preview
-- **Import**: pour importer un product Prism
-- **Export**: pour exporter en product Prism
-- **Project Browser**: pour ouvrir une instance du project browser de Prism dans Zbrush
-- **Turntable**: pour faire un turn de votre modèle 3D et le stocker dans les media de Prism
-- **Settings**: pour ouvrir les settings de Prism
+|Paramètre|Description
+|:---|:---
+|Cases **.ztl** et **.zpr**|Permet de choisir quel extension de fichier Zbrush vous voulez
+|**Save**|Pour sauvegarder votre fichier (en mettant à jour le versioninfo.json de Prism)
+|**Save Version**|Pour sauvegarder une nouvelle version
+|**Save Extended**|Pour sauvegarder une nouvelle version avec des options en plus comme l'ajout d'un commentaire, d'une description et d'une image de preview
+|**Import**|Pour importer un product Prism
+|**Export**|Pour exporter en product Prism
+|**Project Browser**|Pour ouvrir une instance du project browser de Prism dans Zbrush
+|**Turntable**|Pour faire un turn de votre modèle 3D et le stocker dans les media de Prism
+|**Settings**|Pour ouvrir les settings de Prism
 
 <div class="grid cards" markdown>
 
