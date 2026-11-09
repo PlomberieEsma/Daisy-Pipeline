@@ -172,8 +172,16 @@ def auto_material(parent_node: object) -> None:
                     pxr_surface.setInput(2, pxr_texture)
                 elif map_type == "Specular":
                     pxr_surface.setInput(10, pxr_texture)
+                    pxr_surface.parm("specularFresnelMode").set(1)
+                    pxr_surface.parm("specularEdgeColorr").set(1)
+                    pxr_surface.parm("specularEdgeColorg").set(1)
+                    pxr_surface.parm("specularEdgeColorb").set(1)
                 elif map_type == "Roughness":
                     pxr_surface.setInput(14, pxr_texture)
+                    pxr_surface.parm("specularFresnelMode").set(1)
+                    pxr_surface.parm("specularEdgeColorr").set(1)
+                    pxr_surface.parm("specularEdgeColorg").set(1)
+                    pxr_surface.parm("specularEdgeColorb").set(1)
                 elif map_type == "Subsurface" or map_type == "SSS":
                     pxr_surface.setInput(54, pxr_texture)
                 elif map_type == "SubsurfaceColor":
