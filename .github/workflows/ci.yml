@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - doc_material_mkdoc
+      - doc
 permissions:
   contents: write
 jobs:
