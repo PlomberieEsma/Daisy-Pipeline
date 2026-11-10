@@ -76,7 +76,11 @@ markdown_extensions:
           format: !!python/name:pymdownx.superfences.fence_code_format
   - material.extensions.preview:
       configurations:
-        - targets:
+        - sources:
+            exclude:
+              - daisy_pipe/maya/maya_usd.md
+              - daisy_pipe/houdini/solaris.md
+          targets:
             include:
               - "*"
 
@@ -114,7 +118,9 @@ nav:
   - Daisy Pipeline:
     - daisy_pipe/index.md
     - Installation: daisy_pipe/installation.md
-    - Maya: daisy_pipe/maya/index.md
+    - Maya:
+      - daisy_pipe/maya/index.md
+      - USD in Maya: daisy_pipe/maya/maya_usd.md
     - Houdini:
       - daisy_pipe/houdini/index.md
       - Solaris: daisy_pipe/houdini/solaris.md
