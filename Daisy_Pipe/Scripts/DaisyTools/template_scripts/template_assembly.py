@@ -141,6 +141,7 @@ def nodes_template_assembly() -> dict[str,Any]:
     daisy_export1.parm("mayascale").set(0)
     def_prim = seq_and_sht_name.replace("-", "_")
     daisy_export1.parm("defaultprim").set(f"/{def_prim}")
+    daisy_export1.parm("configlayer").set(0)
     daisy_export1.parm("striplayerbreaks").set(0)
 
     node_list.update({"ref_layout1" : ref_layout1,
