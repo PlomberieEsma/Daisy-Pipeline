@@ -87,10 +87,10 @@ usd_file_format = config_file["global"]["usd_file_format"]
 ##########################################################################################################################################
 
 def nodes_template_MASTER_lighting() -> dict[str,Any]:
-
     #-------------------------------------------------------------------------------#
     # This function creates the houdini node template for the Lighting department   #
     # works only for the MASTER shot                                                #
+    #                                                                               #
     # return the list of all nodes in a dictionary                                  #
     #-------------------------------------------------------------------------------#
 
@@ -125,32 +125,30 @@ def nodes_template_MASTER_lighting() -> dict[str,Any]:
     create_lightFilters1.parm("primkind").set("group")
     create_lightFilters1.parm("primtype").set("UsdGeomScope")# scope
 
-    null_lights1 = lopnet.createNode("null")
-    null_lights1.setName("LIGHTS")
-    null_lights1.setInput(0, create_lightFilters1)
-    null_lights1.setColor(hou.Color(color_light_box))
+    null_light1 = lopnet.createNode("null")
+    null_light1.setName("LIGHTS")
+    null_light1.setInput(0, create_lightFilters1)
+    null_light1.setColor(hou.Color(color_light_box))
 
     daisy_export1 = lopnet.createNode("Daisy::daisy_export::1.0")
     daisy_export1.setName("daisy_export1")
-    daisy_export1.setInput(0, null_lights1)
+    daisy_export1.setInput(0, null_light1)
     daisy_export1.parm("versions").set(1)
     daisy_export1.parm("trange").set(1)# Render Specific Frame Range
     daisy_export1.parm("mayascale").set(0)
     def_prim = seq_and_sht_name.replace("-", "_")
     daisy_export1.parm("defaultprim").set(f"/{def_prim}")
-    # daisy_export1.parm("savestyle").set("flattenalllayers")
-    # daisy_export1.parm("striplayerbreaks").set(0)
 
     node_list.update({"ref_set_dress1": ref_set_dress1,
                     "create_lights1" : create_lights1,
                     "create_lightFilters1" : create_lightFilters1,
-                    "null_lights1" : null_lights1,
+                    "null_light1" : null_light1,
                     "daisy_export1" : daisy_export1})
 
     #-------------------------------- arange nodes ---------------------------------#
     lopnet.layoutChildren()
 
-    node_list["null_lights1"].move([0, -5])
+    node_list["null_light1"].move([0, -5])
     node_list["daisy_export1"].move([0, -10])
 
     # set input network box
@@ -164,7 +162,7 @@ def nodes_template_MASTER_lighting() -> dict[str,Any]:
     node_list.update({"input_box" : input_box})
 
     # set light network box
-    nodes_in_light_box = ["null_lights1"]
+    nodes_in_light_box = ["null_light1"]
     light_box = lopnet.createNetworkBox()
     light_box.setName("light_box")
     for node in nodes_in_light_box:
@@ -189,7 +187,7 @@ def nodes_template_MASTER_lighting() -> dict[str,Any]:
     node_list.update({"output_box" : output_box})
 
     # set display flag
-    node_list["null_lights1"].setDisplayFlag(True)
+    node_list["null_light1"].setDisplayFlag(True)
 
     #-------------------------------- create toolbox ---------------------------------#
     node_list.update(create_toolbox(["light::2.0",

@@ -85,15 +85,14 @@ with open(config_file_path, mode="r", encoding="utf-8") as read_file:
 
 usd_file_format = config_file["global"]["usd_file_format"]
 
-
 ##########################################################################################################################################
 #=========================================================== SET FUNCTIONS ===============================================================
 ##########################################################################################################################################
 
 def nodes_template_assembly() -> dict[str,Any]:
-
     #-------------------------------------------------------------------------------#
-    # This function creates the houdini node template for the Set Dress department  #
+    # This function creates the houdini node template for the Assembly department   #
+    #                                                                               #
     # return the list of all nodes in a dictionary                                  #
     #-------------------------------------------------------------------------------#
 
