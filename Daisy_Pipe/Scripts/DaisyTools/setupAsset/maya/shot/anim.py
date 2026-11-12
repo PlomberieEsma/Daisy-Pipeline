@@ -113,11 +113,13 @@ def setup_anim(core, info):
         shot_group = "|" + cameras[0].split("|")[1]
     else:
         shot_group = None
-    rigs = reference_rig_scenes(core, info, shot_group or default_prim or "%s_%s" % (sequence, shot),
-                                layout=layout, ask=reimport)
-
     # Deactivate the USD cameras only once Maya is idle, after the DaisyCam keys are evaluated
+    # Scheduled before the rigs: an error or a cancel while referencing them must not
+    # leave the USD cameras active in the Maya camera list
     if layout:
         cmds.evalDeferred(lambda: deactivate_usd_cameras(layout), lowestPriority=True)
+
+    rigs = reference_rig_scenes(core, info, shot_group or default_prim or "%s_%s" % (sequence, shot),
+                                layout=layout, ask=reimport)
 
     return {"layout": layout, "camera": cameras[0] if cameras else None, "cameras": cameras, "rigs": rigs}
