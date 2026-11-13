@@ -16,6 +16,7 @@ Ci dessous la documentation relative à :
 
 - [Installation](installation.md)
 - [Maya](maya/index.md)
+    - [L'USD dans Maya](maya/maya_usd.md)
 - [Houdini](houdini/index.md)
     - [Solaris](houdini/solaris.md)
     - [Templates](houdini/templates.md)
