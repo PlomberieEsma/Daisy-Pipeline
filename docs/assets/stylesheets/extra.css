@@ -17,6 +17,10 @@
   --md-accent-fg-color--transparent: #84c98d26;
 }
 
+strong{
+  color: #cdeed2;
+}
+
 /* ===== Typographie : échelle marquée, titres en gras ===== */
 .md-typeset h1 {
   font-size: 2rem; /* 32px */
@@ -124,6 +128,10 @@ label.md-nav__link:hover {
   --md-code-hl-comment-color: #6e7781;
   --md-code-hl-generic-color: #57606a;
   --md-code-hl-variable-color: #953800;
+}
+
+[data-md-color-scheme="default"] strong{
+  color: #0b4e16;
 }
 
 /* ===== Tableaux ===== */

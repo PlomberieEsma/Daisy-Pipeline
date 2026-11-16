@@ -15,6 +15,7 @@ Allez, c'est parti ! Voici un sommaire de ce que vous pourrez retrouver sur cett
     - [Garder des scènes légères](#garder-des-scenes-legeres)
     - [Utiliser des chemine relatifs](#utiliser-des-chemine-relatifs)
     - [Utiliser un bon texel ratio](#utiliser-un-bon-texel-ratio)
+    - [Faire des modules pour les UVs](#faire-des-modules-pour-les-uvs)
     - [Utiliser les instances](#utiliser-les-instances)
     - [Désactiver le versionning des caches](#desactiver-le-versionning-des-caches)
     - [Render ses shots petit à petit](#render-ses-shots-petit-a-petit)
@@ -37,6 +38,8 @@ Allez, c'est parti ! Voici un sommaire de ce que vous pourrez retrouver sur cett
 ### Utiliser des chemine relatifs
 
 ### Utiliser un bon texel ratio
+
+### Faire des modules pour les UVs
 
 ### Utiliser les instances
 

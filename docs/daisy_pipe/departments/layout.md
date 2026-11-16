@@ -91,7 +91,7 @@ Vous pouvez voir sur l'image du dessus qu'il y a plusieurs paramètres. Celui qu
 
     3. Si vous voulez **supprimer tous les shots** d'un coup, clickez sur le bouton "**Clear**".
 
-Automatiquement, la caméra est sélectionnée, si vous le souhaitez vous pouvez placer la caméra et même commencer à l'animer. Ensuite ajoutez autant de caméras que vous voulez, rappelez-vous : une caméra est égale à un shot.
+Automatiquement, la caméra est sélectionnée, si vous le souhaitez vous pouvez placer la caméra et même commencer à l'animer **mais ce n'est pas obligatoir**. Ensuite ajoutez autant de caméras que vous voulez, rappelez-vous : une caméra est égale à un shot.
 
 Vous pouvez aussi commencer à animer la position de vos persos et props pour vous aider à placer les caméras.
 
@@ -103,14 +103,77 @@ Une fois que vous avez toutes vos caméras, il est temps de set leur framerange.
 
 À partir de ce moment là, il est possible de voir vos changements de cam en affichant le layout manager et en prenant la vue de la cam "**_cam_layout**". Ensuite, quand vous lirez l'animation, vous switcherez automatiquement d'une cam à l'autre.
 
-Maintenantque que le framerange est set, le plus important est fait, vous pouvez à présent exporter votre RLO avec le node "**Daisy Export**".<br>
+Maintenantque que le framerange est set, le plus important est fait, il faut juste **clicker une fois sur le bouton "Update Framerange"** de chaque shot dans le Layout Manager. Vous pouvez à présent exporter votre RLO avec le node "**Daisy Export**".<br>
 Voilà à quoi ressemble mon RLO à la sortie d'Houdini.
 
 ![houdini cam layout demo](../../assets/images/departments/layout/houdini_cam_layout_demo.gif)
 
+??? info "Pour les Dev"
+    Nous faisons une conversion de framerange entre le MASTER et les shots. Par exemple, un shot qui, dans le MASTER aura un framerange de 1205 - 1274, sera convertit dans son shot en 1001 - 1070.<br>
+    Pourquoi faire ça ? Pour que tous les shots puissent commencer à la frame 1001 et donc faciliter le travail de tout le monde par la suite.
+
+    Il est important de noter que cette conversion de framerange est stockée dans le fichier "framerange.json" dans le pipe. Ce fichier est modifié à chaque création, suppression ou rennomage de shot grâce au Layout Manager, mais aussi quand on click sur le bouton "update framerange". Voilà pourquoi il ne faut pas supprimer à la main les caméras, ça crée une désyncronisation entre la scène et le fichier framerange.json.
+
 ### 2 Animation dans Maya
+Très bien, maintenant que notre RLO est exporté, on va pouvoir passer dans Maya pour utiliser vos rigs low et ajuster les caméras.
+
+Alors allons-y, ouvrons Maya. Une fois complètement ouvert, créez une scène dans **la task Animation du shot MASTER** via Prism. Une fois cette scène ouverte, il va falloir importer le RLO qu'on a sorti d'Houdini. Pour ceci, allez dans **la shelf Prism** et clickez sur le bouton "Daisy import"
+![maya daisy import icon](../../assets/images/departments/layout/maya_daisy_import_icon.png).
+Un Asset Browser s'ouvre, comme pour Houdini faites un drag and drop des assets que vous voulez animer (les mêmes que pour Houdini) et clickez sur "Validate".
+
+![maya asset browser](../../assets/images/departments/layout/maya_asset_browser.png)
+
+Voilà, vous pouvez maintenant travailler sur votre RLO dans Maya. Nous vous avons importé automatiquement les Rigs Low de chaque asset et les caméras auxquelles nous avons ajouté un rig et transféré les keyframes. Il est possible que vous vous posiez quelques questions sur ce que vous voyez, ne vous en faites pas, je vait tout vous expliquer.
+
+!!! tip "Écran rose"
+    Après cet import, vous allez probablement vous retrouver avec un **écran rose**. C'est normal, nous vous avons fait un rig de caméra automatique, et cet écran rose représente un plane pour set le focus de chaque caméra.
+
+    Si vous voulez le désactiver, allez dans la channel box la caméra et **désactivez "Depth Of Field"**. Ou alors, si vous voulez garder le depth of field sans avoir le plane d'affiché, allez dans le menu "Show" du viewport, puis "Viewport" et **désactivez "NURBS Surfaces"**.
+
+!!! tip "Camera Sequencer"
+    Vous avez la possibilité de voir vos changements de caméra se faire automatiquement. Pour faire ça, il faut ouvrir la fenêtre "**Camera Sequencer**" qui fonctionne plus ou moins comme un logiciel de montage. Si vous avez bien fait toutes les manip dans Houdini, tout devrait être géré automatiquement.
+
+    Maintenant si vous faites "**Play**" depuis le Camera Sequencer, les caméras changent automatiquement.
+
+    ![maya camera sequencer](../../assets/images/departments/layout/maya_camera_sequencer.png)
+
+    !!! warning
+        Si vous ne faites pas Play depuis le Camera Sequencer, vous resterez sur la cam active jusqu'à ce que vous arrêtiez la lecture, puis la caméra se remettra à jour. Bref, ça fera des trucs bizarres et pas pratiques.
+
+!!! info "Ghost"
+    Vous remarquerez peut-être que les assets que vous avez importé sont présents deux fois dans la scène. C'est totalement normale, il y a **le Rig Low** que vous avez importé précédemment mais il y a aussi **les éléments que vous avez créé dans Houdini**. Vous pouvez vous en servir comme d'un ghost pour vous aider à replacer vos rigs.
+
+    Mais si vous n'en voulez pas, vous pouvez aller chercher ces éléments dans l'**Outliner**, faire un **click droit** dessus et choisir "**Unload**". Faites bien attention d'unload l'asset USD et pas le rig.
+
+    ![maya unload usd](../../assets/images/departments/layout/maya_unload_usd.png)
+
+Dans notre exemple, j'ai modifié l'animation de notre poisson et j'ai animé la première caméra (qui était statique auparavant).
+
+Quand vous avez terminé votre animation, vous pouvez l'exporter en USD. Pour le faire, commencez par ouvrir le "**State Manager**" (l'icone avec les 2 flèches dans la shelf Prism). Ensuite clickez sur le bouton **"Export", puis "DaisysdExport"**. Finalement, clickez sur "**Detect from scene**" pour ajouter ce qu'il faut à l'export (tout est set automatiquement).<br>
+Enfin, clickez sur "Publish", si vous ne le voyez pas, faites un **click droit sur DaisyUsdExport** puis "**Execute**".
+
+![maya state manager](../../assets/images/departments/layout/maya_state_manager.png)
+
+Voilà, maintenant que vous avez votre animation, il est temps de la merge avec notre scène dans Houdini.
+
+Courage, vous y êtes presque ! :muscle:
 
 ### 3 Import de l'animation dans Houdini again
+
+Allez, plus qu'une étape ! Ne vous inquiétez pas, c'est loin d'être la plus longue.
+
+Alors retournons sur notre scène Houdini. On va essayer d'appliquer l'animation sur les assets de votre scène.<br>
+Sélectionnez le Layout Manager et clickez sur le bouton "**Get RLO from Maya**" en bas.
+
+Cette action va vous créer un nouveau node Daisy Import qui va importer votre animation et la placer correctement avec les bons paramètres pour merge votre animation.
+
+**Félicitation, vous avez terminé votre RLO !** :tada: :partying_face:
+
+Finalement, vous pouvez exporter un playblast de ce RLO depuis Houdini (flipbook). Pour faire ça, pas de panique, allez dans le **Layout Manager**, dans l'onglet "**Playblast**" et clickez sur le bouton "**Render playblast**".
+
+![houdini layout playblast](../../assets/images/departments/layout/houdini_layout_playblast.gif)
+
+Maintenant vous avez l'habitude, il faut **exporter la scène avec Daisy Export** comme vous l'avez fait avant d'aller dans Maya.
 
 ***
 
