@@ -178,3 +178,5 @@ Maintenant vous avez l'habitude, il faut **exporter la scène avec Daisy Export*
 ***
 
 ## FLO
+
+Le RLO c'était un gros morceau, maintenant on va passer au FLO qui est bien plus simple si vous avez bien fait votre travail avant.
