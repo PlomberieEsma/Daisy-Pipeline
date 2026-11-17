@@ -69,11 +69,14 @@ sequence_name = shot_entity["sequence"]
 shot_name = shot_entity["shot"]
 
 env_var_path = f"$PRISM_JOB/03_Production/Shots/{sequence_name}/{shot_name}"
+master_env_var_path = env_var_path.replace(shot_name, "MASTER")
+
+master_seq_and_sht_name = seq_and_sht_name.replace(shot_name, "MASTER")
 
 node_position = [0,0]
 color_input_box = [0.33, 0.18, 0.44]
 color_light_box = [0.86, 0.85, 0.5]
-color_output_box = [0.86, 0.85, 0.72]
+color_render_box = [0.26, 0.54, 0.71]
 
 #get variables from config.json
 config_file_path = f"{project_path}/00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/lib/config.json"
@@ -108,49 +111,73 @@ def nodes_template_lighting() -> dict[str,Any]:
     ref_assembly1.setName("ref_assembly1")
     ref_assembly1.parm("path").set(f"{env_var_path}/Export/Assembly/master/{seq_and_sht_name}_Assembly_master.{usd_file_format}")
     ref_assembly1.parm("mayascale").set(0)
+    ref_assembly1.parm("layerbreak").set(0)
+    ref_assembly1.parm("loadpayloads").set(0)
 
-    create_lights1 = lopnet.createNode("primitive")
-    create_lights1.setName("create_lights1")
-    create_lights1.setInput(0, ref_assembly1)
-    create_lights1.parm("primpath").set(f"{seq_and_sht_name}/lights")
-    create_lights1.parm("primkind").set("group")
-    create_lights1.parm("parentprimtype").set("") #none
+    load_saved_payloads1 = lopnet.createNode("Daisy::load_saved_payloads")
+    load_saved_payloads1.setName("load_saved_payloads1")
+    load_saved_payloads1.setInput(0, ref_assembly1)
+    load_saved_payloads1.setColor(hou.Color(color_input_box))
 
-    create_lightFilters1 = lopnet.createNode("primitive")
-    create_lightFilters1.setName("create_lightFilters1")
-    create_lightFilters1.setInput(0, create_lights1)
-    create_lightFilters1.parm("primpath").set(f"{seq_and_sht_name}/lights/lightFilters")
-    create_lightFilters1.parm("primkind").set("group")
-    create_lightFilters1.parm("primtype").set("UsdGeomScope")# scope
+    ref_master_lighting1 = lopnet.createNode("Daisy::daisy_import")
+    ref_master_lighting1.setName("ref_master_lighting1")
+    ref_master_lighting1.setInput(0, load_saved_payloads1)
+    ref_master_lighting1.parm("path").set(f"{master_env_var_path}/Export/Lighting/master/{master_seq_and_sht_name}_Lighting_master.{usd_file_format}")
+    ref_master_lighting1.parm("mayascale").set(0)
+    ref_master_lighting1.parm("layerbreak").set(0)
+
+    dupli_master_light1 = lopnet.createNode("duplicate")
+    dupli_master_light1.setName("dupli_master_light1")
+    dupli_master_light1.setInput(0, ref_master_lighting1)
+    dupli_master_light1.setColor(hou.Color(color_input_box))
+    dupli_master_light1.parm("sourceprims").set(f"/{master_seq_and_sht_name}/lights")
+    dupli_master_light1.parm("ncy").set(1)
+    dupli_master_light1.parm("separatesource").set(1)
+    dupli_master_light1.parm("destinationprims").set(f"/{seq_and_sht_name}/lights")
+    dupli_master_light1.parm("duplicatename").set("MASTER_lights")
+    dupli_master_light1.parm("makeinstances").set(0)
+    dupli_master_light1.parm("primkind").set("group")
+
+    hide_old_master_light1 = lopnet.createNode("configureprimitive")
+    hide_old_master_light1.setName("hide_old_master_light1")
+    hide_old_master_light1.setInput(0, dupli_master_light1)
+    hide_old_master_light1.setColor(hou.Color(color_input_box))
+    hide_old_master_light1.parm("primpattern").set(f"/{master_seq_and_sht_name}")
+    hide_old_master_light1.parm("setactivation").set(1)
+    hide_old_master_light1.parm("activation").set(0)
+    hide_old_master_light1.parm("seteditable").set(1)
+    hide_old_master_light1.parm("editable").set(0)
+    hide_old_master_light1.parm("setselectable").set(1)
+    hide_old_master_light1.parm("selectable").set(0)
+    hide_old_master_light1.parm("sethideinui").set(1)
+    hide_old_master_light1.parm("hideinui").set(1)
 
     null_light1 = lopnet.createNode("null")
     null_light1.setName("LIGHTS")
-    null_light1.setInput(0, create_lightFilters1)
+    null_light1.setInput(0, hide_old_master_light1)
     null_light1.setColor(hou.Color(color_light_box))
 
-    daisy_export1 = lopnet.createNode("Daisy::daisy_export::1.0")
-    daisy_export1.setName("daisy_export1")
-    daisy_export1.setInput(0, null_light1)
-    daisy_export1.parm("versions").set(1)
-    daisy_export1.parm("trange").set(1)# Render Specific Frame Range
-    daisy_export1.parm("mayascale").set(0)
-    def_prim = seq_and_sht_name.replace("-", "_")
-    daisy_export1.parm("defaultprim").set(f"/{def_prim}")
+    null_render1 = lopnet.createNode("null")
+    null_render1.setName("RENDER")
+    null_render1.setInput(0, null_light1)
+    null_render1.setColor(hou.Color(color_render_box))
 
     node_list.update({"ref_assembly1": ref_assembly1,
-                    "create_lights1" : create_lights1,
-                    "create_lightFilters1" : create_lightFilters1,
+                    "load_saved_payloads1" : load_saved_payloads1,
+                    "ref_master_lighting1" : ref_master_lighting1,
+                    "dupli_master_light1" : dupli_master_light1,
+                    "hide_old_master_light1" : hide_old_master_light1,
                     "null_light1" : null_light1,
-                    "daisy_export1" : daisy_export1})
+                    "null_render1" : null_render1})
 
     #-------------------------------- arange nodes ---------------------------------#
     lopnet.layoutChildren()
 
     node_list["null_light1"].move([0, -5])
-    node_list["daisy_export1"].move([0, -10])
+    node_list["null_render1"].move([0, -10])
 
     # set input network box
-    nodes_in_input_box = ["ref_assembly1", "create_lights1", "create_lightFilters1"]
+    nodes_in_input_box = ["ref_assembly1", "load_saved_payloads1", "ref_master_lighting1", "dupli_master_light1", "hide_old_master_light1"]
     input_box = lopnet.createNetworkBox()
     for node in nodes_in_input_box:
         input_box.addItem(node_list[node])
@@ -173,16 +200,19 @@ def nodes_template_lighting() -> dict[str,Any]:
         node_in_box.move([0, 1.5])
     node_list.update({"light_box" : light_box})
 
-    # set output network box
-    nodes_in_output_box = ["daisy_export1"]
-    output_box = lopnet.createNetworkBox()
-    output_box.setName("output_box")
-    for node in nodes_in_output_box:
-        output_box.addItem(node_list[node])
-    output_box.setColor(hou.Color(color_output_box))
-    output_box.setComment("Outputs")
-    output_box.fitAroundContents()
-    node_list.update({"output_box" : output_box})
+    # set render network box
+    nodes_in_render_box = ["null_render1"]
+    render_box = lopnet.createNetworkBox()
+    render_box.setName("render_box")
+    for node in nodes_in_render_box:
+        render_box.addItem(node_list[node])
+    render_box.setColor(hou.Color(color_render_box))
+    render_box.setComment("Render")
+    render_box.fitAroundContents()
+    render_box.resize(hou.Vector2(0, 1.5))
+    for node_in_box in render_box.nodes():
+        node_in_box.move([0, 1.5])
+    node_list.update({"render_box" : render_box})
 
     # set display flag
     node_list["null_light1"].setDisplayFlag(True)
