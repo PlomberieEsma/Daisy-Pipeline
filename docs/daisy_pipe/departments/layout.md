@@ -23,6 +23,9 @@ Maintenant que tout cela est précisé, il est temps de vous dire que cette page
     - [Animation dans Maya](#2-animation-dans-maya)
     - [Import de l'animation dans Houdini again](#3-import-de-lanimation-dans-houdini-again)
 - [FLO](#flo)
+    - [Camera frustrum](#camera-frustrum)
+    - [Load les payloads à la main](#load-les-payloads-a-la-main)
+    - [save les payloads dans l'USD](#save-les-payloads-dans-lusd)
 
 </div>
 
@@ -173,10 +176,73 @@ Finalement, vous pouvez exporter un playblast de ce RLO depuis Houdini (flipbook
 
 ![houdini layout playblast](../../assets/images/departments/layout/houdini_layout_playblast.gif)
 
+!!! info "Création des shots"
+    **Une fois que votre RLO sera terminé et validé**, il vous faudra créer les shots à partir de ce dernier. Mais c'est un travail long, fastidieux et très répétitif ...<br>
+    Vous me voyez venir n'est-ce pas ? On s'en occupe !
+
+    Allez dans le **Layout Manager**, dasn l'onglet RLO et clickez sur le bouton "**Push to Prism**". Ce bouton créera automatiquement tous les shots que vous avez mis dans le Layout Manager, les renommera correctement et leur assignera le bon framerange.
+
+    |Avant|Après
+    |:|:
+    |![before push to prism](../../assets/images/departments/layout/before_push_to_prism.png)|![after push to prism](../../assets/images/departments/layout/after_push_to_prism.png)
+
 Maintenant vous avez l'habitude, il faut **exporter la scène avec Daisy Export** comme vous l'avez fait avant d'aller dans Maya.
 
 ***
 
 ## FLO
 
-Le RLO c'était un gros morceau, maintenant on va passer au FLO qui est bien plus simple si vous avez bien fait votre travail avant.
+Le RLO c'était un gros morceau, maintenant on va passer au FLO qui est bien plus simple si vous avez bien fait votre travail avant.<br>
+Qu'est-ce que j'entend par là ?
+
+Et bien, le FLO c'est un layout qui est spécifique à chaque shot. Ici on va donc chercher à **corriger 2 ou 3 trucs sur le RLO** si l'on veut mais aussi et surtout, on va essayer d'**optimiser la scène** au maximum. Alors comment faire ça ? Dans cette doc je vais vous parler surtout d'une manière d'optimiser grâce aux [payloads](../../overview/usd.md#payload).
+
+!!! warning "Attention"
+    Avant de commencer, pensez bien à créer vos shots et à exporter votre RLO ([voir la fin de la partie ci-dessus](#3-import-de-lanimation-dans-houdini-again)).
+
+Pour commencer, **créez une scène Houdini dans la task Layout d'un shot** (qui n'est pas le MASTER vous vous en doutez). Ouvrez cette scène Houdini puis **créez le template** avec le node [Daisy Create Template](../houdini/hda.md#create-template). Vous vous retrouvez avec ce genre de scène.
+
+![houdini layout shot template](../../assets/images/departments/layout/houdini_layout_shot_template.png)
+
+Là vous vous demandez peut-être, submergé par la panique : "Mais qu'est-ce qu'ils ont fait à ma scène !!!". **Tout est normal**.<br>
+Les carrés gris sont les bounding box de vos assets. Pourquoi ils s'affichent comme ça ? Tout simplement parce que **nous avons désactivé tous les payloads de la scène**. Votre mission maintenant, ça va être de les réactiver, mais seulement ceux qui sont utils.
+
+Pour définir les éléments qui sont utils, demandez vous déjà si ils sont visibles dans le shot (ou si leur ombre est visible dans le shot). À partir de là vous allez pouvoir activer ou non vos payloads.
+
+### Camera frustrum
+
+Si vous ne voulez pas activer les payloads à la main, je vais vous présenter un petit node qui pourrait vous être utile : [Daisy Camera Frustrum](../houdini/hda.md#daisy-camera-frustrum).<br>
+Ce node vous sert à load les payloads qui sont visibles à la caméra. Comment l'utiliser ?
+
+Commencez par le connecter à la fin de votre scène (avant la partie Outputs). Pensez bien à **connecter les 2 entrées du node** (la 2<sup>nd</sup> correspond à la caméra). Ensuite, dans le paramètre **"Camera Path", ajoutez le path de la caméra** du shot. Finalement clickez sur le bouton "**Analyze camera anim**" puis "**Update**".
+
+![houdini cam frustrum demo no instance](../../assets/images/departments/layout/houdini_cam_frustrum_demo_no_instance.png)
+
+Comme vous pouvez le voir ci-dessus, les assets ne sont load que si ils sont dans le champ de la caméra.
+
+!!! info
+    Je dois vous avouer quelque-chose, j'ai triché pour faire l'image du dessus. En réalité, tous mes assets se load sur la scène. Mais pourquoi ?
+
+    Il faut savoir que j'ai fait mon set dress avec des instanceurs (pour dupliquer mes assets sans utiliser trop de ressource). Or, **les instanceurs ne sont comptés que comme un élément**, donc quand on load un instanceur, on load tous les éléments qui sont contenus dedans. Donc ne soyez pas surpris si vous n'avez pas un joli cône d'éléments chargés. Dans mon cas toute la scène est load.
+    
+    Notez aussi que **le point de pivot des instanceurs se place au centre du monde**. Donc il ne sera pas load par le camera frustrum si vous ne voyez pas le centre du monde avec la cam.
+
+### Load les payloads à la main
+
+Il est possible que le camera frustrum ne load pas certains éléments mâma si on les voit à la caméra. Il est aussi possible que vous vouliez load des éléments qui ne sont pas directement visibles (pour faire des ombres par exemple). Dans ce cas, il faut que vous sachiez comment faire.
+
+Pour ajouter des éléments à load à la main, il faut utiliser un node "**configurestage**". Vous pouvez le placer juste après le camera frustrum. **Passez le paramètre "Load Primitives" en "Add and remove primitives to load"**, puis placez le path des éléments à load dans "**Load paths from input**". Vous pouvez en ajouter autanat que vous voulez (et aussi en supprimer avec le paramètre "Remove load paths from input").
+
+Pour ajouter tous ces éléments facilement, sélectionnez les soit dans le viewport (en restant appuyé sur la touche S) soit dans le scene graph tree, puis faitez un drag and drop dans le champ que vous voulez.
+
+![houdini selection for config stage](../../assets/images/departments/layout/houdini_selection_for_config_stage.png)
+
+### Save les payloads dans l'USD
+
+Dans peu de temps vous allez exporter votre fichier USD (comme à chaque fois), mais vous allez faire face à un petit problème : le loading des payloads ne se sauvegarde pas dans les fichiers USD.
+
+Pour éviter que votre travail n'ait servi à rien, je vous ai fait là aussi un petit node : [Daisy Save Loaded Payloads](../houdini/hda.md#daisy-save-loaded-payloads).<br>
+Ce node sert à **stocker la liste des payloads** que vous avez load dans une **collection** (un autre concept USD) et ainsi garder en mémoire votre travail tout au long de la production. Par chance, nous avons intégré ce node au Daisy Export (dans les advanced settings) donc **il s'activera automatiquement à l'export**.<br>
+Maintenant, quand vous utiliserez un autre node : [Daisy Load Saved Payloads](../houdini/hda.md#daisy-load-saved-payloads), vous pourrez récupérer les payloads que vous avez sauvegardé.
+
+Alors une fois que vous avez terminé toutes vos optimisations et modifications sur le shot, vous pouvez **exporter la scène avec le node Daisy Export**.
