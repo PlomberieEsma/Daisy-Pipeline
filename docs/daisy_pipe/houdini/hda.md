@@ -54,6 +54,30 @@ Ci dessous la liste des paramètres du node :
 |Import path prefix|Si la case "Use geometry sequence LOP for file sequence" est cochée
 
 ## Daisy Export
+Ce node node aussi, vous allez beaucoup l'utiliser. Comme son nom l'indique, il sert à faire des exports en USD.
+
+Si vous voulez faire un export, vous pouvez ajouter la primitive que vous voulez exporter dans le paramètre "**Default Primitive**" puis clicker sur "**Save to Disk**".<br>
+Contrairement au Daisy Import, ce node comporte **BEAUCOUP** de paramètres, en voici une liste non exhaustive :
+
+|Nom du paramètre|Description
+|:---|:---
+|Animation Type|Type de fichier qui sort en cas d'animation, il y en a 2 types :<br>- **time samples** : qui sort un fichier pout toute l'animation<br>- **file per frame** : crée un fichier usd par frame
+|Save to Disk|Bouton qui lance la sauvegarde
+|Version|Permet de choisir la version à sauvegarder dans Prism (quand la case "Next" est cochée, les versions sont incrémentées automatiquement)
+|Valid Frame Range|Sert à dire si on veut exporter une animation ou une frame seule
+|Comment|Permet d'écrire un commentaire dans le product exporté
+|Output Type|Type de fichier à exporter
+|Maya Scale|Multiplie la taille de la scène par 100 pour respecterr la taille de Maya
+|Uniform Scale|Si la case "Maya Scale" est cochée, permet de gérer le multiplicateur de taille
+|Update Master Version|Permet de dire si on veut modifier la version master ou pas
+|Update Thumbnail|Permet de créet une thumbnail ou pas
+|Default Primitive|Ce paramètre est obligatoire, c'est la primitive que l'on veut exporter
+|**Advanced Settings**|
+|Use Config Layer|Permet de choisir si on veut utiliser le node configure layer qui rajoute des options d'export au layer
+|Save Loaded Payloads|Permet de dire si on veut utiliser le node [Save Loaded Payloads](#daisy-save-loaded-payloads) ou pas
+
+La suite des paramètres n'est qu'une succession de paramètres déjà existants dans les nodes d'Houdini que nous faisons remonter.<br>
+Pour plus de paramètres, n'hésitez pas à vous référer à la documentation d'Houdini sur les nodes [configure layer](https://www.sidefx.com/docs/houdini/nodes/lop/configurelayer.html) et [usd rop](https://www.sidefx.com/docs/houdini/nodes/out/usd.html).
 
 ## Daisy Lookdev scene
 
