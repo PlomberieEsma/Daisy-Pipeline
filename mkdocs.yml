@@ -135,6 +135,8 @@ nav:
       - Set dress: daisy_pipe/departments/set_dress.md
       - Layout: daisy_pipe/departments/layout.md
       - Animation: daisy_pipe/departments/animation.md
+      - FX/CFX: daisy_pipe/departments/fx_cfx.md
+      - Assembly: daisy_pipe/departments/assembly.md
       - Lighting: daisy_pipe/departments/lighting.md
       - Compositing: daisy_pipe/departments/compositing.md
     - Dev: daisy_pipe/dev.md

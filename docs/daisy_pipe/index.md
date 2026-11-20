@@ -29,6 +29,8 @@ Ci dessous la documentation relative à :
     - [Set dress](departments/set_dress.md)
     - [Layout](departments/layout.md)
     - [Animation](departments/animation.md)
+    - [FX/CFX](departments/fx_cfx.md)
+    - [Assembly](departments/assembly.md)
     - [Lighting](departments/lighting.md)
     - [Compositing](departments/compositing.md)
 - [DEV](dev.md)

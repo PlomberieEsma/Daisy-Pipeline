@@ -13,6 +13,8 @@ Ici vous trouverez la liste des départements impactés par Daisy Pipe. Nous fer
 - [Set dress](set_dress.md)
 - [Layout](layout.md)
 - [Animation](animation.md)
+- [FX/CFX](fx_cfx.md)
+- [Assembly](assembly.md)
 - [Lighting](lighting.md)
 - [Compositing](compositing.md)
 
