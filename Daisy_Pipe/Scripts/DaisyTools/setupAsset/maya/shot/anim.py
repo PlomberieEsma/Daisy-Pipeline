@@ -1,7 +1,7 @@
 import maya.cmds as cmds
 
 from DaisyTools.core.core import CAMERA_PRODUCT
-from DaisyTools.setupAsset.maya.shot.camera import create_camera_sequence, get_usd_camera_ranges, get_usd_camera_shots, group_daisy_cam, import_daisy_cam, import_shot_camera, match_daisy_cam_to_usd
+from DaisyTools.setupAsset.maya.shot.camera import create_camera_sequence, find_existing_daisy_cam, get_usd_camera_ranges, get_usd_camera_shots, group_daisy_cam, import_daisy_cam, import_shot_camera, match_daisy_cam_to_usd
 from DaisyTools.setupAsset.maya.shot.layout import MASTER_SHOT, deactivate_usd_cameras, get_default_prim_name, get_shot_cut, get_shot_ranges, load_shot_layout, set_playback_range
 from DaisyTools.setupAsset.maya.shot.rig_references import reference_rig_scenes
 
@@ -31,6 +31,12 @@ def setup_daisy_cam(core, entity, layout, group_name, sequence, shot, shot_range
     #                                                                             #
     # return the DaisyCam transform, or None if the import failed                 #
     #-----------------------------------------------------------------------------#
+
+    # Reimport: a DaisyCam already in the scene is never imported again nor updated
+    existing = find_existing_daisy_cam(sequence, shot)
+    if existing:
+        print("DaisyCam de %s_%s déjà présente : import ignoré" % (sequence, shot))
+        return existing
 
     if published:
         # The published camera is in the MASTER time whatever the layout the shot
@@ -93,6 +99,7 @@ def setup_anim(core, info):
         cam_shots = []
         for cam_shot in cam_shot_names:
             cam_range = cam_ranges.get(cam_shot)
+            # setup_daisy_cam skips the shots that already have a DaisyCam
             camera = setup_daisy_cam(core, entity, layout, default_prim, sequence, cam_shot, cam_range, cam_range, published=False)
             if camera:
                 cam_shots.append((cam_shot, camera, cam_range))
