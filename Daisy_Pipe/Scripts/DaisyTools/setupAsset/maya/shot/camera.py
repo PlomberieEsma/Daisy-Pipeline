@@ -268,26 +268,56 @@ def group_daisy_cam(cam_transform, group_name):
     return cmds.ls(uuid, long=True)[0]
 
 
+def find_existing_daisy_cam(sequence, shot):
+    #-----------------------------------------------------------------------------#
+    # Find the DaisyCam of a shot already in the scene (previous import)          #
+    #                                                                             #
+    # sequence = sequence name (e.g.: sq0010)                                     #
+    # shot = shot name (e.g.: sh0010)                                             #
+    #                                                                             #
+    # return the camera transform long name, or None if the shot has no DaisyCam  #
+    #-----------------------------------------------------------------------------#
+
+    rig_name = "%s_%s_%s" % (CAMERA_RIG_PREFIX, sequence, shot)
+    # Also with a namespace, in case the rig was imported with one
+    for rig in cmds.ls([rig_name, "*:" + rig_name], long=True, type="transform") or []:
+        cameras = cmds.listRelatives(rig, allDescendents=True, type="camera", fullPath=True) or []
+        parents = cmds.listRelatives(cameras, parent=True, fullPath=True) or []
+        if parents:
+            return parents[0]
+    return None
+
+
 def create_camera_sequence(cam_shots, sequence):
     #-----------------------------------------------------------------------------#
     # Create one Camera Sequencer shot per DaisyCam, to play the whole sequence   #
     # and switch from one camera to the next                                      #
     # Each shot is cut on the MASTER range of the frame range file, and the       #
     # playback range is set to the whole sequence                                 #
+    # On a reimport the old Camera Sequencer shots are deleted and all the shots  #
+    # are recreated on the current cut, so the new shot is inserted in order and  #
+    # the playback range adapts to the whole sequence                             #
     #                                                                             #
     # cam_shots = list of tuples (shot name, DaisyCam transform, MASTER range)    #
     # sequence = sequence name (e.g.: sq0010)                                     #
     #                                                                             #
-    # return the list of created shot nodes                                       #
+    # return the list of the shot nodes of the sequence                           #
     #-----------------------------------------------------------------------------#
+
+    # Reimport: the previous Camera Sequencer shots are deleted, they are rebuilt
+    # below from the DaisyCams (existing ones and new ones) and the current cut
+    old_shots = cmds.ls(type="shot") or []
+    if old_shots:
+        cmds.delete(old_shots)
 
     shots = []
     for shot, cam_transform, cam_range in sorted(cam_shots, key=lambda s: s[2][0] if s[2] else 0):
+        node_name = "%s_%s" % (sequence, shot)
         if not cam_range:
             cmds.warning("Pas de frame range pour %s_%s : pas de shot dans le Camera Sequencer" % (sequence, shot))
             continue
         start, end = float(cam_range[0]), float(cam_range[1])
-        node = cmds.shot("%s_%s" % (sequence, shot), shotName=shot, currentCamera=cam_transform)
+        node = cmds.shot(node_name, shotName=shot, currentCamera=cam_transform)
         # The ranges given at the creation are replaced by the playback range: set them afterwards
         cmds.shot(node, edit=True, startTime=start, endTime=end)
         cmds.shot(node, edit=True, sequenceStartTime=start, sequenceEndTime=end)
