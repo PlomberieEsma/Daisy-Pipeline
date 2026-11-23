@@ -117,6 +117,9 @@ def texture_detect() -> dict[str, str]:
     texture_list = {}
     # keep only texture in the directory and create the output
     for content in texture_dir_content:
+        if content.endswith(".json") or content.endswith(".db"):
+            # if the file is not a texture, continue
+            continue
         if os.path.isfile(f"{texture_dir}/{content}"):
             texture_list.update({content : f"{texture_dir}/{content}"})
 
@@ -186,7 +189,7 @@ def auto_material(parent_node: object) -> None:
                     pxr_surface.setInput(54, pxr_texture)
                 elif map_type == "SubsurfaceColor":
                     pxr_surface.setInput(55, pxr_texture)
-                elif map_type == "Emissive" or map_type == "Glow":
+                elif map_type == "Glow":
                     pxr_surface.setInput(113, pxr_texture)
                 elif map_type == "GlowColor":
                     pxr_surface.setInput(114, pxr_texture)
