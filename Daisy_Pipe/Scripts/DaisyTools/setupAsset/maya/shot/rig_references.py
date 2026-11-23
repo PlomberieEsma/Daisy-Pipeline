@@ -134,12 +134,12 @@ def reference_rig_scenes(core, info, shot_group, layout=None, ask=False):
     #------------------------------------------------------------------------#
 
     if ask:
-        answer = core.popup(
+        answer = core.popupQuestion(
             "The USD has been reloaded.\nDo you want to add a rig?",
             title="Daisy import",
-            severity="question",
             buttons=["Yes", "No"],
             default="No",
+            escapeButton="No",
         )
         if answer != "Yes":
             return []

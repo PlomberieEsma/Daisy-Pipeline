@@ -122,7 +122,13 @@ def texture_detect() -> dict[str, str]:
 
     return texture_list
 
-def auto_material(parent_node: object):
+def auto_material(parent_node: object) -> None:
+    #-----------------------------------------------------------------------------------#
+    # create a pxrSurface node with pxrTexture nodes set and connected automatically    #
+    #                                                                                   #
+    # parent_node : the node containing the shader                                      #
+    #-----------------------------------------------------------------------------------#
+
     #--------------------------------- detections ----------------------------------#
     # create a dict with shader name, texture name and path
     texture_dict = texture_detect()
@@ -141,6 +147,7 @@ def auto_material(parent_node: object):
             material_dict[shader_name].update({texture: texture_dict[texture]})
 
     #-------------------------------- create nodes ---------------------------------#
+    # create shader nodes
     for shader in material_dict:
         mat_builder = parent_node.createNode("pxrmaterialbuilder")
         mat_builder.setName(shader)
@@ -151,6 +158,7 @@ def auto_material(parent_node: object):
         output_collect = hou.node(f"/stage/{parent_node.name()}/{mat_builder.name()}/output_collect")
         output_collect.setInput(0, pxr_surface)
 
+        # create texture nodes
         for tex in material_dict[shader]:
             map_type = tex.split("_")[-3]
 
@@ -158,13 +166,22 @@ def auto_material(parent_node: object):
             pxr_texture.setName(map_type)
             pxr_texture.parm("filename").set(material_dict[shader][tex].replace(project_path, "$PRISM_JOB"))
 
+            # connect the pxrTexture nodes with the pxrSurface node
             try:
                 if map_type == "Diffuse" or map_type == "BaseColor" or map_type == "Albedo":
                     pxr_surface.setInput(2, pxr_texture)
                 elif map_type == "Specular":
                     pxr_surface.setInput(10, pxr_texture)
+                    pxr_surface.parm("specularFresnelMode").set(1)
+                    pxr_surface.parm("specularEdgeColorr").set(1)
+                    pxr_surface.parm("specularEdgeColorg").set(1)
+                    pxr_surface.parm("specularEdgeColorb").set(1)
                 elif map_type == "Roughness":
                     pxr_surface.setInput(14, pxr_texture)
+                    pxr_surface.parm("specularFresnelMode").set(1)
+                    pxr_surface.parm("specularEdgeColorr").set(1)
+                    pxr_surface.parm("specularEdgeColorg").set(1)
+                    pxr_surface.parm("specularEdgeColorb").set(1)
                 elif map_type == "Subsurface" or map_type == "SSS":
                     pxr_surface.setInput(54, pxr_texture)
                 elif map_type == "SubsurfaceColor":
@@ -266,6 +283,7 @@ def template_shading() -> dict[str, Any]:
     daisy_export1.setInput(0, assign_shader1)
     node_position[1] -= 5
     daisy_export1.move(node_position)
+    daisy_export1.parm("versions").set(1)
     daisy_export1.parm("defaultprim").set("`chs(\"../create_component1/primpath\")`")
     daisy_export1.parm("metersperunit").set(meters_per_unit)
 

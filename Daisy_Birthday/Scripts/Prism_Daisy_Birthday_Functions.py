@@ -73,13 +73,6 @@ class Prism_Daisy_Birthday_Functions(object):
     MONTHS_FR = ["janvier", "février", "mars", "avril", "mai", "juin",
                  "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
 
-    # couleur d'accent de la bannière "aujourd'hui" selon l'hôte
-    ACCENTS = {
-        "Maya": "#5285a6",
-        "Houdini": "#e8832a",
-        "Standalone": "#7895a1",
-    }
-
     def __init__(self, core, plugin):
         self.core = core
         self.plugin = plugin
@@ -141,29 +134,8 @@ class Prism_Daisy_Birthday_Functions(object):
                 "%s %s" % (n, self.formatWhen(d, date))
                 for d, n, date in upcoming
             )
-            parts.append("C'est Bientôt l'Anniversaires de : %s" % nxt)
+            parts.append("C'est Bientôt l'Anniversaire de : %s" % nxt)
         return "     ·     ".join(parts)
-
-    def getHostName(self):
-        try:
-            return self.core.appPlugin.pluginName
-        except Exception:
-            return "Standalone"
-
-    def getColors(self, origin, today):
-        pal = origin.palette()
-        base = pal.color(QPalette.Window)
-        text = pal.color(QPalette.WindowText)
-
-        if today:
-            accent = QColor(self.ACCENTS.get(self.getHostName(), self.ACCENTS["Standalone"]))
-            # texte clair ou sombre selon la luminosité de l'accent
-            fg = QColor("#ffffff") if accent.lightness() < 150 else QColor("#1e1e1e")
-            return accent, fg
-
-        # barre discrète : légèrement décalée par rapport au fond de la fenêtre
-        bg = base.lighter(115) if base.lightness() < 128 else base.darker(108)
-        return bg, text
 
     def onProjectBrowserStartup(self, origin):
         todayNames, upcoming = self.getBirthdays()
@@ -177,12 +149,12 @@ class Prism_Daisy_Birthday_Functions(object):
         bar.setStyleSheet("QToolBar { spacing: 0; padding: 0; border: 0; }")
 
         text = self.buildText(todayNames, upcoming)
-        bg, fg = self.getColors(origin, bool(todayNames))
-        if todayNames:
-            label = MarqueeLabel(text, bg, fg, size=14, bold=True, padding=6,
+        today = bool(todayNames)
+        if today:
+            label = MarqueeLabel(text, today=True, size=14, bold=True, padding=6,
                                  intro=self.buildTodayText(todayNames), hold=3000)
         else:
-            label = MarqueeLabel(text, bg, fg, size=12, padding=4)
+            label = MarqueeLabel(text, today=False, size=12, padding=4)
 
         bar.addWidget(label)
 
@@ -192,8 +164,9 @@ class Prism_Daisy_Birthday_Functions(object):
         closeBtn.setCursor(Qt.PointingHandCursor)
         closeBtn.setFixedHeight(label.height())
         closeBtn.setStyleSheet(
-            "QToolButton { background: %s; color: %s; border: 0; padding: 0 10px; }"
-            "QToolButton:hover { background: rgba(128, 128, 128, 70); }" % (bg.name(), fg.name())
+            "QToolButton { background: transparent; color: palette(%s); border: 0; padding: 0 10px; }"
+            "QToolButton:hover { background: rgba(128, 128, 128, 70); }"
+            % ("highlighted-text" if today else "window-text")
         )
         closeBtn.clicked.connect(label.timer.stop)
         closeBtn.clicked.connect(bar.hide)
@@ -203,16 +176,17 @@ class Prism_Daisy_Birthday_Functions(object):
 
 
 class MarqueeLabel(QWidget):
-    def __init__(self, text, bg, fg, size=12, bold=False, padding=4, speed=1, interval=30, intro=None, hold=3000, parent=None):
+    def __init__(self, text, today=False, size=12, bold=False, padding=4, speed=1, interval=30, intro=None, hold=3000, parent=None):
         super(MarqueeLabel, self).__init__(parent)
         self.text = text
+        self.today = today
         self.intro = intro
-        self.bg = QColor(bg)
-        self.fg = QColor(fg)
         self.speed = speed
         self.interval = interval
         self.gap = 80  # espace entre deux répétitions
         self.offset = 0
+
+        self.setAttribute(Qt.WA_StyledBackground, True)
 
         font = self.font()
         font.setPixelSize(size)
@@ -246,8 +220,19 @@ class MarqueeLabel(QWidget):
 
     def paintEvent(self, event):
         p = QPainter(self)
-        p.fillRect(self.rect(), self.bg)
-        p.setPen(self.fg)
+
+        # fond et couleurs résolus à chaque rendu depuis le style actif de Prism
+        opt = QStyleOption()
+        opt.initFrom(self)
+        self.style().drawPrimitive(QStyle.PE_Widget, opt, p, self)
+
+        pal = self.palette()
+        if self.today:
+            p.fillRect(self.rect(), pal.color(QPalette.Highlight))
+            p.setPen(pal.color(QPalette.HighlightedText))
+        else:
+            p.fillRect(self.rect(), QColor(128, 128, 128, 30))
+            p.setPen(pal.color(QPalette.WindowText))
 
         if self.intro:
             p.drawText(self.rect(), Qt.AlignCenter, self.intro)
