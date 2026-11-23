@@ -80,6 +80,28 @@ La suite des paramètres n'est qu'une succession de paramètres déjà existants
 Pour plus de paramètres, n'hésitez pas à vous référer à la documentation d'Houdini sur les nodes [configure layer](https://www.sidefx.com/docs/houdini/nodes/lop/configurelayer.html) et [usd rop](https://www.sidefx.com/docs/houdini/nodes/out/usd.html).
 
 ## Daisy Lookdev scene
+Ce node vous permet de créer automatiquement une scène pour gérer votre lookdev. Il vous sert aussi à faire un turn automatique de votre asset.<br>
+Quand vous créez le node voilà ce que vous avez par défaut :
+
+![houdini lookdev scene default](../../assets/images/houdini/hda/houdini_lookdev_scene_default.png)
+
+!!! note
+    Je vous conseil de vous mettre sur la caméra "**lookdev/camera/cam**" pour afficher la bonne vue. C'est la caméra qui sera utilisée pour faire le turn.<br>
+    Pour changer de caméra, allez en haut à droite du viewport, vous devriez voir deux menus dont un avec marqué "No cam". Ouvrez-le et sélectionnez la caméra que vous voulez (ici "lookdev/camera/cam").
+
+Voici une présentation rapide de la scène :
+
+![houdini lookdev scene render presentation](../../assets/images/houdini/hda/houdini_lookdev_scene_render_presentation.png)
+
+|N°|Nom|Description
+|:|:---|:---
+|1|Shading balls|Pour calibrer le lighting
+|2|Charte RGB|Référence pour les couleurs
+|3|Charte en niveau de gris|Référence pour la valeur
+|4|Checker et légende|Pour donner une information sur la taille de l'asset
+|5|Charte Macbeth|Pour comparer les couleurs avec (en haut) et sans lighting (en bas)
+
+La première chose à faire est de modifier le "Global scale" pour adapter la scène à votre asset. Une fois que c'est fait, tout est prêt pour faire un turn.
 
 ## Daisy Layout Manager
 
