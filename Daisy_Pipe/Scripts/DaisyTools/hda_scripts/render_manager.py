@@ -77,8 +77,31 @@ digit_number = config_file["global"]["sh_name_digit_number"] # number of digits 
 #=========================================================== SET FUNCTIONS ===============================================================
 ##########################################################################################################################################
 
-def create_render_path() -> str:
-    return ""
+def get_render_path(identifier_name: str) -> dict[str,str]:
+    updated_entity = shot_entity
+    updated_entity.update({"department": "Render", "task": task})
+    render_folder = core.mediaProducts.getIdentifierPathFromEntity(entity=updated_entity)
+    render_folder = render_folder.replace("\\", "/")
+    env_var_folder_to_del = render_folder.split("/03_Production")[0]
+    env_var_folder = render_folder.replace(env_var_folder_to_del, "$PRISM_JOB")
+
+    # if there are versions, find the last one
+    latest_version = "v0001"
+    if os.path.exists(f"{render_folder}/{identifier_name}"):
+        version_list = os.listdir(f"{render_folder}/{identifier_name}")
+
+        previews_version_number = 0
+        for version in version_list:
+            final_digits = re.search(r'\d+$', version)
+            if final_digits != None:
+                final_digits = final_digits.group()
+            version_number = int(final_digits)
+            if version_number >= previews_version_number:
+                latest_version = version
+                previews_version_number = version_number
+
+    render_path = f"{env_var_folder}/{identifier_name}/{latest_version}"
+    return {"render_path": render_path, "latest_version": latest_version}
 
 def create_render_folders(identifier_name: str) -> None:
 
@@ -120,6 +143,8 @@ def create_layer(kwargs: dict[str, Any]) -> None:
     multiparm_index = int(kwargs["script_multiparm_index"])
     node.parm(f"is_layer{multiparm_index}").set(1)
     node.parm(f"deadline_is_layer{multiparm_index+1}").set(1)
+    layer_name = node.parm(f"layer_name{multiparm_index}").eval()
+    render_path = get_render_path(layer_name)
 
     # get the input null for render settings
     nulls_in_scene = hou.lopNodeTypeCategory().nodeTypes()["null"].instances()
@@ -144,7 +169,7 @@ def create_layer(kwargs: dict[str, Any]) -> None:
     rendersettings_node1.parm("camera").set(f"/{seq_and_sht_name}/cam/DaisyCam_{sequence_name}_{shot_name}/DaisyCam_{sequence_name}_{shot_name}_geo/DaisyCam_{sequence_name}_{shot_name}_Offset/DaisyCam_{sequence_name}_{shot_name}_Hook/DaisyCam_{sequence_name}_{shot_name}_Move/DaisyCam_{sequence_name}_{shot_name}_group/DaisyCam_{sequence_name}_{shot_name}_cam/DaisyCam_{sequence_name}_{shot_name}_camShape")
     rendersettings_node1.parm("disableMotionBlur").set(1)
     rendersettings_node1.parm("disableDepthOfField").set(1)
-    # rendersettings_node1.parm("productName").set("")
+    rendersettings_node1.parm("productName").set(render_path["render_path"])
 
     configure_prim_node1 = lopnet.createNode("configureprimitive")
     configure_prim_node1.setName(f"{layer_name}_config")
