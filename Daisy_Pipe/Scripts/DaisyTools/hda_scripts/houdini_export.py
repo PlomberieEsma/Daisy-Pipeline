@@ -420,7 +420,7 @@ def _check_written(hda, file_parm):
             raise hou.NodeError(f"Fichier exporté introuvable : '{path}'")
 
 
-def _finalize_export(hda, file_parm, master_parm, thumbnail=True, master_info=True):
+def _finalize_export(hda, file_parm, master_parm, thumbnail=True, master_info=True, farm=False):
     core = get_core()
     info = get_entity_info()
     entity = info["entity"]
@@ -449,14 +449,15 @@ def _finalize_export(hda, file_parm, master_parm, thumbnail=True, master_info=Tr
     info_path = core.products.getVersionInfoPathFromProductFilepath(path)
     core.saveVersionInfo(filepath=info_path, details=details)
 
-    if thumbnail:
+    if thumbnail and not farm:
         update_thumbnail(hda, core, path)
 
     if master_path and master_info:
         master_info_path = core.products.getVersionInfoPathFromProductFilepath(master_path)
         core.saveVersionInfo(filepath=master_info_path, details=details)
 
-    check_version_limit_for_output(core, entity, task, path, parent=get_main_window())
+    if not farm:
+        check_version_limit_for_output(core, entity, task, path, parent=get_main_window())
 
 
 def post_export(hda=None):
@@ -523,3 +524,38 @@ def on_export(kwargs):
             proxy_post_export(hda)
     except Exception as e:
         _report_error(hda, "Post-export", e)
+
+# ---------- Farm ----------
+
+FARM_TOPNET = "topnet1"
+FARM_SCHEDULER = "deadlinescheduler1"
+SUBMIT_LABEL = "Submit"
+
+
+def _press_button(node, label):
+    # Le nom interne du bouton change selon les versions de Houdini : on le cherche par son label
+    for parm in node.parms():
+        template = parm.parmTemplate()
+        if template.type() == hou.parmTemplateType.Button and template.label() == label:
+            parm.pressButton()
+            return
+    raise hou.NodeError(f"Bouton '{label}' introuvable sur {node.path()}")
+
+
+def on_farm_export(kwargs):
+    hda = kwargs["node"]
+    try:
+        update_path(hda, strict=True)
+        hou.hipFile.save()
+        _press_button(hda.node(f"{FARM_TOPNET}/{FARM_SCHEDULER}"), SUBMIT_LABEL)
+    except Exception as e:
+        _report_error(hda, "Envoi farm", e)
+        return
+    if hou.isUIAvailable():
+        hou.ui.displayMessage("Export envoyé sur Deadline.", title="Daisy Export")
+
+
+def farm_finalize(hda):
+    _finalize_export(hda, "path", "masterpath", thumbnail=False, master_info=True, farm=True)
+    if has_proxy_input(hda):
+        _finalize_export(hda, "proxypath", "proxymasterpath", thumbnail=False, master_info=False, farm=True)
