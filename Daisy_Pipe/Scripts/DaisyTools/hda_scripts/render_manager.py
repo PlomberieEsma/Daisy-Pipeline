@@ -26,7 +26,7 @@
 
 #import modules
 import hou # type: ignore
-import json, re
+import json, re, os
 from typing import Any
 from Scripts.DaisyTools.core.core import get_core
 from Scripts.DaisyTools.core.get_entity_info import get_entity_info
@@ -57,8 +57,14 @@ assert core is not None
 assert info is not None
 
 seq_and_sht_name = info["name"]
+shot_entity = info["entity"]
 project_path = core.sequencePath.replace("\\", "/")
 project_path = project_path.removesuffix("/03_Production/Shots")
+department = info["department"]
+task = info["task"]
+
+sequence_name = shot_entity["sequence"]
+shot_name = shot_entity["shot"]
 
 #get variables from config.json
 config_file_path = f"{project_path}/00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/lib/config.json"
@@ -70,6 +76,31 @@ digit_number = config_file["global"]["sh_name_digit_number"] # number of digits 
 ##########################################################################################################################################
 #=========================================================== SET FUNCTIONS ===============================================================
 ##########################################################################################################################################
+
+def create_render_path() -> str:
+    return ""
+
+def create_render_folders(identifier_name: str) -> None:
+
+    # create the folders to put the exr files
+    updated_entity = shot_entity
+    updated_entity.update({"department": "Render", "task": task})
+    render_folder = core.mediaProducts.createIdentifier(entity=updated_entity, identifier=identifier_name)
+
+    # create the version folder if it doesn't exist and the aov one
+    if render_folder != None and len(os.listdir(render_folder)) == 0:
+        core.mediaProducts.createVersion(entity=updated_entity, identifier=identifier_name, version="v0001")
+        core.mediaProducts.createAov(entity=updated_entity, identifier=identifier_name, version="v0001", aov="rgb")
+
+    # put idnetifiers in a group named "Render"
+    identifiers = core.mediaProducts.getIdentifiersByType(entity=shot_entity)
+    identifiers_3d = identifiers["3d"]
+
+    render_idents = []
+    for ident in identifiers_3d:
+        if ident["department"] == "Render":
+            render_idents.append(ident)
+    core.mediaProducts.setIdentifiersGroup(identifiers=render_idents, group="Render")
 
 def create_layer(kwargs: dict[str, Any]) -> None:
     #-------------------------------------------------------------------------------#
@@ -110,8 +141,10 @@ def create_layer(kwargs: dict[str, Any]) -> None:
     rendersettings_node1.setInput(0, null_render_input)
     rendersettings_node1.parm("resolution1").set(project_resolution[0])
     rendersettings_node1.parm("resolution2").set(project_resolution[1])
+    rendersettings_node1.parm("camera").set(f"/{seq_and_sht_name}/cam/DaisyCam_{sequence_name}_{shot_name}/DaisyCam_{sequence_name}_{shot_name}_geo/DaisyCam_{sequence_name}_{shot_name}_Offset/DaisyCam_{sequence_name}_{shot_name}_Hook/DaisyCam_{sequence_name}_{shot_name}_Move/DaisyCam_{sequence_name}_{shot_name}_group/DaisyCam_{sequence_name}_{shot_name}_cam/DaisyCam_{sequence_name}_{shot_name}_camShape")
     rendersettings_node1.parm("disableMotionBlur").set(1)
     rendersettings_node1.parm("disableDepthOfField").set(1)
+    # rendersettings_node1.parm("productName").set("")
 
     configure_prim_node1 = lopnet.createNode("configureprimitive")
     configure_prim_node1.setName(f"{layer_name}_config")
@@ -202,6 +235,14 @@ def change_layer_name(kwargs: dict[str, Any]) -> None:
         null_layer1 = hou.node(f"/stage/{layer_old_name}_OUT")
         null_layer1.setName(f"{new_name}_OUT")
     except Exception as e:
-        print(f"Error : {e}")
+        # print(f"Error : {e}")
+        pass
 
     node.parm(f"layer_old_name{multiparm_index}").set(new_name)
+
+def render_single_layer(kwargs: dict[str, Any]) -> None:
+    node = kwargs["node"]
+    multiparm_index = int(kwargs["script_multiparm_index"])
+    layer_name = node.parm(f"deadline_layer_name{multiparm_index}").eval()
+
+    create_render_folders(layer_name)
