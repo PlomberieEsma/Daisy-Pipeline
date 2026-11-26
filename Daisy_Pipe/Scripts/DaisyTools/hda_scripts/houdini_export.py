@@ -517,7 +517,6 @@ def on_export(kwargs):
         _report_error(hda, "Export", e)
         return
 
-    # Post-export hors du render loop et hors du popup
     try:
         post_export(hda)
         if export_proxy:
