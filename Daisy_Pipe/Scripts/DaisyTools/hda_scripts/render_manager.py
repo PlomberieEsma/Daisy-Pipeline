@@ -66,18 +66,27 @@ task = info["task"]
 sequence_name = shot_entity["sequence"]
 shot_name = shot_entity["shot"]
 
-#get variables from config.json
-config_file_path = f"{project_path}/00_Pipeline/Plugins/Daisy_Pipe/Scripts/DaisyTools/lib/config.json"
+#get variables from pipeline.json
+config_file_path = f"{project_path}/00_Pipeline/pipeline.json"
 with open(config_file_path, mode="r", encoding="utf-8") as read_file:
-    config_file = json.load(read_file)
+    pipeline_file = json.load(read_file)
 
-digit_number = config_file["global"]["sh_name_digit_number"] # number of digits in the seq and sht names
+project_resolution = pipeline_file["globals"]["resolution"] # project resolution
+version_padding = pipeline_file["globals"]["versionPadding"] # number of digits to compose a version
 
 ##########################################################################################################################################
 #=========================================================== SET FUNCTIONS ===============================================================
 ##########################################################################################################################################
 
-def get_render_path(identifier_name: str) -> dict[str,str]:
+def get_render_folder(kwargs: dict[str, Any], identifier_name: str) -> dict[str,str]:
+    #-------------------------------------------------------------------------------#
+    # Get the render folder path even if it doesn't exist                           #
+    #                                                                               #
+    # kwargs = dict taken from the callbgack of the HDA                             #
+    # identifier_name = name of the identifier in Prism for this render             #
+    #-------------------------------------------------------------------------------#
+    node = kwargs["node"]
+    multiparm_index = int(kwargs["script_multiparm_index"])
     updated_entity = shot_entity
     updated_entity.update({"department": "Render", "task": task})
     render_folder = core.mediaProducts.getIdentifierPathFromEntity(entity=updated_entity)
@@ -85,45 +94,11 @@ def get_render_path(identifier_name: str) -> dict[str,str]:
     env_var_folder_to_del = render_folder.split("/03_Production")[0]
     env_var_folder = render_folder.replace(env_var_folder_to_del, "$PRISM_JOB")
 
-    # if there are versions, find the last one
-    latest_version = "v0001"
-    if os.path.exists(f"{render_folder}/{identifier_name}"):
-        version_list = os.listdir(f"{render_folder}/{identifier_name}")
+    version = node.parm(f"version{multiparm_index}").eval()
+    version = f"v{version:0{version_padding}d}"
 
-        previews_version_number = 0
-        for version in version_list:
-            final_digits = re.search(r'\d+$', version)
-            if final_digits != None:
-                final_digits = final_digits.group()
-            version_number = int(final_digits)
-            if version_number >= previews_version_number:
-                latest_version = version
-                previews_version_number = version_number
-
-    render_path = f"{env_var_folder}/{identifier_name}/{latest_version}"
-    return {"render_path": render_path, "latest_version": latest_version}
-
-def create_render_folders(identifier_name: str) -> None:
-
-    # create the folders to put the exr files
-    updated_entity = shot_entity
-    updated_entity.update({"department": "Render", "task": task})
-    render_folder = core.mediaProducts.createIdentifier(entity=updated_entity, identifier=identifier_name)
-
-    # create the version folder if it doesn't exist and the aov one
-    if render_folder != None and len(os.listdir(render_folder)) == 0:
-        core.mediaProducts.createVersion(entity=updated_entity, identifier=identifier_name, version="v0001")
-        core.mediaProducts.createAov(entity=updated_entity, identifier=identifier_name, version="v0001", aov="rgb")
-
-    # put idnetifiers in a group named "Render"
-    identifiers = core.mediaProducts.getIdentifiersByType(entity=shot_entity)
-    identifiers_3d = identifiers["3d"]
-
-    render_idents = []
-    for ident in identifiers_3d:
-        if ident["department"] == "Render":
-            render_idents.append(ident)
-    core.mediaProducts.setIdentifiersGroup(identifiers=render_idents, group="Render")
+    render_path = f"{env_var_folder}/{identifier_name}/{version}"
+    return {"render_path": render_path, "version": version}
 
 def create_layer(kwargs: dict[str, Any]) -> None:
     #-------------------------------------------------------------------------------#
@@ -132,19 +107,29 @@ def create_layer(kwargs: dict[str, Any]) -> None:
     # kwargs = dict taken from the callbgack of the HDA                             #
     #-------------------------------------------------------------------------------#
 
-    #get variables from pipeline.json
-    config_file_path = f"{project_path}/00_Pipeline/pipeline.json"
-    with open(config_file_path, mode="r", encoding="utf-8") as read_file:
-        pipeline_file = json.load(read_file)
-    project_resolution = pipeline_file["globals"]["resolution"]
-
     # set HDA parameters
     node = kwargs["node"]
     multiparm_index = int(kwargs["script_multiparm_index"])
     node.parm(f"is_layer{multiparm_index}").set(1)
-    node.parm(f"deadline_is_layer{multiparm_index+1}").set(1)
+    node.parm(f"deadline_is_layer{multiparm_index}").set(1)
+
     layer_name = node.parm(f"layer_name{multiparm_index}").eval()
-    render_path = get_render_path(layer_name)
+    render_folder = get_render_folder(kwargs, layer_name)["render_path"]
+    version = node.parm(f"version{multiparm_index}").eval()
+    version = f"v{version:0{version_padding}d}"
+    file_extension = "exr"
+
+    # convert the layer type parm value
+    layer_type_number = node.parm(f"layer_type{multiparm_index}").eval()
+    if layer_type_number == 0:
+        file_extension = "exr"
+        product_type = "openexr"
+    elif layer_type_number == 1:
+        file_extension = "exr"
+        product_type = "cryptomatte"
+
+    render_file_name = f"{layer_name}_{version}.$F4.{file_extension}"
+    render_path = f"{render_folder}/{render_file_name}"
 
     # get the input null for render settings
     nulls_in_scene = hou.lopNodeTypeCategory().nodeTypes()["null"].instances()
@@ -169,7 +154,8 @@ def create_layer(kwargs: dict[str, Any]) -> None:
     rendersettings_node1.parm("camera").set(f"/{seq_and_sht_name}/cam/DaisyCam_{sequence_name}_{shot_name}/DaisyCam_{sequence_name}_{shot_name}_geo/DaisyCam_{sequence_name}_{shot_name}_Offset/DaisyCam_{sequence_name}_{shot_name}_Hook/DaisyCam_{sequence_name}_{shot_name}_Move/DaisyCam_{sequence_name}_{shot_name}_group/DaisyCam_{sequence_name}_{shot_name}_cam/DaisyCam_{sequence_name}_{shot_name}_camShape")
     rendersettings_node1.parm("disableMotionBlur").set(1)
     rendersettings_node1.parm("disableDepthOfField").set(1)
-    rendersettings_node1.parm("productName").set(render_path["render_path"])
+    rendersettings_node1.parm("productName").set(render_path)
+    rendersettings_node1.parm("productType").set(product_type)
 
     configure_prim_node1 = lopnet.createNode("configureprimitive")
     configure_prim_node1.setName(f"{layer_name}_config")
@@ -210,7 +196,42 @@ def create_layer(kwargs: dict[str, Any]) -> None:
 
     # create usd render in the ROP of the HDA
 
-def change_layer_name(kwargs: dict[str, Any]) -> None:
+def delete_layer(kwargs: dict[str, Any]) -> None:
+    #-------------------------------------------------------------------------------#
+    # Delete selected layer                                                         #
+    # Clear all layers when "clear" button is pressed                               #
+    #                                                                               #
+    # kwargs = dict taken from the callbgack of the HDA                             #
+    #-------------------------------------------------------------------------------#
+
+    print(kwargs)
+    node = kwargs["node"]
+
+    multiparm_index = int(kwargs["script_multiparm_index"])
+    script_value = kwargs["script_value"]
+    layer_name = node.parm(f"layer_name{multiparm_index}").eval()
+    render_layers = node.parm("render_layers").eval()
+
+    rendersettings_in_scene = hou.lopNodeTypeCategory().nodeTypes()["rendermanrendersettings"].instances()
+    if rendersettings_in_scene == ():
+        return
+
+    rendersettings_in_scene = list(rendersettings_in_scene)
+    rendersettings_len = len(rendersettings_in_scene)
+
+    for rendersettings_node in rendersettings_in_scene:
+        if rendersettings_node.name() == f"{layer_name}_settings":
+            configure_prim_node = hou.node(f"/stage/{layer_name}_config")
+            restructure_scene_node = hou.node(f"/stage/{layer_name}_reparent")
+            null_layer = hou.node(f"/stage/{layer_name}_OUT")
+
+            # delete nodes
+            null_layer.destroy()
+            restructure_scene_node.destroy()
+            configure_prim_node.destroy()
+            rendersettings_node.destroy()
+
+def update_layer_name(kwargs: dict[str, Any]) -> None:
     #-----------------------------------------------------------------------#
     # Modify the name of a layer                                            #
     # Triggered when the name field is modified in the HDA                  #
@@ -223,10 +244,11 @@ def change_layer_name(kwargs: dict[str, Any]) -> None:
 
     multiparm_index = int(kwargs["script_multiparm_index"])
     script_value = kwargs["script_value"]
+    layer_name = node.parm(f"layer_name{multiparm_index}").eval()
     render_layers = node.parm("render_layers").eval()
     new_name = script_value
 
-    # add number at the end of the layer name
+    # add number at the end of the layer name if the name already exist
     for layer_number in range(render_layers):
         name = node.parm(f"layer_old_name{layer_number}").eval()
         if new_name in name:
@@ -242,32 +264,102 @@ def change_layer_name(kwargs: dict[str, Any]) -> None:
 
     # apply name
     kwargs["parm"].set(new_name)
-    node.parm(f"deadline_layer_name{multiparm_index+1}").set(new_name)
+    node.parm(f"deadline_layer_name{multiparm_index}").set(new_name)
 
-    # rename nodes
+    # rename nodes and change render settings
     layer_old_name = node.parm(f"layer_old_name{multiparm_index}").eval()
 
     try:
         rendersettings_node1 = hou.node(f"/stage/{layer_old_name}_settings")
         rendersettings_node1.setName(f"{new_name}_settings")
+        settings_node = hou.node(f"/stage/{layer_name}_settings")
+        product_name = settings_node.parm("productName")
+
+        # modify the path
+        old_path = product_name.eval()
+        old_path = old_path.replace("\\", "/")
+        old_path_to_del = old_path.split("/03_Production")[0]
+        old_path = old_path.replace(old_path_to_del, "$PRISM_JOB")
+        old_path_to_del2 = old_path.split(".")[-2]
+        old_path = old_path.replace(old_path_to_del2, "$F4")
+        new_path = old_path.replace(layer_old_name, new_name)
+
+        product_name.set(new_path)
 
         configure_prim_node1 = hou.node(f"/stage/{layer_old_name}_config")
-        configure_prim_node1.setName(f"{new_name}_OUT")
+        configure_prim_node1.setName(f"{new_name}_config")
 
         restructure_scene_node1 = hou.node(f"/stage/{layer_old_name}_reparent")
-        restructure_scene_node1.setName(f"{new_name}_OUT")
+        restructure_scene_node1.setName(f"{new_name}_reparent")
 
         null_layer1 = hou.node(f"/stage/{layer_old_name}_OUT")
         null_layer1.setName(f"{new_name}_OUT")
-    except Exception as e:
-        # print(f"Error : {e}")
+    except AttributeError:
         pass
 
     node.parm(f"layer_old_name{multiparm_index}").set(new_name)
 
-def render_single_layer(kwargs: dict[str, Any]) -> None:
+def update_version(kwargs: dict[str, Any]) -> None:
+    #-----------------------------------------------------------------------#
+    # Modify the version of a layer                                         #
+    # Triggered when the version field is modified in the HDA               #
+    #                                                                       #
+    # kwargs = dict taken from the callbgack of the HDA                     #
+    #-----------------------------------------------------------------------#
     node = kwargs["node"]
     multiparm_index = int(kwargs["script_multiparm_index"])
-    layer_name = node.parm(f"deadline_layer_name{multiparm_index}").eval()
+    layer_name = node.parm(f"layer_name{multiparm_index}").eval()
+    version = node.parm(f"version{multiparm_index}").eval()
+    version = f"v{version:0{4}d}"
 
-    create_render_folders(layer_name)
+    settings_node = hou.node(f"/stage/{layer_name}_settings")
+    product_name_parm = settings_node.parm("productName")
+
+    # modify the path
+    old_path = product_name_parm.eval()
+    old_path = old_path.replace("\\", "/")
+    old_path_to_del = old_path.split("/03_Production")[0]
+    old_path = old_path.replace(old_path_to_del, "$PRISM_JOB")
+    old_path_to_del2 = old_path.split(".")[-2]
+    old_path = old_path.replace(old_path_to_del2, "$F4")
+    to_replace = old_path.split("/")[-2]
+    new_path = old_path.replace(to_replace, version)
+
+    product_name_parm.set(new_path)
+
+def update_type(kwargs: dict[str, Any]) -> None:
+    #-----------------------------------------------------------------------#
+    # Modify the file type of a layer                                       #
+    # Triggered when the file_type field is modified in the HDA             #
+    #                                                                       #
+    # kwargs = dict taken from the callbgack of the HDA                     #
+    #-----------------------------------------------------------------------#
+    node = kwargs["node"]
+    multiparm_index = int(kwargs["script_multiparm_index"])
+    layer_name = node.parm(f"layer_name{multiparm_index}").eval()
+
+    # convert the layer type parm value
+    layer_type_number = node.parm(f"layer_type{multiparm_index}").eval()
+    if layer_type_number == 0:
+        file_extension = "exr"
+        product_type = "openexr"
+    elif layer_type_number == 1:
+        file_extension = "exr"
+        product_type = "cryptomatte"
+
+    settings_node = hou.node(f"/stage/{layer_name}_settings")
+    product_name_parm = settings_node.parm("productName")
+    product_type_parm = settings_node.parm("productType")
+
+    # modify the path
+    old_path = product_name_parm.eval()
+    old_path = old_path.replace("\\", "/")
+    old_path_to_del = old_path.split("/03_Production")[0]
+    old_path = old_path.replace(old_path_to_del, "$PRISM_JOB")
+    old_path_to_del2 = old_path.split(".")[-2]
+    old_path = old_path.replace(old_path_to_del2, "$F4")
+    to_replace = old_path.split(".")[-1]
+    new_path = old_path.replace(to_replace, file_extension)
+
+    product_name_parm.set(new_path)
+    product_type_parm.set(product_type)
