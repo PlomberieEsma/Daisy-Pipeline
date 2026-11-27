@@ -1,0 +1,18 @@
+{
+    "task_env": {
+        "PRISM_JOB": "$PRISM_JOB",
+        "PRISM_ROOT": "//minerva/3d5_2627/Prism2",
+        "PRISM_PROJECT": "$PRISM_JOB",
+        "PRISM_PLUGIN_SEARCH_PATHS": "//minerva/3d5_2627/Prism2_plugins",
+        "HOUDINI_PATH": "//minerva/3d5_2627/Prism2_plugins/Houdini/Integration;$PRISM_JOB/00_Pipeline/Plugins/Daisy_Pipe/Integration;&",
+        "HOUDINI_OTLSCAN_PATH": "$PRISM_JOB/00_Pipeline/Plugins/Daisy_Pipe;&",
+        "PYTHONPATH": "$PRISM_JOB/00_Pipeline/Plugins/Daisy_Pipe;$PRISM_JOB/00_Pipeline/Plugins/Daisy_Pipe/Scripts;//minerva/3d5_2627/Prism2/PythonLibs/Python3;//minerva/3d5_2627/Prism2/Scripts",
+        "HOUDINI_DISABLE_CONSOLE": "1"
+    },
+    "graph_only_env": {
+        "PRISM_USER": "$PRISM_USER"
+    },
+    "job_info": {
+        "UserName": "DeepDive"
+    }
+}

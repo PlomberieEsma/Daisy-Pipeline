@@ -1,6 +1,4 @@
-import hou
-import os
-import re
+import hou, os, re, json, shutil, time
 from pxr import Sdf, Vt
 from Scripts.DaisyTools.core.core import get_core, houdini_relative_path, USD_FILE_FORMAT, create_master, create_master_clips, USD_CAM_KEYFRAMES, resolve_root_prim
 from Scripts.DaisyTools.core.get_entity_info import get_entity_info
@@ -22,6 +20,21 @@ LAYER_BREAK_PARM = "layerbreak"
 STRIP_PARM = "striplayerbreaks"
 SAVE_STYLE_PARM = "savestyle"
 
+FARM_TOPNET = "topnet1"
+FARM_SCHEDULER = "deadlinescheduler1"
+
+FARM_ENV_FILE = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "lib", "farm_env.json"))
+
+# Noms internes des multiparms du deadlinescheduler1
+TASK_ENV_COUNT = "deadline_envmulti"
+TASK_ENV_NAME = "deadline_envname{}"
+TASK_ENV_VALUE = "deadline_envvalue{}"
+JOB_KV_COUNT = "deadline_jobfilekvpair"
+JOB_KV_KEY = "deadline_jobfilekey{}"
+JOB_KV_VALUE = "deadline_jobfilevalue{}"
+MULTIPARM_START = 1  # 0 si la première entrée du scheduler est numérotée 0
+
+PDGTEMP_MAX_AGE_HOURS = 24
 
 # ---------- Version ----------
 
@@ -409,14 +422,28 @@ def update_thumbnail(hda, core, path):
 
 # ---------- Post-export ----------
 
+def _wait_for_file(path, timeout=30, interval=2):
+    # Sur la farm, le fichier est écrit par une autre machine : le cache SMB peut le cacher quelques secondes
+    end = time.time() + timeout
+    while True:
+        folder = os.path.dirname(path)
+        if os.path.isdir(folder):
+            os.listdir(folder)  # force le rafraîchissement du cache du dossier
+        if os.path.isfile(path):
+            return True
+        if time.time() >= end:
+            return False
+        time.sleep(interval)
+
+
 def _check_written(hda, file_parm):
     if is_file_per_frame(hda):
-        missing = [p for p in _frame_paths(hda, file_parm) if not os.path.isfile(p)]
+        missing = [p for p in _frame_paths(hda, file_parm) if not _wait_for_file(p, timeout=10)]
         if missing:
             raise hou.NodeError(f"{len(missing)} frame(s) manquante(s), ex : '{missing[0]}'")
     else:
         path = hda.parm(file_parm).eval()
-        if not path or not os.path.isfile(path):
+        if not path or not _wait_for_file(path):
             raise hou.NodeError(f"Fichier exporté introuvable : '{path}'")
 
 
@@ -447,8 +474,11 @@ def _finalize_export(hda, file_parm, master_parm, thumbnail=True, master_info=Tr
     details["comment"] = hda.parm("comment").eval()
 
     info_path = core.products.getVersionInfoPathFromProductFilepath(path)
+    print(f"[finalize] versionInfo -> {info_path}")
     core.saveVersionInfo(filepath=info_path, details=details)
+    print(f"[finalize] versionInfo écrit : {os.path.isfile(info_path)}")
 
+    # La capture viewport demande une UI : jamais sur la farm
     if thumbnail and not farm:
         update_thumbnail(hda, core, path)
 
@@ -456,6 +486,7 @@ def _finalize_export(hda, file_parm, master_parm, thumbnail=True, master_info=Tr
         master_info_path = core.products.getVersionInfoPathFromProductFilepath(master_path)
         core.saveVersionInfo(filepath=master_info_path, details=details)
 
+    # Le cleanup ouvre une popup : sur la farm personne ne pourrait y répondre
     if not farm:
         check_version_limit_for_output(core, entity, task, path, parent=get_main_window())
 
@@ -525,29 +556,87 @@ def on_export(kwargs):
     except Exception as e:
         _report_error(hda, "Post-export", e)
 
+
 # ---------- Farm ----------
 
-FARM_TOPNET = "topnet1"
-FARM_SCHEDULER = "deadlinescheduler1"
-SUBMIT_LABEL = "Submit"
+def _load_farm_env():
+    with open(FARM_ENV_FILE, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    # Les dict JSON gardent leur ordre : les variables partent dans l'ordre du fichier
+    return (
+        list(data.get("task_env", {}).items()),
+        list(data.get("graph_only_env", {}).items()),
+        list(data.get("job_info", {}).items()),
+    )
 
 
-def _press_button(node, label):
-    # Le nom interne du bouton change selon les versions de Houdini : on le cherche par son label
-    for parm in node.parms():
-        template = parm.parmTemplate()
-        if template.type() == hou.parmTemplateType.Button and template.label() == label:
-            parm.pressButton()
-            return
-    raise hou.NodeError(f"Bouton '{label}' introuvable sur {node.path()}")
+def _user_env(hda):
+    # Variables ajoutées par l'artiste dans le multiparm extra_env du HDA
+    pairs = []
+    count_parm = hda.parm("extra_env")
+    if count_parm is None:
+        return pairs
+    for i in range(1, count_parm.evalAsInt() + 1):
+        name = hda.parm(f"extra_env_name{i}").unexpandedString().strip()
+        if name:
+            pairs.append((name, hda.parm(f"extra_env_value{i}").unexpandedString()))
+    return pairs
+
+
+def _fill_multiparm(node, count_parm, key_fmt, value_fmt, pairs):
+    # On repart de zéro à chaque envoi : pas d'accumulation d'un envoi à l'autre
+    node.parm(count_parm).set(0)
+    node.parm(count_parm).set(len(pairs))
+    for i, (key, value) in enumerate(pairs, start=MULTIPARM_START):
+        node.parm(key_fmt.format(i)).set(key)
+        node.parm(value_fmt.format(i)).set(value)
+
+
+def _apply_farm_env(hda):
+    scheduler = hda.node(f"{FARM_TOPNET}/{FARM_SCHEDULER}")
+    studio_env, graph_only_env, job_info = _load_farm_env()
+
+    task_env = studio_env + _user_env(hda)
+    graph_env = task_env + graph_only_env
+
+    _fill_multiparm(scheduler, TASK_ENV_COUNT, TASK_ENV_NAME, TASK_ENV_VALUE, task_env)
+
+    job_kv = [(f"EnvironmentKeyValue{i}", f"{k}={v}") for i, (k, v) in enumerate(graph_env)]
+    job_kv += job_info
+    _fill_multiparm(scheduler, JOB_KV_COUNT, JOB_KV_KEY, JOB_KV_VALUE, job_kv)
+
+
+def _cleanup_pdgtemp(max_age_hours=PDGTEMP_MAX_AGE_HOURS):
+    # PDG laisse des dossiers derrière lui : on efface les anciens, jamais ceux d'un job en cours
+    root = hou.text.expandString("$HIP/pdgtemp")
+    if not os.path.isdir(root):
+        return
+    limit = time.time() - max_age_hours * 3600
+    for name in os.listdir(root):
+        folder = os.path.join(root, name)
+        try:
+            if os.path.isdir(folder) and os.path.getmtime(folder) < limit:
+                shutil.rmtree(folder, ignore_errors=True)
+        except OSError:
+            pass
 
 
 def on_farm_export(kwargs):
     hda = kwargs["node"]
     try:
+        _cleanup_pdgtemp()
+
+        # Les chemins sont figés en local : la farm écrit exactement cette version
         update_path(hda, strict=True)
+
+        # La capture viewport demande une UI : on la fait ici, avant l'envoi
+        path = _base_path(hda, "path")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        update_thumbnail(hda, get_core(), path)
+
+        _apply_farm_env(hda)
         hou.hipFile.save()
-        _press_button(hda.node(f"{FARM_TOPNET}/{FARM_SCHEDULER}"), SUBMIT_LABEL)
+        hda.node(f"{FARM_TOPNET}/{FARM_SCHEDULER}").parm("submitjob").pressButton()
     except Exception as e:
         _report_error(hda, "Envoi farm", e)
         return
@@ -556,6 +645,7 @@ def on_farm_export(kwargs):
 
 
 def farm_finalize(hda):
+    print(f"[farm_finalize] start {hda.path()} path={_base_path(hda, 'path')}")
     _finalize_export(hda, "path", "masterpath", thumbnail=False, master_info=True, farm=True)
     if has_proxy_input(hda):
         _finalize_export(hda, "proxypath", "proxymasterpath", thumbnail=False, master_info=False, farm=True)
